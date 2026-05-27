@@ -349,7 +349,87 @@ sequenceDiagram
 
 ---
 
-## 10. Cross-Module Event Flow (Agent Orchestration)
+## 10. Admin Dashboard UX Flow
+
+```mermaid
+sequenceDiagram
+    actor Admin as Admin User
+    participant Browser as Web Browser
+    participant NextJS as Next.js Admin (SSR)
+    participant API as Backend API (NestJS)
+    participant Auth as Auth Module
+    participant DB as PostgreSQL
+    participant Cache as Redis Cache
+
+    Admin->>Browser: Navigate to /login
+    Browser->>NextJS: GET /login
+    NextJS-->>Browser: Login page (SSR)
+
+    Admin->>Browser: Enter credentials
+    Browser->>NextJS: POST /api/auth/callback/credentials
+    NextJS->>API: POST /api/v1/auth/login
+    API->>Auth: validate credentials
+    Auth->>DB: SELECT user by email
+    DB-->>Auth: user + passwordHash + role
+    Auth->>Auth: bcrypt.compare() + check role
+    Auth->>Cache: create session
+    Auth-->>API: JWT + user profile
+    API-->>NextJS: session token
+    NextJS-->>Browser: Set cookie, redirect to /dashboard
+
+    Admin->>Browser: View Dashboard
+    Browser->>NextJS: GET /dashboard (authenticated)
+    NextJS->>API: GET /api/v1/admin/dashboard/stats
+    API->>DB: SELECT counts (users, gardens, transactions, reports)
+    DB-->>API: aggregated stats
+    API-->>NextJS: { totalUsers, activeGardens, marketplaceVolume, reports }
+    NextJS-->>Browser: Dashboard with StatCards + Charts
+
+    Admin->>Browser: Manage Users
+    Browser->>NextJS: GET /users
+    NextJS->>API: GET /api/v1/admin/users?page=1&limit=20
+    API->>DB: SELECT users ORDER BY createdAt DESC
+    DB-->>API: [users] + total count
+    API-->>NextJS: paginated user list
+    NextJS-->>Browser: DataTable with search + pagination
+
+    Admin->>Browser: Moderation Queue
+    Browser->>NextJS: GET /moderation
+    NextJS->>API: GET /api/v1/moderation/queue?status=PENDING
+    API->>DB: SELECT flagged content WHERE status = PENDING
+    DB-->>API: [reports with content]
+    API-->>NextJS: moderation queue
+    NextJS-->>Browser: Moderation review panel
+
+    Admin->>Browser: Analytics
+    Browser->>NextJS: GET /analytics
+    NextJS->>API: GET /api/v1/analytics/overview?period=30d
+    API->>DB: query aggregated metrics over time
+    DB-->>API: time-series data
+    API-->>NextJS: analytics payload
+    NextJS-->>Browser: Recharts visualizations
+
+    Admin->>Browser: Feature Flags
+    Browser->>NextJS: GET /features
+    NextJS->>API: GET /api/v1/feature-flags
+    API->>DB: SELECT all flags
+    DB-->>API: [flags with rollout percentage]
+    API-->>NextJS: feature flag list
+    NextJS-->>Browser: Toggle switches per flag
+
+    Admin->>Browser: Super Admin Panel
+    Browser->>NextJS: GET /super-admin/dashboard
+    NextJS->>API: GET /api/v1/admin/super-admin/dashboard
+    API->>API: verify SUPER_ADMIN role
+    API->>DB: SELECT system-wide stats
+    DB-->>API: { userGrowth, revenue, systemHealth }
+    API-->>NextJS: super admin payload
+    NextJS-->>Browser: Super Admin dashboard
+```
+
+---
+
+## 11. Cross-Module Event Flow (Agent Orchestration)
 
 ```mermaid
 sequenceDiagram

@@ -22,3 +22,7 @@ docker-compose.override.yml
 .vercel
 playwright-report/
 test-results/
+
+# Hardhat build artifacts (regenerated via npx hardhat compile)
+contracts/artifacts/
+contracts/cache/

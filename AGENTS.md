@@ -154,6 +154,22 @@ Examples:
   - Updated package.json with 7 new script commands
   - Updated AGENTS.md with new sections (scripts, diagnostic workflows, .opencode, sequence diagrams, support docs)
   - Updated MEMORY.md with session tracking and file map
+- **Session 3 (E2E Testing + Config Fixes)**:
+  - Fixed MCP configs (Docker → mcp/docker container, Superpowers plugin added)
+  - Created module-by-module E2E test runner (`e2e/modules/run-module.ts`) — runs 8 workflows independently
+  - Created `.opencode/skills/e2e-testing.md` skill document
+  - Installed Superpowers plugin for agent orchestration
+  - Installed Playwright CLI 1.60.0 + Playwright MCP 0.0.75
+  - Admin dashboard deployed: 10/10 routes live
+  - Smart contracts verified: 41/41 Hardhat tests passing
+  - Captured 28 E2E workflow screenshots across 8 modules (auth, garden, admin, weather, marketplace, community, ai-scanner, invites)
+  - Generated HTML gallery at `e2e/workflows-data/` with animated step viewer
+  - Updated package.json with 10 new `e2e:*` module scripts
+  - Updated AGENTS.md with E2E module commands and session tracking
+  - Updated sequence diagrams with Admin UX flow (11 diagrams total)
+  - Created `docs/architecture/flow-payloads.md` with sample API request/response payloads
+  - Documented failure handling by layer, idempotency strategy, scalability & fault tolerance in overview.md
+  - Gitignored contract build artifacts (artifacts/, cache/)
 
 ## External API Integrations
 
@@ -361,7 +377,7 @@ Mandatory agentic development rules covering:
 
 ## Sequence Diagrams
 
-Located in `docs/architecture/sequence-diagrams.md` — 10 Mermaid diagrams:
+Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
 
 | # | Diagram | Description |
 |---|---------|-------------|
@@ -374,7 +390,8 @@ Located in `docs/architecture/sequence-diagrams.md` — 10 Mermaid diagrams:
 | 7 | Community Chat | WebSocket, Redis pub/sub, encrypted messaging |
 | 8 | IoT Sensor Pipeline | MQTT ingest, device auth, trust scoring |
 | 9 | QR Invite System | Encrypted QR generation + verification |
-| 10 | Agent Orchestration | Event bus routing across all 7 agents |
+| 10 | Admin Dashboard UX | Admin login, stats, users, moderation, analytics, super admin |
+| 11 | Agent Orchestration | Event bus routing across all 7 agents |
 
 ## Support Documentation
 
