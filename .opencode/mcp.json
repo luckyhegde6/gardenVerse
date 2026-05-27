@@ -1,0 +1,34 @@
+{
+  "mcpServers": {
+    "docker": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "--init", "mcp/docker"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--headless"]
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["@anthropic-ai/mcp-postgres"],
+      "env": {
+        "DATABASE_URL": "postgresql://gardenverse:gardenverse123@localhost:5432/gardenverse"
+      }
+    },
+    "git": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-git"],
+      "env": {
+        "GIT_ALLOW_PROTOCOL": "ssh https"
+      }
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-memory"]
+    },
+    "playwright-cli-skills": {
+      "command": "npx",
+      "args": ["--no-install", "playwright-cli", "--help"]
+    }
+  }
+}

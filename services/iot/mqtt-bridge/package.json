@@ -1,0 +1,18 @@
+{
+  "name": "@gardenverse/iot-mqtt-bridge",
+  "version": "1.0.0",
+  "description": "MQTT to HTTP bridge for GardenVerse IoT sensor data",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "ioredis": "^5.3.0",
+    "mqtt": "^5.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}

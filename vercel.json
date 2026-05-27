@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "contracts": false,
+      "mobile": false,
+      "services": false
+    }
+  },
+  "installCommand": "npm install",
+  "buildCommand": "npm run admin:build",
+  "framework": "nextjs",
+  "outputDirectory": "packages/admin/.next",
+  "crons": []
+}

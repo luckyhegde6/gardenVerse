@@ -1,0 +1,111 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gardenverse-postgres
+    environment:
+      POSTGRES_DB: gardenverse
+      POSTGRES_USER: gardenverse
+      POSTGRES_PASSWORD: gardenverse123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gardenverse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: gardenverse-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: gardenverse-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+
+  nginx:
+    image: nginx:alpine
+    container_name: gardenverse-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+      - admin
+
+  backend:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile
+    container_name: gardenverse-backend
+    env_file: .env
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/backend:/app
+      - /app/node_modules
+
+  admin:
+    build:
+      context: ./packages/admin
+      dockerfile: Dockerfile
+    container_name: gardenverse-admin
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  ai-service:
+    build:
+      context: ./services/ai
+      dockerfile: Dockerfile
+    container_name: gardenverse-ai
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/ai:/app
+    depends_on:
+      - redis
+
+  iot-gateway:
+    build:
+      context: ./services/iot
+      dockerfile: Dockerfile
+    container_name: gardenverse-iot
+    env_file: .env
+    depends_on:
+      - mosquitto
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data:
+  mosquitto_data:
+  mosquitto_log:

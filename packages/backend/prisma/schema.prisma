@@ -1,0 +1,783 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  REGIONAL_MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum InviteType {
+  OPEN
+  CODE
+  QR
+  LINK
+  PASSCODE
+}
+
+enum TokenType {
+  GREEN_CREDITS
+  ECO_POINTS
+  REPUTATION_TOKENS
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+  FATAL
+}
+
+enum GardenType {
+  VIRTUAL
+  REAL
+  HYBRID
+}
+
+enum CropStatus {
+  SEED
+  SPROUTING
+  GROWING
+  MATURE
+  HARVESTED
+  WILTED
+  DISEASED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum SensorType {
+  SOIL_MOISTURE
+  HUMIDITY
+  PH
+  TEMPERATURE
+  LIGHT
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+  EXPIRED
+}
+
+model User {
+  id                      String                     @id @default(uuid()) @db.Uuid
+  email                   String                     @unique
+  phone                   String?
+  username                String                     @unique
+  displayName             String?
+  passwordHash            String
+  role                    UserRole                   @default(USER)
+  isVerified              Boolean                    @default(false)
+  isOnboarded             Boolean                    @default(false)
+  avatarUrl               String?
+  bio                     String?
+  geohash                 String?
+  region                  String?
+  twoFactorEnabled        Boolean                    @default(false)
+  telegramId              String?
+  deviceTrustScore        Float                      @default(0.0)
+
+  level                   Int                        @default(1)
+  experience              Int                        @default(0)
+  greenCredits            Float                      @default(0)
+  ecoPoints               Float                      @default(0)
+  reputationTokens        Float                      @default(0)
+  sustainabilityScore     Float                      @default(0)
+  trustScore              Float                      @default(100)
+  marketplaceReliability  Float                      @default(100)
+  communityStanding       Float                      @default(100)
+  inviteCount             Int                        @default(0)
+
+  currentStreak           Int                        @default(0)
+  longestStreak           Int                        @default(0)
+  lastActiveAt            DateTime?
+
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+  deletedAt               DateTime?
+
+  garden                  Garden?
+  crops                   Crop[]
+  inventory               Inventory[]
+  listings                MarketplaceListing[]
+  purchases               MarketplaceTransaction[]   @relation("BuyerTransactions")
+  sales                   MarketplaceTransaction[]   @relation("SellerTransactions")
+  devices                 IotDevice[]
+  notifications           Notification[]
+  aiScans                 AiScan[]
+  sentMessages            Message[]                  @relation("SentMessages")
+  receivedMessages        Message[]                  @relation("ReceivedMessages")
+  groups                  GroupMember[]
+  invitesCreated          Invite[]                   @relation("CreatedInvites")
+  invitesRedeemed         Invite[]                   @relation("RedeemedInvites")
+  moderationReports       ModerationReport[]         @relation("ReportedReports")
+  moderationActions       ModerationReport[]         @relation("ActionedReports")
+  transactions            BlockchainTransaction[]
+  reputationLogs          ReputationLog[]
+  sensorReadings          SensorReading[]
+  featureOverrides        UserFeatureOverride[]
+  qrSessionsCreated       QrSession[]                @relation("CreatedQrSessions")
+  qrSessionsUsed          QrSession[]                @relation("UsedQrSessions")
+  auditLogs               AuditLog[]
+  sessions                Session[]
+  tokenTransactions       TokenTransaction[]
+  appLogs                 AppLog[]
+
+  @@index([email])
+  @@index([username])
+  @@index([geohash])
+  @@index([region])
+  @@index([sustainabilityScore])
+  @@index([trustScore])
+}
+
+model PlantSpecies {
+  id                String   @id @default(uuid()) @db.Uuid
+  commonName        String
+  scientificName    String   @unique
+  family            String?
+  genus             String?
+  species           String?
+
+  imageUrl          String?
+  description       String?
+  growingDays       Int?
+  difficulty        String   @default("MEDIUM")
+  minTemp           Float?
+  maxTemp           Float?
+  waterNeeds        String   @default("MODERATE")
+  sunlightNeeds     String   @default("FULL_SUN")
+  soilPhMin        Float?
+  soilPhMax        Float?
+  matureHeightCm    Float?
+  spacingCm         Float?
+
+  seasons           String[]
+  edible            Boolean  @default(false)
+  medicinal         Boolean  @default(false)
+  attractsPollinators Boolean @default(false)
+  isNative          Boolean  @default(false)
+  tags              String[]
+
+  cropVarieties     CropVariety[]
+  crops            Crop[]
+  gardenPlanPlants  GardenPlanPlant[]
+
+  dataSource        String   @default("openfarm")
+  externalId        String?
+  metadata          Json?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([commonName])
+  @@index([scientificName])
+  @@index([family])
+  @@index([seasons])
+  @@index([difficulty])
+  @@index([dataSource])
+}
+
+model CropVariety {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  daysToMaturity Int?
+  characteristics Json?
+
+  speciesId   String   @db.Uuid
+  species     PlantSpecies @relation(fields: [speciesId], references: [id])
+  crops       Crop[]
+
+  createdAt   DateTime @default(now())
+
+  @@index([speciesId])
+}
+
+model GardenPlan {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  difficulty  String   @default("MEDIUM")
+  gridWidth   Int      @default(4)
+  gridHeight  Int      @default(4)
+  season      String?
+  region      String?
+  theme       String?
+  isPublic    Boolean  @default(false)
+  imageUrl    String?
+
+  plants      GardenPlanPlant[]
+  gardens     Garden[]
+
+  createdBy   String?  @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([difficulty])
+  @@index([season])
+  @@index([isPublic])
+}
+
+model GardenPlanPlant {
+  id          String   @id @default(uuid()) @db.Uuid
+  plotX       Int
+  plotY       Int
+  quantity    Int      @default(1)
+
+  planId      String   @db.Uuid
+  plan        GardenPlan @relation(fields: [planId], references: [id])
+
+  speciesId   String   @db.Uuid
+  species     PlantSpecies @relation(fields: [speciesId], references: [id])
+
+  @@unique([planId, plotX, plotY])
+  @@index([planId])
+  @@index([speciesId])
+}
+
+model Garden {
+  id               String     @id @default(uuid()) @db.Uuid
+  name             String     @default("My Garden")
+  type             GardenType @default(VIRTUAL)
+  description      String?
+  size             Int        @default(0)
+  soilQuality      Float      @default(50.0)
+  irrigationLevel  Float      @default(50.0)
+  sunlightExposure Float      @default(50.0)
+
+  latitude         Float?
+  longitude        Float?
+  address          String?
+  timezone         String?
+
+  theme            String?
+  decorations      Json?
+  planId           String?    @db.Uuid
+  plan             GardenPlan? @relation(fields: [planId], references: [id])
+
+  userId           String     @unique @db.Uuid
+  user             User       @relation(fields: [userId], references: [id])
+
+  crops            Crop[]
+
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model Crop {
+  id                String     @id @default(uuid()) @db.Uuid
+  name              String
+  species           String?
+  variety           String?
+
+  status            CropStatus @default(SEED)
+  growthStage       Int        @default(0)
+  health            Float      @default(100.0)
+  hydration         Float      @default(50.0)
+  nutrientLevel     Float      @default(50.0)
+
+  plantedAt         DateTime   @default(now())
+  lastWateredAt     DateTime?
+  lastFertilizedAt  DateTime?
+  estimatedHarvest  DateTime?
+  harvestedAt       DateTime?
+
+  plotX             Int?
+  plotY             Int?
+
+  weatherStressed   Boolean    @default(false)
+  stressFactor      Float      @default(0.0)
+
+  speciesId         String?    @db.Uuid
+  plantSpecies      PlantSpecies? @relation(fields: [speciesId], references: [id])
+  varietyId         String?    @db.Uuid
+  cropVariety       CropVariety? @relation(fields: [varietyId], references: [id])
+
+  gardenId          String     @db.Uuid
+  garden            Garden     @relation(fields: [gardenId], references: [id])
+
+  userId            String     @db.Uuid
+  user              User       @relation(fields: [userId], references: [id])
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@index([gardenId])
+  @@index([userId])
+  @@index([status])
+  @@index([speciesId])
+}
+
+model Inventory {
+  id        String   @id @default(uuid()) @db.Uuid
+  itemType  String
+  itemId    String
+  name      String
+  quantity  Int      @default(1)
+  rarity    String   @default("COMMON")
+
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([itemType])
+}
+
+model MarketplaceListing {
+  id          String         @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  category    String
+  price       Float
+  currency    String         @default("GREEN_CREDITS")
+  quantity    Int            @default(1)
+  status      ListingStatus  @default(ACTIVE)
+  images      Json?
+  location    String?
+  isLocal     Boolean        @default(false)
+
+  sellerId    String         @db.Uuid
+  seller      User           @relation(fields: [sellerId], references: [id])
+
+  transactions MarketplaceTransaction[]
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  expiresAt   DateTime?
+
+  @@index([sellerId])
+  @@index([category])
+  @@index([status])
+}
+
+model MarketplaceTransaction {
+  id              String            @id @default(uuid()) @db.Uuid
+  status          TransactionStatus @default(PENDING)
+  amount          Float
+  currency        String            @default("GREEN_CREDITS")
+
+  listingId       String            @db.Uuid
+  listing         MarketplaceListing @relation(fields: [listingId], references: [id])
+
+  buyerId         String            @db.Uuid
+  buyer           User              @relation("BuyerTransactions", fields: [buyerId], references: [id])
+
+  sellerId        String            @db.Uuid
+  seller          User              @relation("SellerTransactions", fields: [sellerId], references: [id])
+
+  blockchainTxId  String?
+
+  createdAt       DateTime          @default(now())
+  completedAt     DateTime?
+
+  @@index([listingId])
+  @@index([buyerId])
+  @@index([sellerId])
+}
+
+model IotDevice {
+  id              String          @id @default(uuid()) @db.Uuid
+  name            String
+  deviceType      String
+  firmwareVersion String?
+  isOnline        Boolean         @default(false)
+  lastSeenAt      DateTime?
+  publicKey       String?
+
+  userId          String          @db.Uuid
+  user            User            @relation(fields: [userId], references: [id])
+
+  sensorReadings  SensorReading[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+model SensorReading {
+  id         String     @id @default(uuid()) @db.Uuid
+  sensorType SensorType
+  value      Float
+  unit       String
+  isVerified Boolean    @default(false)
+
+  deviceId   String     @db.Uuid
+  device     IotDevice  @relation(fields: [deviceId], references: [id])
+
+  userId     String     @db.Uuid
+  user       User       @relation(fields: [userId], references: [id])
+
+  timestamp  DateTime   @default(now())
+
+  @@index([deviceId])
+  @@index([userId])
+  @@index([timestamp])
+  @@index([sensorType])
+}
+
+model WeatherRecord {
+  id            String   @id @default(uuid()) @db.Uuid
+  region        String
+  temperature   Float
+  humidity      Float
+  rainfall      Float
+  windSpeed     Float
+  sunlightHours Float
+  condition     String
+
+  forecast      Json?
+  alerts        Json?
+
+  recordedAt    DateTime @default(now())
+  expiresAt     DateTime?
+
+  @@index([region])
+  @@index([recordedAt])
+  @@index([condition])
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  type      String
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean  @default(false)
+  isPush    Boolean  @default(true)
+
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model AiScan {
+  id               String   @id @default(uuid()) @db.Uuid
+  imageUrl         String
+  plantName        String?
+  species          String?
+  healthScore      Float?
+  diseases         Json?
+  recommendations  Json?
+
+  userId           String   @db.Uuid
+  user             User     @relation(fields: [userId], references: [id])
+
+  createdAt        DateTime @default(now())
+
+  @@index([userId])
+}
+
+model GovernmentAdvisory {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String
+  description String
+  type        String
+  region      String
+  source      String
+  url         String?
+  data        Json?
+
+  publishedAt DateTime
+  expiresAt   DateTime?
+
+  createdAt   DateTime @default(now())
+
+  @@index([region])
+  @@index([type])
+  @@index([publishedAt])
+}
+
+model Message {
+  id          String   @id @default(uuid()) @db.Uuid
+  content     String   @db.Text
+  isEncrypted Boolean  @default(true)
+  nonce       String?
+
+  senderId    String   @db.Uuid
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+
+  receiverId  String?  @db.Uuid
+  receiver    User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  groupId     String?  @db.Uuid
+  group       Group?   @relation(fields: [groupId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@index([senderId, receiverId])
+  @@index([groupId])
+}
+
+model Group {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  type        String
+  region      String?
+  isPrivate   Boolean       @default(false)
+  iconUrl     String?
+
+  members     GroupMember[]
+  messages    Message[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([region])
+  @@index([type])
+}
+
+model GroupMember {
+  id        String   @id @default(uuid()) @db.Uuid
+  role      String   @default("MEMBER")
+
+  groupId   String   @db.Uuid
+  group     Group    @relation(fields: [groupId], references: [id])
+
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+
+  joinedAt  DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model Invite {
+  id           String     @id @default(uuid()) @db.Uuid
+  code         String     @unique
+  type         InviteType @default(CODE)
+  passcode     String?
+  maxUses      Int        @default(1)
+  useCount     Int        @default(0)
+  isActive     Boolean    @default(true)
+  expiresAt    DateTime?
+
+  createdById  String    @db.Uuid
+  createdBy    User      @relation("CreatedInvites", fields: [createdById], references: [id])
+
+  redeemedById String?   @db.Uuid
+  redeemedBy   User?     @relation("RedeemedInvites", fields: [redeemedById], references: [id])
+
+  createdAt    DateTime  @default(now())
+  redeemedAt   DateTime?
+
+  @@index([code])
+  @@index([createdById])
+}
+
+model TokenTransaction {
+  id              String    @id @default(uuid()) @db.Uuid
+  type            TokenType
+  amount          Float
+  balanceBefore   Float
+  balanceAfter    Float
+  action          String
+  referenceId     String?
+  referenceType   String?
+  description     String?
+  metadata        Json?
+
+  userId          String    @db.Uuid
+  user            User      @relation(fields: [userId], references: [id])
+
+  createdAt       DateTime  @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model AppLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  level       LogLevel @default(INFO)
+  message     String
+  context     String?
+  metadata    Json?
+  ipAddress   String?
+  traceId     String?
+  spanId      String?
+  source      String   @default("backend")
+
+  userId      String?  @db.Uuid
+  user        User?    @relation(fields: [userId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@index([level])
+  @@index([source])
+  @@index([createdAt])
+  @@index([traceId])
+}
+
+model QrSession {
+  id          String   @id @default(uuid()) @db.Uuid
+  type        String
+  payload     Json
+  signature   String
+  expiresAt   DateTime
+  isUsed      Boolean  @default(false)
+
+  createdById String   @db.Uuid
+  createdBy   User     @relation("CreatedQrSessions", fields: [createdById], references: [id])
+
+  usedById    String?  @db.Uuid
+  usedBy      User?    @relation("UsedQrSessions", fields: [usedById], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@index([type])
+  @@index([expiresAt])
+}
+
+model BlockchainTransaction {
+  id           String   @id @default(uuid()) @db.Uuid
+  txHash       String?  @unique
+  contractType String
+  action       String
+  fromAddress  String?
+  toAddress    String?
+  amount       String?
+  tokenId      String?
+  status       String   @default("PENDING")
+  gasUsed      String?
+  blockNumber  Int?
+
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id])
+
+  createdAt    DateTime @default(now())
+  confirmedAt  DateTime?
+
+  @@index([userId])
+  @@index([txHash])
+  @@index([status])
+}
+
+model ReputationLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  action      String
+  scoreChange Float
+  reason      String
+
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+}
+
+model ModerationReport {
+  id           String   @id @default(uuid()) @db.Uuid
+  type         String
+  description  String?
+  status       String   @default("PENDING")
+  evidence     Json?
+
+  reporterId   String   @db.Uuid
+  reporter     User     @relation("ReportedReports", fields: [reporterId], references: [id])
+
+  actionedById String?  @db.Uuid
+  actionedBy   User?    @relation("ActionedReports", fields: [actionedById], references: [id])
+
+  actionTaken  String?
+
+  createdAt    DateTime @default(now())
+  resolvedAt   DateTime?
+
+  @@index([status])
+  @@index([reporterId])
+}
+
+model FeatureFlag {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  enabled     Boolean  @default(false)
+  description String?
+  rules       Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+}
+
+model UserFeatureOverride {
+  id          String   @id @default(uuid()) @db.Uuid
+  featureName String
+  enabled     Boolean
+
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, featureName])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  action    String
+  entity    String
+  entityId  String
+  changes   Json?
+  ipAddress String?
+  userAgent String?
+
+  userId    String?  @db.Uuid
+  user      User?    @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([entity])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Session {
+  id           String   @id @default(uuid()) @db.Uuid
+  token        String   @unique
+  refreshToken String?
+  isRevoked    Boolean  @default(false)
+  deviceInfo   String?
+  ipAddress    String?
+  expiresAt    DateTime
+
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id])
+
+  createdAt    DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}

@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: gardenverse-postgres-test
+    environment:
+      POSTGRES_DB: gardenverse_test
+      POSTGRES_USER: gardenverse
+      POSTGRES_PASSWORD: gardenverse123
+    ports:
+      - "5433:5432"
+    tmpfs: /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gardenverse"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: gardenverse-redis-test
+    ports:
+      - "6380:6379"
+    tmpfs: /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+networks:
+  default:
+    name: gardenverse-test-network

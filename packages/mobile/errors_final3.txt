@@ -1,0 +1,9 @@
+src/screens/scanner/AiScannerScreen.tsx(82,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: CameraProps): CameraView', gave the following error.
+    Type '{ children: Element[]; ref: MutableRefObject<any>; className: string; facing: "back"; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<CameraView> & Pick<Readonly<CameraProps>, never> & InexactPartial<...> & InexactPartial<...>'.
+      Property 'className' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<CameraView> & Pick<Readonly<CameraProps>, never> & InexactPartial<...> & InexactPartial<...>'.
+  Overload 2 of 2, '(props: CameraProps, context: any): CameraView', gave the following error.
+    Type '{ children: Element[]; ref: MutableRefObject<any>; className: string; facing: "back"; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<CameraView> & Pick<Readonly<CameraProps>, never> & InexactPartial<...> & InexactPartial<...>'.
+      Property 'className' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<CameraView> & Pick<Readonly<CameraProps>, never> & InexactPartial<...> & InexactPartial<...>'.
+src/services/websocket.ts(96,28): error TS2345: Argument of type '(...args: any[]) => void' is not assignable to parameter of type 'FallbackToUntypedListener<E extends "connect" | "connect_error" | "disconnect" ? SocketReservedEvents[E] : E extends "chat:typing" | "garden:update" | ... 7 more ... | "user:offline" ? ServerToClientEvents[E] : never>'.
+src/services/websocket.ts(109,29): error TS2345: Argument of type '(...args: any[]) => void' is not assignable to parameter of type 'FallbackToUntypedListener<E extends "connect" | "connect_error" | "disconnect" ? SocketReservedEvents[E] : E extends "chat:typing" | "garden:update" | ... 7 more ... | "user:offline" ? ServerToClientEvents[E] : never>'.

@@ -1,0 +1,16 @@
+{
+  "name": "@gardenverse/iot-gateway",
+  "version": "1.0.0",
+  "description": "IoT Gateway service for GardenVerse sensor data collection and forwarding",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "mqtt": "^5.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GardenVerse — Interactive Demo</title>
+  <style>
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0fdf4; color: #1e293b; }
+
+    .hero {
+      background: linear-gradient(135deg, #166534 0%, #15803d 50%, #16a34a 100%);
+      background-size: 200% 200%;
+      animation: gradientShift 8s ease infinite;
+      color: white; padding: 64px 24px; text-align: center; position: relative; overflow: hidden;
+    }
+    .hero::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .hero-content { position: relative; z-index: 1; }
+    .hero h1 { font-size: 3rem; margin-bottom: 8px; animation: fadeIn 1s ease; }
+    .hero p { font-size: 1.2rem; opacity: 0.9; margin-bottom: 24px; animation: fadeIn 1s ease 0.3s both; }
+    .hero-badge {
+      display: inline-block; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);
+      padding: 8px 20px; border-radius: 20px; font-size: 0.9rem; margin-bottom: 16px;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 32px 16px; }
+
+    .section-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 24px; color: #166534; display: flex; align-items: center; gap: 12px; }
+
+    .workflow-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px; margin-bottom: 48px;
+    }
+    .workflow-card {
+      background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); animation: fadeIn 0.6s ease both;
+      border: 1px solid rgba(22, 101, 52, 0.1);
+    }
+    .workflow-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.12); border-color: #166534; }
+    .workflow-card:nth-child(1) { animation-delay: 0.1s; }
+    .workflow-card:nth-child(2) { animation-delay: 0.2s; }
+    .workflow-card:nth-child(3) { animation-delay: 0.3s; }
+    .workflow-card:nth-child(4) { animation-delay: 0.4s; }
+    .workflow-card:nth-child(5) { animation-delay: 0.5s; }
+    .workflow-card:nth-child(6) { animation-delay: 0.6s; }
+    .workflow-card:nth-child(7) { animation-delay: 0.7s; }
+    .workflow-card:nth-child(8) { animation-delay: 0.8s; }
+
+    .card-icon {
+      width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center;
+      justify-content: center; font-size: 1.5rem; margin-bottom: 12px;
+    }
+    .card-body { padding: 24px; }
+    .card-body h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+    .card-body .meta { font-size: 0.8rem; color: #94a3b8; margin-bottom: 12px; }
+    .card-body p { font-size: 0.9rem; color: #64748b; line-height: 1.5; margin-bottom: 16px; }
+    .card-links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .card-links a {
+      padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 500;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .btn-primary { background: #166534; color: white; }
+    .btn-primary:hover { background: #15803d; }
+    .btn-secondary { background: #f1f5f9; color: #475569; }
+    .btn-secondary:hover { background: #e2e8f0; }
+
+    .recording-section {
+      background: white; border-radius: 20px; padding: 24px; margin-bottom: 48px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid rgba(22, 101, 52, 0.1);
+    }
+    .recording-list { display: grid; gap: 16px; }
+    .recording-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px; background: #f8fafc; border-radius: 12px;
+      transition: background 0.2s;
+    }
+    .recording-item:hover { background: #f1f5f9; }
+    .recording-item .info h4 { font-size: 0.95rem; font-weight: 500; }
+    .recording-item .info span { font-size: 0.8rem; color: #94a3b8; }
+    .recording-item video { width: 240px; border-radius: 8px; }
+
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 48px;
+    }
+    .stat-card {
+      background: white; border-radius: 16px; padding: 24px; text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid rgba(22, 101, 52, 0.1);
+    }
+    .stat-card .number { font-size: 2rem; font-weight: 700; color: #166534; }
+    .stat-card .label { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+
+    .deploy-section {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border-radius: 20px; padding: 32px; margin-bottom: 48px;
+      border: 1px solid rgba(22, 101, 52, 0.2);
+    }
+    .deploy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 16px; }
+    .deploy-card {
+      background: white; border-radius: 12px; padding: 20px;
+      text-decoration: none; color: inherit; transition: transform 0.2s; display: block;
+    }
+    .deploy-card:hover { transform: translateY(-2px); }
+    .deploy-card h4 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    .deploy-card p { font-size: 0.85rem; color: #64748b; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2rem; }
+      .workflow-grid { grid-template-columns: 1fr; }
+      .recording-item { flex-direction: column; gap: 12px; }
+      .recording-item video { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">🌱 Hybrid Agriculture Simulation</div>
+      <h1>GardenVerse</h1>
+      <p>Interactive Workflow Demos & Screenshots</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card"><div class="number">8</div><div class="label">Workflows</div></div>
+      <div class="stat-card"><div class="number" id="totalScreenshots">—</div><div class="label">Screenshots</div></div>
+      <div class="stat-card"><div class="number">7</div><div class="label">Screen Recordings</div></div>
+      <div class="stat-card"><div class="number">3</div><div class="label">Packages</div></div>
+    </div>
+
+    <!-- Workflow Screenshots -->
+    <h2 class="section-title">📸 Workflow Screenshots</h2>
+    <div class="workflow-grid">
+      <div class="workflow-card">
+        <div class="card-body">
+          <div class="card-icon" style="background:#dcfce7;">🔐</div>
+          <h3>Authentication Flow</h3>
+          <div class="meta">5 steps</div>
+          <p>Login, registration, super admin toggle, protected route redirects</p>
+          <div class="card-links">
+            <a class="btn-primary" href="workflow-0.html">View →</a>
+          </div>
+        </div>
+      </div>
+      <div class="workflow-card">
+        <div class="card-body">
+          <div class="card-icon" style="background:#dcfce7;">🌿</div>
+          <h3>Garden Management</h3>
+          <div class="meta">4 steps</div>
+          <p>Garden overview, plant selection, plant browser, crop details</p>
+          <div class="card-links">
+            <a class="btn-primary" href="workflow-1.html">View →</a>
+          </div>
+        </div>
+      </div>
+      <div class="workflow-card">
+        <div class="card-body">
+          <div class="card-icon" style="background:#dcfce7;">⚙️</div>
+          <h3>Admin Portal</h3>
+          <div class="meta">5 steps</div>
+          <p>Dashboard, user management, marketplace, invites, super admin</p>
+          <div class="card-links">
+            <a class="btn-primary" href="workflow-2.html">View →</a>
+          </div>
+        </div>
+      </div>
+      <div class="workflow-card">
+        <div class="card-body">
+          <div class="card-icon" style="background:#dcfce7;">🌤️</div>
+          <h3>Weather Dashboard</h3>
+          <div class="meta">1 step</div>
+          <p>Real-time weather via OpenWeatherMap API integration</p>
+          <div class="card-links">
+            <a class="btn-primary" href="workflow-3.html">View →</a>
+          </div>
+        </div>
+      </div>
+      <div class="workflow-card">
+        <div class="card-body">
+          <div class="card-icon" style="background:#dcfce7;">🏪</div>
+          <h3>Marketplace</h3>
+          <div class="meta">2 steps</div>
+          <p>Browse listings, create new listings with token transactions</p>
+          <div class="card-links">
+            <a class="btn-primary" href="workflow-4.html">View →</a>
+          </div>
+        </div>
+      </div>
+      <div class="workflow-card">
+        <div class="card-body">
+          <div class="card-icon" style="background:#dcfce7;">👥</div>
+          <h3>Community</h3>
+          <div class="meta">2 steps</div>
+          <p>Community hub, groups, nearby gardeners via geohash</p>
+          <div class="card-links">
+            <a class="btn-primary" href="workflow-5.html">View →</a>
+          </div>
+        </div>
+      </div>
+      <div class="workflow-card">
+        <div class="card-body">
+          <div class="card-icon" style="background:#dcfce7;">🤖</div>
+          <h3>AI Scanner</h3>
+          <div class="meta">2 steps</div>
+          <p>Plant identification via OpenCV/vision processing, scan history</p>
+          <div class="card-links">
+            <a class="btn-primary" href="workflow-6.html">View →</a>
+          </div>
+        </div>
+      </div>
+      <div class="workflow-card">
+        <div class="card-body">
+          <div class="card-icon" style="background:#dcfce7;">📨</div>
+          <h3>Invite System</h3>
+          <div class="meta">2 steps</div>
+          <p>QR codes, invite links, passcodes, token tracking</p>
+          <div class="card-links">
+            <a class="btn-primary" href="workflow-7.html">View →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen Recordings -->
+    <h2 class="section-title">🎥 Demo Recordings</h2>
+    <div class="recording-section">
+      <div class="recording-list" id="recordingList">
+        <div class="recording-item">
+          <div class="info">
+            <h4>01. Authentication & Super Admin</h4>
+            <span>Login, registration, super admin portal</span>
+          </div>
+          <video controls preload="metadata">
+            <source src="../playwright-report/recordings/01-auth-super-admin.webm" type="video/webm">
+          </video>
+        </div>
+        <div class="recording-item">
+          <div class="info">
+            <h4>02. Garden Management</h4>
+            <span>Garden overview, plant selection, plant database browser</span>
+          </div>
+          <video controls preload="metadata">
+            <source src="../playwright-report/recordings/02-garden-management.webm" type="video/webm">
+          </video>
+        </div>
+        <div class="recording-item">
+          <div class="info">
+            <h4>03. Admin & Super Admin</h4>
+            <span>Dashboard, user management, invites, performance metrics</span>
+          </div>
+          <video controls preload="metadata">
+            <source src="../playwright-report/recordings/03-admin-management.webm" type="video/webm">
+          </video>
+        </div>
+        <div class="recording-item">
+          <div class="info">
+            <h4>04. Weather Dashboard</h4>
+            <span>Real-time weather via OpenWeatherMap API integration</span>
+          </div>
+          <video controls preload="metadata">
+            <source src="../playwright-report/recordings/04-weather.webm" type="video/webm">
+          </video>
+        </div>
+        <div class="recording-item">
+          <div class="info">
+            <h4>05. Marketplace & Trading</h4>
+            <span>Browse listings, create listings, token transactions</span>
+          </div>
+          <video controls preload="metadata">
+            <source src="../playwright-report/recordings/05-marketplace.webm" type="video/webm">
+          </video>
+        </div>
+        <div class="recording-item">
+          <div class="info">
+            <h4>06. AI Scanner</h4>
+            <span>Plant identification via vision processing, scan history</span>
+          </div>
+          <video controls preload="metadata">
+            <source src="../playwright-report/recordings/06-ai-scanner.webm" type="video/webm">
+          </video>
+        </div>
+        <div class="recording-item">
+          <div class="info">
+            <h4>07. Community & Groups</h4>
+            <span>Community hub, groups, nearby gardeners</span>
+          </div>
+          <video controls preload="metadata">
+            <source src="../playwright-report/recordings/07-community.webm" type="video/webm">
+          </video>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deploy Info -->
+    <h2 class="section-title">🚀 Deployment</h2>
+    <div class="deploy-section">
+      <p style="margin-bottom: 16px; color: #475569;">
+        Deployed on <strong>Vercel</strong> with <strong>Supabase</strong> (auth + storage) and <strong>Sentry</strong> (monitoring).
+        Smart contracts on <strong>Sepolia testnet</strong> via Hardhat.
+      </p>
+      <div class="deploy-grid">
+        <a class="deploy-card" href="https://gardenverse.vercel.app" target="_blank">
+          <h4>🌐 Live Demo</h4>
+          <p>Deployed admin dashboard on Vercel</p>
+        </a>
+        <a class="deploy-card" href="https://github.com/your-org/gardenverse" target="_blank">
+          <h4>📦 GitHub</h4>
+          <p>Source code repository</p>
+        </a>
+        <a class="deploy-card" href="https://gardenverse.vercel.app/api/docs" target="_blank">
+          <h4>📖 API Docs</h4>
+          <p>Swagger API documentation</p>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    fetch('workflows-data/results.json')
+      .then(r => r.json())
+      .then(data => {
+        const total = data.reduce((a, r) => a + r.steps, 0);
+        document.getElementById('totalScreenshots').textContent = total;
+      })
+      .catch(() => { document.getElementById('totalScreenshots').textContent = '8+'; });
+  </script>
+</body>
+</html>

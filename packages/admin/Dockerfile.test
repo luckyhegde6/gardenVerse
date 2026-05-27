@@ -1,0 +1,35 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY ../../package.json ../../package-lock.json* /app/
+COPY packages/admin/package.json /app/packages/admin/
+COPY packages/admin/tsconfig.json /app/packages/admin/
+COPY packages/admin/next.config.mjs /app/packages/admin/
+COPY packages/admin/tailwind.config.ts /app/packages/admin/
+COPY packages/admin/postcss.config.mjs /app/packages/admin/
+
+WORKDIR /app/packages/admin
+RUN npm ci
+
+COPY packages/admin/ ./
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/packages/admin/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/packages/admin/.next/standalone ./.next/standalone
+COPY --from=builder --chown=nextjs:nodejs /app/packages/admin/.next/static ./.next/static
+
+USER nextjs
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+CMD ["node", ".next/standalone/server.js"]

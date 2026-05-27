@@ -1,0 +1,71 @@
+{
+  "name": "gardenverse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hybrid agriculture simulation ecosystem - virtual gardening, AI-powered agriculture assistant, IoT-enabled farming, geospatial community platform",
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "backend:dev": "npm run dev -w packages/backend",
+    "backend:build": "npm run build -w packages/backend",
+    "mobile:dev": "npm run dev -w packages/mobile",
+    "mobile:build": "npm run build -w packages/mobile",
+    "admin:dev": "npm run dev -w packages/admin",
+    "admin:build": "npm run build -w packages/admin",
+    "ai:dev": "npm run dev -w services/ai",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "lint": "npm run lint -w packages/backend && npm run lint -w packages/mobile",
+    "typecheck": "npm run typecheck -w packages/backend && npm run typecheck -w packages/mobile && npm run typecheck -w packages/admin",
+    "typecheck:backend": "npm run typecheck -w packages/backend",
+    "typecheck:admin": "npm run typecheck -w packages/admin",
+    "typecheck:mobile": "npm run typecheck -w packages/mobile",
+    "test": "npm run test -w packages/backend",
+    "test:e2e": "powershell -ExecutionPolicy Bypass -File e2e/scripts/run-e2e.ps1",
+    "test:e2e:headed": "powershell -ExecutionPolicy Bypass -File e2e/scripts/run-e2e.ps1 -Headed",
+    "test:e2e:docker-only": "docker compose -f e2e/docker/docker-compose.test.yml up -d",
+    "test:feedback": "npx ts-node e2e/scripts/agentic-feedback.ts",
+    "workflow:screenshots": "npx ts-node e2e/workflows/run-all-workflows.ts",
+    "workflow:recordings": "npx ts-node e2e/workflows/record-demo.ts",
+    "workflow:all": "powershell -ExecutionPolicy Bypass -File e2e/scripts/run-workflows.ps1 -All",
+    "e2e:module": "npx ts-node e2e/modules/run-module.ts",
+    "e2e:auth": "npx ts-node e2e/modules/run-module.ts auth --html",
+    "e2e:garden": "npx ts-node e2e/modules/run-module.ts garden --html",
+    "e2e:admin": "npx ts-node e2e/modules/run-module.ts admin --html",
+    "e2e:weather": "npx ts-node e2e/modules/run-module.ts weather --html",
+    "e2e:marketplace": "npx ts-node e2e/modules/run-module.ts marketplace --html",
+    "e2e:community": "npx ts-node e2e/modules/run-module.ts community --html",
+    "e2e:ai-scanner": "npx ts-node e2e/modules/run-module.ts ai-scanner --html",
+    "e2e:invites": "npx ts-node e2e/modules/run-module.ts invites --html",
+    "e2e:all": "npx ts-node e2e/modules/run-module.ts all --html",
+    "docker:local": "docker compose -f docker-compose.local.yml up -d",
+    "docker:local:down": "docker compose -f docker-compose.local.yml down",
+    "deploy:test": "powershell -ExecutionPolicy Bypass -File scripts/vercel-deploy-test.ps1",
+    "deploy:preview": "vercel deploy --prebuilt --yes",
+    "deploy:prod": "vercel deploy --prod --prebuilt --yes",
+    "prisma:generate": "npm run prisma:generate -w packages/backend",
+    "prisma:migrate": "npm run prisma:migrate -w packages/backend",
+    "prisma:seed": "npm run prisma:seed -w packages/backend",
+    "prepare": "husky",
+
+    "script:docker-local": "powershell -ExecutionPolicy Bypass -File scripts/docker-local.ps1",
+    "script:docker-prod-debug": "powershell -ExecutionPolicy Bypass -File scripts/docker-prod-debug.ps1",
+    "script:health-check": "powershell -ExecutionPolicy Bypass -File scripts/health-check.ps1",
+    "script:db-diagnostic": "powershell -ExecutionPolicy Bypass -File scripts/db-diagnostic.ps1 -All",
+    "script:reset-db": "powershell -ExecutionPolicy Bypass -File scripts/reset-db.ps1",
+    "script:run-migrations": "powershell -ExecutionPolicy Bypass -File scripts/run-migrations.ps1",
+    "script:stop-all": "powershell -ExecutionPolicy Bypass -File scripts/stop-all.ps1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.60.0",
+    "playwright": "^1.60.0"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

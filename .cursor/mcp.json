@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "docker": {
+      "command": "docker",
+      "args": ["compose", "-f", "docker-compose.yml"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@anthropic-ai/mcp-playwright"]
+    },
+    "github": {
+      "command": "gh"
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["@anthropic-ai/mcp-postgres", "postgresql://gardenverse:gardenverse123@localhost:5432/gardenverse"]
+    },
+    "vercel": {
+      "url": "https://mcp.vercel.com"
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp"
+    }
+  }
+}

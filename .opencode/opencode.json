@@ -1,0 +1,358 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "./README.md",
+    "./AGENTS.md",
+    "./TODO.md",
+    "./.agents/rules/README.md",
+    "./.agents/rules/checklist.md"
+  ],
+  "server": {
+    "port": 4096,
+    "mdns": true
+  },
+  "lsp": {
+    "typescript": {
+      "enabled": true,
+      "command": ["npx", "typescript-language-server", "--stdio"]
+    }
+  },
+  "plugin": [
+    "opencode-helicone-session",
+    "opencode-wakatime",
+    ".opencode/plugins/graphify.js",
+    "~/.config/opencode/node_modules/superpowers"
+  ],
+  "mcp": {
+    "docker": {
+      "type": "local",
+      "command": ["docker", "run", "-i", "--rm", "--init", "mcp/docker"],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "@playwright/mcp@latest", "--headless"],
+      "enabled": true
+    },
+    "postgres": {
+      "type": "local",
+      "command": ["npx", "@anthropic-ai/mcp-postgres"],
+      "environment": {
+        "DATABASE_URL": "postgresql://gardenverse:gardenverse123@localhost:5432/gardenverse"
+      },
+      "enabled": true
+    },
+    "git": {
+      "type": "local",
+      "command": ["npx", "@modelcontextprotocol/server-git"],
+      "environment": {
+        "GIT_ALLOW_PROTOCOL": "ssh https"
+      },
+      "enabled": true
+    },
+    "memory": {
+      "type": "local",
+      "command": ["npx", "@modelcontextprotocol/server-memory"],
+      "enabled": true
+    },
+    "sequential-thinking": {
+      "type": "local",
+      "command": ["npx", "@modelcontextprotocol/server-sequential-thinking"],
+      "enabled": false
+    },
+    "prisma": {
+      "type": "local",
+      "command": ["npx", "prisma", "mcp"],
+      "enabled": false
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["npx", "chrome-devtools-mcp@latest"],
+      "enabled": false
+    }
+  },
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 10000
+  },
+  "watcher": {
+    "ignore": [
+      "node_modules/**",
+      ".next/**",
+      "dist/**",
+      ".git/**",
+      "*.log",
+      ".env*",
+      ".vercel/**"
+    ]
+  },
+  "formatter": {
+    "prettier": {
+      "disabled": false
+    }
+  },
+  "permission": {
+    "*": "allow",
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow",
+      "*.env.local": "deny"
+    },
+    "edit": {
+      "*": "allow",
+      "prisma/**": "ask",
+      "*.env*": "ask",
+      "package.json": "ask",
+      "docker-compose*.yml": "ask"
+    },
+    "bash": {
+      "*": "ask",
+      "git status *": "allow",
+      "git diff *": "allow",
+      "git log *": "allow",
+      "grep *": "allow",
+      "rg *": "allow",
+      "node *": "allow",
+      "npm run test *": "allow",
+      "npm run typecheck *": "allow",
+      "npm run lint *": "allow",
+      "npm run docker:*": "allow",
+      "npm run prisma:*": "ask",
+      "docker compose *": "allow",
+      "docker exec *": "ask",
+      "npm install *": "ask",
+      "npx prisma *": "ask",
+      "npx --no-install playwright-cli *": "allow",
+      "playwright-cli *": "allow",
+      "netstat *": "allow",
+      "Get-Process *": "allow",
+      "Stop-Process *": "ask",
+      "rm -rf *": "deny",
+      "Remove-Item *": "ask"
+    },
+    "webfetch": "allow",
+    "websearch": "allow",
+    "codesearch": "allow",
+    "skill": {
+      "*": "allow"
+    },
+    "external_directory": {
+      "*": "ask"
+    },
+    "doom_loop": "ask"
+  },
+  "agent": {
+    "build": {
+      "description": "Main agent for building features, implementing changes, and development work",
+      "mode": "primary",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow"
+      }
+    },
+    "plan": {
+      "description": "Planning and analysis agent - creates implementation plans without making changes",
+      "mode": "primary",
+      "temperature": 0.1,
+      "permission": {
+        "edit": "deny",
+        "bash": "deny"
+      }
+    },
+    "backend-dev": {
+      "description": "NestJS backend development - API endpoints, Prisma schema, services, agents",
+      "file": ".opencode/agents/backend-dev.md",
+      "mode": "subagent",
+      "steps": 15,
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      }
+    },
+    "mobile-dev": {
+      "description": "React Native mobile development - screens, components, navigation",
+      "file": ".opencode/agents/mobile-dev.md",
+      "mode": "subagent",
+      "steps": 15,
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      }
+    },
+    "admin-dev": {
+      "description": "Next.js admin dashboard - pages, components, API integration",
+      "file": ".opencode/agents/admin-dev.md",
+      "mode": "subagent",
+      "steps": 15,
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      }
+    },
+    "testing": {
+      "description": "Playwright E2E testing, Jest unit tests, test infrastructure",
+      "file": ".opencode/agents/testing.md",
+      "mode": "subagent",
+      "steps": 15,
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      }
+    },
+    "devops": {
+      "description": "Docker, CI/CD, deployment, infrastructure, monitoring",
+      "file": ".opencode/agents/devops.md",
+      "mode": "subagent",
+      "steps": 15,
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      }
+    },
+    "review": {
+      "description": "Code review specialist - analyzes code quality, security, and maintainability",
+      "mode": "subagent",
+      "steps": 10,
+      "temperature": 0.1,
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "ask",
+          "git status *": "allow",
+          "git diff *": "allow",
+          "git log *": "allow",
+          "grep *": "allow",
+          "rg *": "allow"
+        }
+      }
+    },
+    "explore": {
+      "description": "Fast read-only agent for exploring codebases - find files, search patterns",
+      "mode": "subagent",
+      "permission": {
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "codesearch": "allow",
+        "edit": "deny",
+        "bash": {
+          "*": "ask",
+          "grep *": "allow",
+          "rg *": "allow",
+          "git status *": "allow",
+          "git log *": "allow"
+        }
+      }
+    }
+  },
+  "command": {
+    "typecheck": {
+      "description": "Run TypeScript strict check on all packages",
+      "template": "bash: npm run typecheck"
+    },
+    "lint": {
+      "description": "Run linter on all packages",
+      "template": "bash: npm run lint"
+    },
+    "test": {
+      "description": "Run backend Jest tests",
+      "template": "bash: npm run test"
+    },
+    "e2e": {
+      "description": "Run full E2E test suite with Docker",
+      "template": "bash: npm run test:e2e"
+    },
+    "docker-up": {
+      "description": "Start local Docker infrastructure (Postgres + Redis)",
+      "template": "bash: npm run docker:local"
+    },
+    "docker-down": {
+      "description": "Stop local Docker infrastructure",
+      "template": "bash: npm run docker:local:down"
+    },
+    "health-check": {
+      "description": "Run full health check on all services",
+      "template": "bash: powershell -ExecutionPolicy Bypass -File scripts/health-check.ps1"
+    },
+    "prisma-migrate": {
+      "description": "Run Prisma migration with a name (use $1 for name)",
+      "template": "bash: node node_modules/prisma/build/index.js migrate dev --name $1 --schema=packages/backend/prisma/schema.prisma"
+    },
+    "prisma-generate": {
+      "description": "Generate Prisma client",
+      "template": "bash: npm run prisma:generate"
+    },
+    "db-reset": {
+      "description": "Reset local database (drop + migrate + seed)",
+      "template": "bash: powershell -ExecutionPolicy Bypass -File scripts/reset-db.ps1 -Force"
+    },
+    "db-diagnostic": {
+      "description": "Run database inspection and repair",
+      "template": "bash: powershell -ExecutionPolicy Bypass -File scripts/db-diagnostic.ps1 -All"
+    },
+    "workflow-screenshots": {
+      "description": "Generate all E2E workflow screenshots",
+      "template": "bash: npm run workflow:screenshots"
+    },
+    "e2e-auth": {
+      "description": "Run auth workflow screenshots only",
+      "template": "bash: npx ts-node e2e/modules/run-module.ts auth --html"
+    },
+    "e2e-garden": {
+      "description": "Run garden workflow screenshots only",
+      "template": "bash: npx ts-node e2e/modules/run-module.ts garden --html"
+    },
+    "e2e-admin": {
+      "description": "Run admin portal workflow screenshots only",
+      "template": "bash: npx ts-node e2e/modules/run-module.ts admin --html"
+    },
+    "e2e-weather": {
+      "description": "Run weather dashboard workflow screenshots only",
+      "template": "bash: npx ts-node e2e/modules/run-module.ts weather --html"
+    },
+    "e2e-marketplace": {
+      "description": "Run marketplace workflow screenshots only",
+      "template": "bash: npx ts-node e2e/modules/run-module.ts marketplace --html"
+    },
+    "e2e-community": {
+      "description": "Run community workflow screenshots only",
+      "template": "bash: npx ts-node e2e/modules/run-module.ts community --html"
+    },
+    "e2e-ai-scanner": {
+      "description": "Run AI scanner workflow screenshots only",
+      "template": "bash: npx ts-node e2e/modules/run-module.ts ai-scanner --html"
+    },
+    "e2e-invites": {
+      "description": "Run invite system workflow screenshots only",
+      "template": "bash: npx ts-node e2e/modules/run-module.ts invites --html"
+    },
+    "e2e-modules": {
+      "description": "Run all E2E module workflows one at a time",
+      "template": "bash: npx ts-node e2e/modules/run-module.ts all --html"
+    },
+    "pre-commit-check": {
+      "description": "Check changes before commit - verify typecheck, tests, and documentation updates",
+      "template": "You are a pre-commit checker for GardenVerse. Before the user commits:\n\n1. Run `npm run typecheck` to verify TypeScript passes\n2. Check git diff to see what changed\n3. Verify AGENTS.md is updated if architecture/routes changed\n4. Verify no secrets in the diff\n5. Report findings WITHOUT making changes"
+    }
+  }
+}
