@@ -13,7 +13,7 @@ export const authOptions: AuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
         try {
-          const res = await api.post('/auth/admin/login', {
+          const res = await api.post('/api/v1/auth/admin/login', {
             email: credentials.email,
             password: credentials.password,
           })
