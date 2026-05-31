@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, FlatList } from 'react-native';
-import { AiScanResult } from '../../types';
-import { Card } from '../ui/Card';
-import { Badge } from '../ui/Badge';
-import { formatRelativeTime } from '../../utils/formatting';
+import React from "react";
+import { View, Text, FlatList } from "react-native";
+import { AiScanResult } from "../../types";
+import { Card } from "../ui/Card";
+import { Badge } from "../ui/Badge";
+import { formatRelativeTime } from "../../utils/formatting";
 
 interface ScanHistoryProps {
   scans: AiScanResult[];
@@ -25,14 +25,11 @@ export function ScanHistory({ scans, onScanPress }: ScanHistoryProps) {
       data={scans}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
-        <Card
-          className="mb-2"
-          onPress={() => onScanPress?.(item)}
-        >
+        <Card className="mb-2" onPress={() => onScanPress?.(item)}>
           <View className="flex-row items-center justify-between">
             <View className="flex-1">
               <Text className="text-sm font-semibold text-gray-900">
-                {item.plantName || 'Unknown Plant'}
+                {item.plantName || "Unknown Plant"}
               </Text>
               {item.species && (
                 <Text className="text-xs text-gray-500">{item.species}</Text>
@@ -44,10 +41,10 @@ export function ScanHistory({ scans, onScanPress }: ScanHistoryProps) {
                   label={`${item.healthScore}%`}
                   variant={
                     item.healthScore >= 70
-                      ? 'success'
+                      ? "success"
                       : item.healthScore >= 40
-                      ? 'warning'
-                      : 'error'
+                        ? "warning"
+                        : "error"
                   }
                   size="sm"
                 />

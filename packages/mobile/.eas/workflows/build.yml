@@ -1,0 +1,54 @@
+name: Mobile Build & Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/mobile/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/mobile/**'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Build profile from eas.json'
+        type: choice
+        options: [development, preview, production]
+        default: production
+      platform:
+        description: 'Platform to build'
+        type: choice
+        options: [ios, android, all]
+        default: android
+
+defaults:
+  image: sdk-51
+
+jobs:
+  lint:
+    name: Lint & Typecheck
+    type: custom
+    runs_on: linux-medium
+    steps:
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+
+  build-development:
+    name: Development Build
+    type: build
+    needs: [lint]
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.profile == 'development' }}
+    params:
+      platform: ${{ inputs.platform || 'android' }}
+      profile: development
+
+  build-production:
+    name: Production Build
+    type: build
+    needs: [lint]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    params:
+      platform: all
+      profile: production

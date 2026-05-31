@@ -6,7 +6,7 @@
 A: GardenVerse is a hybrid agriculture simulation ecosystem combining virtual gardening, AI-powered plant diagnosis, IoT-enabled farming, and a geospatial community platform. It's a modular monolith designed for future microservices extraction.
 
 ### Q: What are the minimum requirements to run GardenVerse?
-- **Node.js** >= 18.0.0
+- **Node.js** >= 22.0.0 (LTS)
 - **Docker** (for Postgres + Redis)
 - **npm** (workspaces-enabled)
 - **Windows**: PowerShell 5.1+ (scripts use PS-specific features)
@@ -25,8 +25,9 @@ npm run admin:dev              # Start admin dashboard (port 3000)
 ```
 
 ### Q: What's the default test credentials?
-- **Admin**: `admin@gardenverse.io` / `Admin@123456`
-- **Regular User**: `test@gardenverse.io` / `Test@123456`
+- **Admin**: `admin@gardenverse.vercel.app` / `Admin@123456`
+- **Super Admin**: `superadmin@gardenverse.vercel.app` / `password123`
+- **Regular User**: `demo@gardenverse.vercel.app` / `password123`
 
 ---
 
@@ -83,18 +84,51 @@ npm run prisma:migrate -- --name describe-your-change
 npm run prisma:generate
 ```
 
+### Q: How do I run a specific test suite?
+```bash
+# Unit tests (backend)
+npm run test -w packages/backend
+npm run test:watch              # Watch mode
+
+# Specific test file
+npx jest packages/backend/src/modules/gardens/gardens.service.spec.ts
+
+# E2E tests (full suite)
+npm run test:e2e
+
+# Individual module workflows (Playwright)
+npm run e2e:auth               # Authentication only
+npm run e2e:garden             # Garden management only
+npm run e2e:admin              # Admin portal only
+npm run e2e:weather            # Weather dashboard only
+npm run e2e:marketplace        # Marketplace only
+npm run e2e:community          # Community only
+npm run e2e:ai-scanner         # AI scanner only
+npm run e2e:invites            # Invite system only
+
+# Run all 8 module workflows sequentially
+npm run e2e:all
+```
+
 ---
 
 ## Testing
 
 ### Q: How do I run E2E tests?
 ```bash
-npm run docker:local           # Start infrastructure
-npm run backend:dev            # Start backend (separate terminal)
-npm run admin:dev              # Start admin (separate terminal)
-npm run test:e2e               # Full E2E suite
+# Prerequisites: Docker infra must be running
+npm run docker:local           # Start Postgres + Redis containers
+
+# In separate terminals, start the apps:
+npm run backend:dev            # Start backend on port 3001
+npm run admin:dev              # Start admin dashboard on port 3000
+
+# Then run the Playwright E2E suite:
+npm run test:e2e               # Headless (no visible browser)
 npm run test:e2e:headed        # With visible browser
 ```
+
+**Note:** `npm run test:e2e` does NOT automatically start Docker or your apps. Ensure infrastructure and applications are running first. Use `npm run test:e2e:docker-only` to start just Docker infrastructure without apps.
 
 ### Q: How do I generate workflow screenshots?
 ```bash
@@ -102,7 +136,21 @@ npm run workflow:all           # Generate all screenshots + recordings
 npm run workflow:screenshots   # Only screenshots (8 workflows)
 npm run workflow:recordings    # Only recordings (7 demo videos)
 ```
-Output: `e2e/screenshots/`, `e2e/workflows-data/`, `playwright-report/recordings/`
+
+Output artifacts:
+- `e2e/screenshots/` — PNG screenshots per workflow step
+- `e2e/workflows-data/` — HTML gallery pages with animated step viewer
+- `playwright-report/recordings/` — WebM demo videos + manifest.json
+
+### Q: What workflows are covered by screenshots?
+1. **Authentication Flow** — Login, validation, super admin, protected routes
+2. **Garden Management** — Overview, plant selection, plant browser, crop detail
+3. **Admin Portal** — Dashboard, users, marketplace, invites, super admin
+4. **Weather Dashboard** — Real-time OpenWeatherMap integration
+5. **Marketplace** — Browse listings, create listings
+6. **Community** — Hub, groups, nearby gardeners
+7. **AI Scanner** — Plant identification interface, scan history
+8. **Invite System** — QR codes, invite links, passcodes, tokens
 
 ### Q: E2E tests fail with "No element found"?
 - Ensure backend AND admin are both running
@@ -112,6 +160,40 @@ Output: `e2e/screenshots/`, `e2e/workflows-data/`, `playwright-report/recordings
   npm run test:e2e:headed
   ```
 - Take a Playwright snapshot to inspect the page state
+- Check for auth guards — many admin routes redirect to login if not authenticated
+- Verify the test seed data exists (`npm run prisma:seed`)
+
+### Q: What about mobile testing?
+Mobile E2E testing can be done via **Expo Web** for basic UI verification:
+```bash
+npm run mobile:dev             # Press 'w' to open web version
+```
+
+However, Expo Web has **limited support** for native features:
+- **Camera**: Not available in web browsers (use file upload instead)
+- **Push notifications**: Only native notifications work
+- **Geolocation**: Works in modern browsers (HTTPS required for production)
+- **Native modules**: Any `expo-*` native plugin may not work in web mode
+
+For full mobile testing:
+- Use **Expo Go** on a physical device (scan QR code from `npm run mobile:dev`)
+- Use **iOS Simulator** (macOS only) or **Android Emulator**
+- Use **BrowserStack** or **Sauce Labs** for device cloud testing
+- Add React Native Testing Library tests for component-level verification
+
+### Q: How do I run the agentic feedback loop?
+```bash
+npm run test:feedback
+```
+This runs Playwright tests, analyzes results, and generates a deploy readiness report at `playwright-report/feedback-*.json`.
+
+### Q: E2E test expects auth but routes are protected?
+Many admin and API routes require authentication.
+- The E2E test runner automatically logs in before testing protected routes
+- Auth guard redirects unauthenticated requests to the login page
+- If login fails, all subsequent tests will also fail
+- Debug: check `e2e/screenshots/` for the login step to see if credentials are being entered correctly
+- Verify seed data is present: the test uses seeded admin credentials (`npm run prisma:seed`)
 
 ---
 
@@ -163,6 +245,25 @@ No — the app works without them:
 npm run deploy:test      # Full pipeline: link → env pull → build → preview → health check → E2E
 npm run deploy:preview   # Quick preview
 npm run deploy:prod      # Production deploy
+```
+
+### Q: What Redis limitation exists on Vercel?
+Vercel's serverless functions do **not** support persistent TCP connections. Direct `ioredis` connections (used by BullMQ, Socket.IO, and Redis caching) **will not work** on Vercel.
+
+**Solutions:**
+1. Use **Upstash Redis** (HTTP-based) or **Vercel KV** for caching, sessions, and rate limiting
+2. Run BullMQ and Socket.IO on a **separate long-running worker service** (Railway, Fly.io)
+3. Docker Redis remains the recommended setup for **local development**
+
+See [`docs/deployment/deployment-guide.md`](../deployment/deployment-guide.md) for the full migration path.
+
+### Q: What are the necessary environment variables for Vercel deployment?
+```
+NEXT_PUBLIC_API_URL=https://gardenverse-api.vercel.app/api/v1
+NEXTAUTH_URL=https://gardenverse-admin.vercel.app
+NEXTAUTH_SECRET=your-nextauth-secret
+VERCEL_ORG_ID=your-org-id
+VERCEL_PROJECT_ID=your-project-id
 ```
 
 ### Q: How do I run locally with production Supabase database?

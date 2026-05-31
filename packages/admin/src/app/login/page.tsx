@@ -58,7 +58,7 @@ export default function LoginPage() {
             label="Email"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            placeholder="admin@gardenverse.io"
+            placeholder="admin@gardenverse.vercel.app"
             required
           />
 

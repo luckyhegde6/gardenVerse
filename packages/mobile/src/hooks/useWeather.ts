@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
-import { WeatherData } from '../types';
-import { useLocation } from './useLocation';
+import { useState, useEffect, useCallback } from "react";
+import api from "../services/api";
+import { WeatherData } from "../types";
+import { useLocation } from "./useLocation";
 
 interface UseWeatherReturn {
   weather: WeatherData | null;
@@ -23,7 +23,7 @@ export function useWeather(): UseWeatherReturn {
     setError(null);
 
     try {
-      const response = await api.get<WeatherData>('/weather', {
+      const response = await api.get<WeatherData>("/weather", {
         params: {
           lat: location.latitude,
           lon: location.longitude,
@@ -31,7 +31,7 @@ export function useWeather(): UseWeatherReturn {
       });
       setWeather(response.data);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch weather');
+      setError(err.response?.data?.message || "Failed to fetch weather");
     } finally {
       setIsLoading(false);
     }

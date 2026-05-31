@@ -15,6 +15,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Activity,
+  Trees,
+  CloudSun,
+  MessageCircle,
+  Scan,
+  Settings,
+  GraduationCap,
+  TicketCheck,
+  Gamepad2,
+  BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -26,13 +35,22 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/onboarding', label: 'Onboarding', icon: GraduationCap },
   { href: '/users', label: 'Users', icon: Users },
+  { href: '/monitoring', label: 'Monitoring', icon: Activity },
+  { href: '/garden', label: 'Gardens', icon: Trees },
+  { href: '/gamification', label: 'Gamification', icon: Gamepad2 },
+  { href: '/weather', label: 'Weather', icon: CloudSun },
+  { href: '/community', label: 'Community', icon: MessageCircle },
+  { href: '/ai-scanner', label: 'AI Scanner', icon: Scan },
   { href: '/moderation', label: 'Moderation', icon: Shield },
   { href: '/marketplace', label: 'Marketplace', icon: Store },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/features', label: 'Feature Flags', icon: Flag },
+  { href: '/support', label: 'Support', icon: TicketCheck },
   { href: '/invites', label: 'Invites', icon: Mail },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
+  { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/super-admin/dashboard', label: 'Super Admin', icon: Activity },
 ]
 
@@ -96,13 +114,31 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         })}
       </nav>
 
-      <div className="border-t border-slate-800/60 p-3">
-        <button
-          onClick={onToggle}
-          className="flex items-center justify-center w-full p-2 rounded-lg text-sidebar-foreground hover:text-sidebar-foreground-active hover:bg-sidebar-hover transition-colors"
-        >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
+      <div className="border-t border-slate-800/60">
+        <div className="px-2 pt-3 pb-1">
+          <a
+            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/docs`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+              collapsed ? 'justify-center' : '',
+              'text-sidebar-foreground hover:text-sidebar-foreground-active hover:bg-sidebar-hover'
+            )}
+            title={collapsed ? 'API Docs' : undefined}
+          >
+            <BookOpen className="w-5 h-5 shrink-0" />
+            {!collapsed && <span>API Docs</span>}
+          </a>
+        </div>
+        <div className="p-3 pt-1">
+          <button
+            onClick={onToggle}
+            className="flex items-center justify-center w-full p-2 rounded-lg text-sidebar-foreground hover:text-sidebar-foreground-active hover:bg-sidebar-hover transition-colors"
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
     </aside>
   )

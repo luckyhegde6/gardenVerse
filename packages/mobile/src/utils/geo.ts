@@ -1,21 +1,21 @@
-const BASE32 = '0123456789bcdefghjkmnpqrstuvwxyz';
+const BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
 
 function encodeBase32(value: number): string {
   let binary = value.toString(2);
-  while (binary.length < 5) binary = '0' + binary;
+  while (binary.length < 5) binary = "0" + binary;
   return BASE32[parseInt(binary, 2)];
 }
 
 export function encodeGeohash(
   latitude: number,
   longitude: number,
-  precision = 9
+  precision = 9,
 ): string {
   let latMin = -90;
   let latMax = 90;
   let lonMin = -180;
   let lonMax = 180;
-  let geohash = '';
+  let geohash = "";
   let isEven = true;
   let bit = 0;
   let currentChar = 0;
@@ -54,9 +54,10 @@ export function encodeGeohash(
   return geohash;
 }
 
-export function decodeGeohash(
-  geohash: string
-): { latitude: number; longitude: number } {
+export function decodeGeohash(geohash: string): {
+  latitude: number;
+  longitude: number;
+} {
   let latMin = -90;
   let latMax = 90;
   let lonMin = -180;
@@ -97,8 +98,8 @@ export function decodeGeohash(
 export function getGeohashNeighbors(geohash: string): string[] {
   const { latitude, longitude } = decodeGeohash(geohash);
   const precision = geohash.length;
-  const latStep = 180 / (1 << (precision * 5 / 2));
-  const lonStep = 360 / (1 << (precision * 5 / 2));
+  const latStep = 180 / (1 << ((precision * 5) / 2));
+  const lonStep = 360 / (1 << ((precision * 5) / 2));
 
   return [
     encodeGeohash(latitude + latStep, longitude, precision),
@@ -116,7 +117,7 @@ export function haversineDistance(
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number
+  lon2: number,
 ): number {
   const R = 6371;
   const dLat = toRad(lat2 - lat1);

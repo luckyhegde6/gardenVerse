@@ -15,9 +15,9 @@ export interface User {
 }
 
 export enum UserRole {
-  USER = 'USER',
-  MODERATOR = 'MODERATOR',
-  ADMIN = 'ADMIN',
+  USER = "USER",
+  MODERATOR = "MODERATOR",
+  ADMIN = "ADMIN",
 }
 
 export interface Garden {
@@ -31,15 +31,16 @@ export interface Garden {
 }
 
 export enum GardenType {
-  VIRTUAL = 'VIRTUAL',
-  REAL = 'REAL',
-  HYBRID = 'HYBRID',
+  VIRTUAL = "VIRTUAL",
+  REAL = "REAL",
+  HYBRID = "HYBRID",
 }
 
 export interface Crop {
   id: string;
   name: string;
   species?: string;
+  speciesId?: string;
   status: CropStatus;
   growthStage: number;
   health: number;
@@ -49,16 +50,22 @@ export interface Crop {
   estimatedHarvest?: string;
   plotX?: number;
   plotY?: number;
+  /** Number of consecutive days with care actions */
+  careStreak: number;
+  /** Total number of care actions performed */
+  totalCareCount: number;
+  /** Number of times harvested (used for mastery calculation) */
+  harvestCount?: number;
 }
 
 export enum CropStatus {
-  SEED = 'SEED',
-  SPROUTING = 'SPROUTING',
-  GROWING = 'GROWING',
-  MATURE = 'MATURE',
-  HARVESTED = 'HARVESTED',
-  WILTED = 'WILTED',
-  DISEASED = 'DISEASED',
+  SEED = "SEED",
+  SPROUTING = "SPROUTING",
+  GROWING = "GROWING",
+  MATURE = "MATURE",
+  HARVESTED = "HARVESTED",
+  WILTED = "WILTED",
+  DISEASED = "DISEASED",
 }
 
 export interface MarketplaceListing {
@@ -75,10 +82,10 @@ export interface MarketplaceListing {
 }
 
 export enum ListingStatus {
-  ACTIVE = 'ACTIVE',
-  SOLD = 'SOLD',
-  CANCELLED = 'CANCELLED',
-  EXPIRED = 'EXPIRED',
+  ACTIVE = "ACTIVE",
+  SOLD = "SOLD",
+  CANCELLED = "CANCELLED",
+  EXPIRED = "EXPIRED",
 }
 
 export interface Notification {
@@ -167,48 +174,54 @@ export interface Invite {
   createdAt: string;
 }
 
-export type AuthStackParamList = {
-  Login: undefined;
-  Register: undefined;
-  ForgotPassword: undefined;
-  OTPVerify: { email: string };
-};
+export interface AuthStackParamList {
+   [key: string]: undefined | object;
+   Login: undefined;
+   Register: undefined;
+   ForgotPassword: undefined;
+   OTPVerify: { email: string };
+ }
 
-export type MainTabParamList = {
-  GardenTab: undefined;
-  MarketplaceTab: undefined;
-  CommunityTab: undefined;
-  ScannerTab: undefined;
-  ProfileTab: undefined;
-};
+export interface MainTabParamList {
+   [key: string]: undefined | object;
+   GardenTab: undefined;
+   MarketplaceTab: undefined;
+   CommunityTab: undefined;
+   ScannerTab: undefined;
+   ProfileTab: undefined;
+ }
 
-export type GardenStackParamList = {
-  GardenHome: undefined;
-  CropDetail: { cropId: string };
-  PlantCrop: { plotX?: number; plotY?: number };
-  GardenSettings: undefined;
-};
+export interface GardenStackParamList {
+   [key: string]: undefined | object;
+   GardenHome: undefined;
+   CropDetail: { cropId: string };
+   PlantCrop: { plotX?: number; plotY?: number };
+   GardenSettings: undefined;
+ }
 
-export type MarketplaceStackParamList = {
-  MarketplaceHome: undefined;
-  ListingDetail: { listingId: string };
-  CreateListing: undefined;
-  MyListings: undefined;
-};
+export interface MarketplaceStackParamList {
+   [key: string]: undefined | object;
+   MarketplaceHome: undefined;
+   ListingDetail: { listingId: string };
+   CreateListing: undefined;
+   MyListings: undefined;
+ }
 
-export type CommunityStackParamList = {
-  CommunityHome: undefined;
-  GroupDetail: { groupId: string };
-  ChatScreen: { groupId?: string; receiverId?: string };
-};
+export interface CommunityStackParamList {
+   [key: string]: undefined | object;
+   CommunityHome: undefined;
+   GroupDetail: { groupId: string };
+   ChatScreen: { groupId?: string; receiverId?: string };
+ }
 
-export type ProfileStackParamList = {
-  ProfileHome: undefined;
-  Settings: undefined;
-  Achievements: undefined;
-  Inventory: undefined;
-  Invites: undefined;
-};
+export interface ProfileStackParamList {
+   [key: string]: undefined | object;
+   ProfileHome: undefined;
+   Settings: undefined;
+   Achievements: undefined;
+   Inventory: undefined;
+   Invites: undefined;
+ }
 
 export interface PlantSpecies {
   id: string;
@@ -256,13 +269,49 @@ export interface NearbyGardener {
   sustainabilityScore: number;
 }
 
-export type RootStackParamList = {
-  Auth: undefined;
-  Main: undefined;
-  Weather: undefined;
-  IotDashboard: undefined;
-  AiScanner: undefined;
-  NotificationCenter: undefined;
-  GardenMap: undefined;
-  PlantBrowser: undefined;
-};
+export interface PlantCollectionData {
+  id: string;
+  speciesId: string;
+  speciesName: string;
+  discoveredAt: string;
+  timesPlanted: number;
+  timesHarvested: number;
+}
+
+export interface SpeciesMasteryData {
+  id: string;
+  speciesId: string;
+  speciesName: string;
+  level: number;
+  experience: number;
+  plantCount: number;
+  harvestCount: number;
+  totalForNextLevel: number;
+  perfectedAt: string | null;
+}
+
+export interface CollectionStats {
+  discovered: number;
+  total: number;
+  completion: number;
+}
+
+export interface PlantHybridData {
+  id: string;
+  parent1Name: string;
+  parent2Name: string;
+  resultName: string;
+  discoveredAt: string;
+}
+
+export interface RootStackParamList {
+   [key: string]: undefined | object;
+   Auth: undefined;
+   Main: undefined;
+   Weather: undefined;
+   IotDashboard: undefined;
+   AiScanner: undefined;
+   NotificationCenter: undefined;
+   GardenMap: undefined;
+   PlantBrowser: undefined;
+ }

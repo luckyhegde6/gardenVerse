@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AiService } from './ai.service';
-import { SubmitScanDto, AiRecommendationDto } from './dto/ai.dto';
+import { SubmitScanDto } from './dto/ai.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { RecommendationAgent } from '@/agents/recommendation/recommendation-agent.service';

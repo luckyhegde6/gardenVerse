@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef } from "react";
+import { Animated, Text, TouchableOpacity, View } from "react-native";
 
-type ToastType = 'success' | 'error' | 'warning' | 'info';
+type ToastType = "success" | "error" | "warning" | "info";
 
 interface ToastConfig {
   message: string;
@@ -15,15 +15,15 @@ interface ToastProps extends ToastConfig {
 }
 
 const typeStyles: Record<ToastType, { bg: string; icon: string }> = {
-  success: { bg: 'bg-green-500', icon: '✓' },
-  error: { bg: 'bg-red-500', icon: '✕' },
-  warning: { bg: 'bg-yellow-500', icon: '⚠' },
-  info: { bg: 'bg-blue-500', icon: 'ℹ' },
+  success: { bg: "bg-green-500", icon: "✓" },
+  error: { bg: "bg-red-500", icon: "✕" },
+  warning: { bg: "bg-yellow-500", icon: "⚠" },
+  info: { bg: "bg-blue-500", icon: "ℹ" },
 };
 
 export function Toast({
   message,
-  type = 'info',
+  type = "info",
   visible,
   duration = 3000,
   onDismiss,
@@ -108,11 +108,7 @@ export function useToast() {
     show,
     hide,
     ToastComponent: toast ? (
-      <Toast
-        {...toast}
-        visible={!!toast}
-        onDismiss={hide}
-      />
+      <Toast {...toast} visible={!!toast} onDismiss={hide} />
     ) : null,
   };
 }

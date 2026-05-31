@@ -1,62 +1,94 @@
-import React from 'react';
-import { View, Text, ViewProps } from 'react-native';
+import React from "react";
+import { View, Text, ViewStyle, TextStyle, StyleSheet } from "react-native";
+import { colors, spacing, borderRadius, typography } from "../../styles/theme";
 
-type BadgeVariant =
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'info'
-  | 'primary'
-  | 'secondary'
-  | 'neutral'
-  | 'premium'
-  | 'danger';
+type BadgeVariant = "primary" | "success" | "warning" | "error" | "info" | "neutral" | "secondary" | "danger";
+type BadgeSize = "sm" | "md";
 
-interface BadgeProps extends ViewProps {
+interface BadgeProps {
   label: string;
   variant?: BadgeVariant;
-  size?: 'sm' | 'md' | 'lg';
+  size?: BadgeSize;
   dot?: boolean;
+  /** @deprecated Use StyleSheet instead of className */
   className?: string;
 }
 
-const variantStyles: Record<BadgeVariant, { bg: string; text: string; dot: string }> =
-  {
-    success: { bg: 'bg-green-100', text: 'text-green-800', dot: 'bg-green-500' },
-    warning: { bg: 'bg-yellow-100', text: 'text-yellow-800', dot: 'bg-yellow-500' },
-    error: { bg: 'bg-red-100', text: 'text-red-800', dot: 'bg-red-500' },
-    info: { bg: 'bg-blue-100', text: 'text-blue-800', dot: 'bg-blue-500' },
-    primary: { bg: 'bg-primary-100', text: 'text-primary-800', dot: 'bg-primary-500' },
-    secondary: { bg: 'bg-indigo-100', text: 'text-indigo-800', dot: 'bg-indigo-500' },
-    danger: { bg: 'bg-red-100', text: 'text-red-800', dot: 'bg-red-500' },
-    neutral: { bg: 'bg-gray-100', text: 'text-gray-800', dot: 'bg-gray-500' },
-    premium: { bg: 'bg-amber-100', text: 'text-amber-800', dot: 'bg-amber-500' },
-  };
-
-const sizeStyles = {
-  sm: { container: 'px-1.5 py-0.5', text: 'text-xs' },
-  md: { container: 'px-2 py-1', text: 'text-xs' },
-  lg: { container: 'px-3 py-1.5', text: 'text-sm' },
+const VARIANT_CONFIG: Record<
+  BadgeVariant,
+  { bg: string; text: string; dotColor: string }
+> = {
+  primary: { bg: colors.primaryBg, text: colors.primary, dotColor: colors.primary },
+  success: { bg: colors.successBg, text: colors.primaryDark, dotColor: colors.success },
+  warning: { bg: colors.warningBg, text: colors.warning, dotColor: colors.warning },
+  error: { bg: colors.errorBg, text: colors.error, dotColor: colors.error },
+  info: { bg: colors.infoBg, text: colors.info, dotColor: colors.info },
+  neutral: { bg: colors.surfaceSecondary, text: colors.textSecondary, dotColor: colors.textMuted },
+  secondary: { bg: colors.infoBg, text: colors.info, dotColor: colors.info },
+  danger: { bg: colors.errorBg, text: colors.error, dotColor: colors.error },
 };
 
 export function Badge({
   label,
-  variant = 'neutral',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   dot = false,
-  className = '',
+  className: _className,
 }: BadgeProps) {
-  const v = variantStyles[variant];
-  const s = sizeStyles[size];
+  const config = VARIANT_CONFIG[variant] ?? VARIANT_CONFIG.primary;
+
+  const containerStyles: ViewStyle[] = [
+    styles.container,
+    ...(size === "sm" ? [styles.containerSm] : []),
+    { backgroundColor: config.bg },
+  ];
+
+  const labelStyles: TextStyle[] = [
+    styles.label,
+    ...(size === "sm" ? [styles.labelSm] : []),
+    { color: config.text },
+  ];
 
   return (
-    <View
-      className={`flex-row items-center rounded-full ${v.bg} ${s.container} ${className}`}
-    >
-      {dot && (
-        <View className={`w-1.5 h-1.5 rounded-full mr-1.5 ${v.dot}`} />
-      )}
-      <Text className={`font-medium ${v.text} ${s.text}`}>{label}</Text>
+    <View style={containerStyles}>
+      {dot ? (
+        <View
+          style={[styles.dot, { backgroundColor: config.dotColor }]}
+        />
+      ) : null}
+      <Text style={labelStyles}>{label}</Text>
     </View>
   );
 }
+
+export default Badge;
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  containerSm: {
+    paddingHorizontal: spacing.sm - 2,
+    paddingVertical: 2,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 16,
+  },
+  labelSm: {
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: spacing.xs,
+  },
+});

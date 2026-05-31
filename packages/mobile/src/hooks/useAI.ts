@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
-import api from '../services/api';
-import { AiScanResult } from '../types';
+import { useState, useCallback } from "react";
+import api from "../services/api";
+import { AiScanResult } from "../types";
 
 interface UseAIReturn {
   isScanning: boolean;
@@ -15,9 +15,7 @@ interface UseAIReturn {
 
 export function useAI(): UseAIReturn {
   const [isScanning, setIsScanning] = useState(false);
-  const [currentResult, setCurrentResult] = useState<AiScanResult | null>(
-    null
-  );
+  const [currentResult, setCurrentResult] = useState<AiScanResult | null>(null);
   const [scanHistory, setScanHistory] = useState<AiScanResult[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,17 +26,17 @@ export function useAI(): UseAIReturn {
 
       try {
         const formData = new FormData();
-        const filename = imageUri.split('/').pop() || 'scan.jpg';
-        const ext = filename.split('.').pop() || 'jpg';
+        const filename = imageUri.split("/").pop() || "scan.jpg";
+        const ext = filename.split(".").pop() || "jpg";
 
-        formData.append('image', {
+        formData.append("image", {
           uri: imageUri,
           name: filename,
           type: `image/${ext}`,
         } as any);
 
-        const response = await api.post<AiScanResult>('/ai/scan', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+        const response = await api.post<AiScanResult>("/ai/scan", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
           timeout: 60000,
         });
 
@@ -47,20 +45,19 @@ export function useAI(): UseAIReturn {
         setScanHistory((prev) => [result, ...prev]);
         return result;
       } catch (err: any) {
-        const message =
-          err.response?.data?.message || 'Failed to scan image';
+        const message = err.response?.data?.message || "Failed to scan image";
         setError(message);
         return null;
       } finally {
         setIsScanning(false);
       }
     },
-    []
+    [],
   );
 
   const fetchScanHistory = useCallback(async () => {
     try {
-      const response = await api.get<AiScanResult[]>('/ai/history');
+      const response = await api.get<AiScanResult[]>("/ai/history");
       setScanHistory(response.data);
     } catch {}
   }, []);

@@ -1,8 +1,13 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AdminService } from './admin.service';
-import { AdminRegisterDto, AdminLoginDto, AdminUserQueryDto, UpdateUserRoleDto, CreateAdminInviteDto, TokenTransactionQueryDto, AppLogQueryDto } from './dto/admin.dto';
+import {
+  AdminRegisterDto, AdminLoginDto, AdminUserQueryDto, UpdateUserRoleDto,
+  CreateAdminInviteDto, TokenTransactionQueryDto, AppLogQueryDto,
+  BlockUserDto, AdminResetPasswordDto, CreateSupportTicketDto,
+  UpdateTicketStatusDto, AssignTicketDto, SupportTicketQueryDto,
+} from './dto/admin.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
@@ -145,5 +150,85 @@ export class AdminController {
   @ApiOperation({ summary: 'Revoke an invite' })
   async revokeInvite(@Param('id') id: string) {
     return this.adminService.revokeInvite(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Put('users/:id/block')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Block a user' })
+  async blockUser(@Param('id') id: string, @Body() dto: BlockUserDto) {
+    return this.adminService.blockUser(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Put('users/:id/unblock')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Unblock a user' })
+  async unblockUser(@Param('id') id: string) {
+    return this.adminService.unblockUser(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Post('users/:id/reset-password')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin reset user password' })
+  async resetUserPassword(@Param('id') id: string, @Body() dto: AdminResetPasswordDto) {
+    return this.adminService.resetUserPassword(id, dto);
+  }
+
+  @Public()
+  @Post('support/tickets')
+  @ApiOperation({ summary: 'Create support ticket (public - from mobile)' })
+  async createSupportTicket(@Body() dto: CreateSupportTicketDto, @CurrentUser('id') userId?: string) {
+    const uid = userId || 'anonymous';
+    return this.adminService.createSupportTicket(uid, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Get('support/tickets')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all support tickets' })
+  async getSupportTickets(@Query() query: SupportTicketQueryDto) {
+    return this.adminService.getSupportTickets(query);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Put('support/tickets/:id/status')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update support ticket status' })
+  async updateTicketStatus(@Param('id') id: string, @Body() dto: UpdateTicketStatusDto) {
+    return this.adminService.updateTicketStatus(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Put('support/tickets/:id/assign')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Assign support ticket to an admin' })
+  async assignTicket(@Param('id') id: string, @Body() dto: AssignTicketDto) {
+    return this.adminService.assignTicket(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Get('notifications')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get admin notifications (support tickets)' })
+  async getAdminNotifications(@CurrentUser('id') userId: string) {
+    return this.adminService.getAdminNotifications(userId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Get('tickets/open-count')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get count of open support tickets' })
+  async getOpenTicketCount() {
+    return this.adminService.getOpenTicketCount();
   }
 }

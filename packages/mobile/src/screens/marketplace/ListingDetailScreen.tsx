@@ -1,17 +1,17 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { Avatar } from '../../components/ui/Avatar';
-import { PriceBadge } from '../../components/marketplace/PriceBadge';
-import { formatRelativeTime, formatDate } from '../../utils/formatting';
-import { MarketplaceStackParamList } from '../../types';
+import React from "react";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/Badge";
+import { Avatar } from "../../components/ui/Avatar";
+import { PriceBadge } from "../../components/marketplace/PriceBadge";
+import { formatRelativeTime, formatDate } from "../../utils/formatting";
+import { MarketplaceStackParamList } from "../../types";
 
 type ListingDetailRouteProp = RouteProp<
   MarketplaceStackParamList,
-  'ListingDetail'
+  "ListingDetail"
 >;
 
 export function ListingDetailScreen() {
@@ -53,9 +53,7 @@ export function ListingDetailScreen() {
                 Member since Mar 2024
               </Text>
               <View className="w-1 h-1 rounded-full bg-gray-300 mx-2" />
-              <Text className="text-xs text-green-600">
-                Trust Score: 98
-              </Text>
+              <Text className="text-xs text-green-600">Trust Score: 98</Text>
             </View>
           </View>
         </Card>
@@ -81,23 +79,25 @@ export function ListingDetailScreen() {
           <DetailRow label="Quantity" value="50 seeds" />
           <DetailRow label="Condition" value="New" />
           <DetailRow label="Location" value="San Francisco, CA" />
-          <DetailRow label="Listed" value={formatRelativeTime(new Date().toISOString())} />
+          <DetailRow
+            label="Listed"
+            value={formatRelativeTime(new Date().toISOString())}
+          />
         </Card>
 
         {/* Action Buttons */}
-        <Button
-          title="Buy Now"
-          onPress={() => {}}
-          size="lg"
-          className="mb-3"
-        />
+        <Button title="Buy Now" onPress={() => {}} size="lg" className="mb-3" />
 
         <View className="flex-row gap-3 mb-6">
           <TouchableOpacity className="flex-1 flex-row items-center justify-center border border-primary-600 rounded-xl py-3">
-            <Text className="text-primary-600 font-semibold text-sm">📤 Share</Text>
+            <Text className="text-primary-600 font-semibold text-sm">
+              📤 Share
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity className="flex-1 flex-row items-center justify-center border border-red-400 rounded-xl py-3">
-            <Text className="text-red-500 font-semibold text-sm">🚩 Report</Text>
+            <Text className="text-red-500 font-semibold text-sm">
+              🚩 Report
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

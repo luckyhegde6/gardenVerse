@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text } from 'react-native';
-import { Avatar } from '../ui/Avatar';
-import { Badge } from '../ui/Badge';
+import React from "react";
+import { View, Text } from "react-native";
+import { Avatar } from "../ui/Avatar";
+import { Badge } from "../ui/Badge";
 
 interface MemberListItemProps {
   username: string;
@@ -40,10 +40,18 @@ export function MemberListItem({
         </View>
         <Text className="text-xs text-gray-500">@{username}</Text>
       </View>
-      {role && role !== 'MEMBER' && (
+      {role && role !== "MEMBER" && (
         <Badge
-          label={role === 'ADMIN' ? 'Admin' : role === 'MODERATOR' ? 'Mod' : role}
-          variant={role === 'ADMIN' ? 'error' : role === 'MODERATOR' ? 'warning' : 'info'}
+          label={
+            role === "ADMIN" ? "Admin" : role === "MODERATOR" ? "Mod" : role
+          }
+          variant={
+            role === "ADMIN"
+              ? "error"
+              : role === "MODERATOR"
+                ? "warning"
+                : "info"
+          }
           size="sm"
         />
       )}

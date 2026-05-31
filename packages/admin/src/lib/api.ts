@@ -111,4 +111,60 @@ export interface FeatureFlag {
   updatedAt: string
 }
 
+export interface SupportTicket {
+  id: string
+  subject: string
+  message: string
+  status: string
+  priority: string
+  userId: string
+  user: { id: string; username: string; email: string }
+  assignedTo?: { id: string; username: string; email: string } | null
+  assignedToId?: string | null
+  adminNotes?: string | null
+  closedAt?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdminNotification {
+  id: string
+  type: string
+  title: string
+  body: string
+  isRead: boolean
+  createdAt: string
+}
+
+export interface Achievement {
+  id: string
+  key: string
+  name: string
+  description: string
+  icon: string
+  category: string
+  maxProgress: number
+  xpReward: number
+  tokenReward: number
+}
+
+export interface ShopItem {
+  id: string
+  name: string
+  description: string
+  price: number
+  currency: string
+  icon: string
+  category: string
+  levelRequired: number
+  isLimited: boolean
+  stock: number | null
+}
+
+export interface UserEnergy {
+  current: number
+  max: number
+  regenRate: number
+}
+
 export default api

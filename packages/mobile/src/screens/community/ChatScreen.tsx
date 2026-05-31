@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { useRoute, RouteProp } from '@react-navigation/native';
-import { MessageBubble } from '../../components/community/MessageBubble';
-import { useAuthStore } from '../../stores/authStore';
-import { CommunityStackParamList, Message } from '../../types';
+} from "react-native";
+import { useRoute, RouteProp } from "@react-navigation/native";
+import { MessageBubble } from "../../components/community/MessageBubble";
+import { useAuthStore } from "../../stores/authStore";
+import { CommunityStackParamList, Message } from "../../types";
 
-type ChatScreenRouteProp = RouteProp<CommunityStackParamList, 'ChatScreen'>;
+type ChatScreenRouteProp = RouteProp<CommunityStackParamList, "ChatScreen">;
 
 export function ChatScreen() {
   const route = useRoute<ChatScreenRouteProp>();
@@ -21,13 +21,43 @@ export function ChatScreen() {
   const user = useAuthStore((s) => s.user);
   const flatListRef = useRef<FlatList>(null);
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', content: 'Hey everyone! How are your gardens doing?', senderId: 'user2', createdAt: new Date(Date.now() - 3600000).toISOString(), groupId },
-    { id: '2', content: 'Great! My tomatoes are finally sprouting 🌱', senderId: 'user1', createdAt: new Date(Date.now() - 3500000).toISOString(), groupId },
-    { id: '3', content: 'Anyone have tips for dealing with aphids?', senderId: 'user3', createdAt: new Date(Date.now() - 3400000).toISOString(), groupId },
-    { id: '4', content: 'Try neem oil spray! Works wonders ✨', senderId: 'user1', createdAt: new Date(Date.now() - 3300000).toISOString(), groupId },
-    { id: '5', content: 'Thanks for the tip! Will try it today', senderId: 'user3', createdAt: new Date(Date.now() - 3200000).toISOString(), groupId },
+    {
+      id: "1",
+      content: "Hey everyone! How are your gardens doing?",
+      senderId: "user2",
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      groupId,
+    },
+    {
+      id: "2",
+      content: "Great! My tomatoes are finally sprouting 🌱",
+      senderId: "user1",
+      createdAt: new Date(Date.now() - 3500000).toISOString(),
+      groupId,
+    },
+    {
+      id: "3",
+      content: "Anyone have tips for dealing with aphids?",
+      senderId: "user3",
+      createdAt: new Date(Date.now() - 3400000).toISOString(),
+      groupId,
+    },
+    {
+      id: "4",
+      content: "Try neem oil spray! Works wonders ✨",
+      senderId: "user1",
+      createdAt: new Date(Date.now() - 3300000).toISOString(),
+      groupId,
+    },
+    {
+      id: "5",
+      content: "Thanks for the tip! Will try it today",
+      senderId: "user3",
+      createdAt: new Date(Date.now() - 3200000).toISOString(),
+      groupId,
+    },
   ]);
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
   const handleSend = () => {
@@ -40,15 +70,15 @@ export function ChatScreen() {
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, newMessage]);
-    setInputText('');
+    setInputText("");
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       className="flex-1 bg-gray-50"
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       <FlatList
         ref={flatListRef}
@@ -59,7 +89,11 @@ export function ChatScreen() {
           <MessageBubble
             message={item}
             isOwnMessage={item.senderId === user?.id}
-            senderName={item.senderId === 'user1' ? 'You' : `User_${item.senderId.slice(-4)}`}
+            senderName={
+              item.senderId === "user1"
+                ? "You"
+                : `User_${item.senderId.slice(-4)}`
+            }
           />
         )}
         onContentSizeChange={() =>
@@ -97,7 +131,7 @@ export function ChatScreen() {
           onPress={handleSend}
           disabled={!inputText.trim()}
           className={`ml-2 w-10 h-10 rounded-full items-center justify-center ${
-            inputText.trim() ? 'bg-primary-600' : 'bg-gray-200'
+            inputText.trim() ? "bg-primary-600" : "bg-gray-200"
           }`}
         >
           <Text className="text-white text-lg">↑</Text>

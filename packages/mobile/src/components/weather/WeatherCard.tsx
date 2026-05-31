@@ -1,28 +1,28 @@
-import React from 'react';
-import { View, Text } from 'react-native';
-import { WeatherData } from '../../types';
-import { Card } from '../ui/Card';
+import React from "react";
+import { View, Text } from "react-native";
+import { WeatherData } from "../../types";
+import { Card } from "../ui/Card";
 
 interface WeatherCardProps {
   weather: WeatherData;
 }
 
 const conditionIcons: Record<string, string> = {
-  sunny: '☀️',
-  clear: '🌙',
-  cloudy: '☁️',
-  partly_cloudy: '⛅',
-  rainy: '🌧️',
-  heavy_rain: '🌧️',
-  storm: '⛈️',
-  snowy: '❄️',
-  foggy: '🌫️',
-  windy: '💨',
-  drizzle: '🌦️',
+  sunny: "☀️",
+  clear: "🌙",
+  cloudy: "☁️",
+  partly_cloudy: "⛅",
+  rainy: "🌧️",
+  heavy_rain: "🌧️",
+  storm: "⛈️",
+  snowy: "❄️",
+  foggy: "🌫️",
+  windy: "💨",
+  drizzle: "🌦️",
 };
 
 export function WeatherCard({ weather }: WeatherCardProps) {
-  const icon = conditionIcons[weather.condition?.toLowerCase()] || '🌤️';
+  const icon = conditionIcons[weather.condition?.toLowerCase()] || "🌤️";
 
   return (
     <Card className="mb-4 bg-gradient-to-br from-blue-500 to-blue-600">
@@ -32,7 +32,7 @@ export function WeatherCard({ weather }: WeatherCardProps) {
             {Math.round(weather.temperature)}°C
           </Text>
           <Text className="text-white/80 text-sm mt-1 capitalize">
-            {weather.condition.replace(/_/g, ' ')}
+            {weather.condition.replace(/_/g, " ")}
           </Text>
         </View>
         <Text className="text-5xl">{icon}</Text>

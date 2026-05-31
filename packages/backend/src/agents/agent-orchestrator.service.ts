@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
-import { AgentName, AgentStatus, AgentEvent, AgentHealth, EVENT_TYPES } from './types/agent.types';
+import { AgentName, AgentStatus, AgentEvent, AgentHealth } from './types/agent.types';
 
 @Injectable()
 export class AgentOrchestrator extends EventEmitter implements OnModuleInit, OnModuleDestroy {

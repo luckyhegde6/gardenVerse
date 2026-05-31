@@ -1,9 +1,9 @@
-import { IsEmail, IsString, MinLength, MaxLength, IsOptional, IsInt, Min, IsEnum, IsArray, IsBoolean } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength, IsOptional, IsInt, Min, IsEnum, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@/common/constants';
 
 export class AdminRegisterDto {
-  @ApiProperty({ example: 'superadmin@gardenverse.io' })
+  @ApiProperty({ example: 'superadmin@gardenverse.vercel.app' })
   @IsEmail()
   email: string;
 
@@ -25,7 +25,7 @@ export class AdminRegisterDto {
 }
 
 export class AdminLoginDto {
-  @ApiProperty({ example: 'superadmin@gardenverse.io' })
+  @ApiProperty({ example: 'superadmin@gardenverse.vercel.app' })
   @IsEmail()
   email: string;
 
@@ -114,6 +114,73 @@ export class TokenTransactionQueryDto {
   @IsOptional()
   @IsString()
   type?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  offset?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  limit?: number;
+}
+
+export class BlockUserDto {
+  @ApiProperty({ example: 'Violation of community guidelines' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
+  reason: string;
+}
+
+export class AdminResetPasswordDto {
+  @ApiProperty({ example: 'NewPass@123' })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(128)
+  newPassword: string;
+}
+
+export class CreateSupportTicketDto {
+  @ApiProperty({ example: 'I was unfairly blocked' })
+  @IsString()
+  @MinLength(3)
+  @MaxLength(200)
+  subject: string;
+
+  @ApiProperty({ example: 'My account was blocked but I did not violate any rules...' })
+  @IsString()
+  @MinLength(10)
+  @MaxLength(2000)
+  message: string;
+}
+
+export class UpdateTicketStatusDto {
+  @ApiProperty({ example: 'IN_PROGRESS' })
+  @IsString()
+  status: string;
+
+  @ApiPropertyOptional({ example: 'Investigated and resolved' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  adminNotes?: string;
+}
+
+export class AssignTicketDto {
+  @ApiProperty()
+  @IsString()
+  assignedToId: string;
+}
+
+export class SupportTicketQueryDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  status?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

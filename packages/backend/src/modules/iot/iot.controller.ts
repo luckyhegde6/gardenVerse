@@ -3,7 +3,6 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { IotService } from './iot.service';
 import { RegisterDeviceDto, IngestSensorDto } from './dto/iot.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-import { OptionalAuthGuard } from '@/common/guards/optional-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 
 @ApiTags('IoT')

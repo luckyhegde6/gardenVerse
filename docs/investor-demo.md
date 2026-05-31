@@ -378,7 +378,7 @@ Q2 2026     Q3 2026     Q4 2026     Q1 2027     Q2 2027
 ## 12. Contact
 
 **GardenVerse Inc.**  
-hello@gardenverse.io  
-https://gardenverse.io
+luckyhegde6  
+https://gardenverse.vercel.app
 
 *"Grow Together, Sustainably."*

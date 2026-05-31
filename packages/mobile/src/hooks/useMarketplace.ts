@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
-import { MarketplaceListing, ListingStatus } from '../types';
+import { useState, useEffect, useCallback } from "react";
+import api from "../services/api";
+import { MarketplaceListing, ListingStatus } from "../types";
 
 interface UseMarketplaceOptions {
   category?: string;
@@ -42,11 +42,11 @@ export function useMarketplace(options: UseMarketplaceOptions = {}) {
           ...(options.local && { local: true }),
         };
 
-        const response = await api.get('/marketplace/listings', { params });
+        const response = await api.get("/marketplace/listings", { params });
         const data = response.data;
 
         setListings((prev) =>
-          page === 1 ? data.listings : [...prev, ...data.listings]
+          page === 1 ? data.listings : [...prev, ...data.listings],
         );
         setPagination({
           page: data.page,
@@ -54,15 +54,13 @@ export function useMarketplace(options: UseMarketplaceOptions = {}) {
           total: data.total,
         });
       } catch (err: any) {
-        setError(
-          err.response?.data?.message || 'Failed to fetch listings'
-        );
+        setError(err.response?.data?.message || "Failed to fetch listings");
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);
       }
     },
-    [options.category, options.search, options.status, options.local]
+    [options.category, options.search, options.status, options.local],
   );
 
   useEffect(() => {
@@ -87,10 +85,10 @@ export function useMarketplace(options: UseMarketplaceOptions = {}) {
       quantity: number;
       images?: string[];
     }) => {
-      const response = await api.post('/marketplace/listings', data);
+      const response = await api.post("/marketplace/listings", data);
       return response.data as MarketplaceListing;
     },
-    []
+    [],
   );
 
   const deleteListing = useCallback(async (listingId: string) => {

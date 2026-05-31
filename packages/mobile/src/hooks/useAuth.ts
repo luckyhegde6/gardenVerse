@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
-import { useAuthStore } from '../stores/authStore';
-import { LoginRequest, RegisterRequest } from '../services/auth';
+import { useCallback } from "react";
+import { useAuthStore } from "../stores/authStore";
+import { LoginRequest, RegisterRequest } from "../services/auth";
 
 export function useAuth() {
   const {
@@ -20,14 +20,14 @@ export function useAuth() {
     async (data: LoginRequest) => {
       await login(data);
     },
-    [login]
+    [login],
   );
 
   const handleRegister = useCallback(
     async (data: RegisterRequest) => {
       await register(data);
     },
-    [register]
+    [register],
   );
 
   const handleLogout = useCallback(async () => {
@@ -38,7 +38,7 @@ export function useAuth() {
     async (data: { displayName?: string; avatarUrl?: string }) => {
       await updateProfile(data);
     },
-    [updateProfile]
+    [updateProfile],
   );
 
   return {

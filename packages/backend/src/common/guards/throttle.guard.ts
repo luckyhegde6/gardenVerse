@@ -9,7 +9,7 @@ export class ThrottleGuard extends ThrottlerGuard {
 
   protected async shouldSkip(context: ExecutionContext): Promise<boolean> {
     const { user } = context.switchToHttp().getRequest();
-    if (user && user.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
+    if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
       return true;
     }
     return false;

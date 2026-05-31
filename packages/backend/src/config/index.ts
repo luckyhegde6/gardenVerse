@@ -23,7 +23,7 @@ export class AppConfigService {
 
   get redis(): { host: string; port: number; password?: string } {
     return {
-      host: this.configService.get('REDIS_HOST', 'localhost'),
+      host: this.configService.get('REDIS_HOST', '127.0.0.1'),
       port: this.configService.get('REDIS_PORT', 6379),
       password: this.configService.get('REDIS_PASSWORD', undefined),
     };
@@ -76,6 +76,10 @@ export class AppConfigService {
       ttl: this.configService.get('THROTTLE_TTL', 60),
       limit: this.configService.get('THROTTLE_LIMIT', 100),
     };
+  }
+
+  get requireEmailVerification(): boolean {
+    return this.configService.get('REQUIRE_EMAIL_VERIFICATION', 'false') === 'true';
   }
 
   get socketCorsOrigin(): string {

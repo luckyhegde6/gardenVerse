@@ -368,3 +368,140 @@ No automated demo generation existed — all demos would need to be manually rec
 - Always separate screenshot capture from HTML generation for testability
 - Use inline styles for GitHub Pages to avoid CORS issues
 - Make demo recordings idempotent — re-recording should overwrite cleanly
+
+---
+
+## 2026-06-01: Vercel `@vercel/next` Builder Bug with Next.js 14.2.29
+
+**Session**: ses-005
+**Category**: Workflow
+**Impact**: High
+
+### Situation
+Deploying the admin dashboard (Next.js 14.2.29) to Vercel. Tried `vercel build` (local) then `vercel deploy --prebuilt`.
+
+### Problem
+Local `vercel build` intermittently fails with `NEXT_MISSING_LAMBDA` error for random routes. The specific failing routes vary between runs (sometimes it's `/super-admin`, sometimes `/weather`, etc.). This blocks preview deployments and production deployments using the `--prebuilt` flag.
+
+### Root Cause
+`@vercel/next` builder (v4.6.0) has a bug with Next.js 14.2.29 where it can't find the lambda output for some routes during local builds. The exact trigger is not documented — likely a race condition in the builder's lambda detection.
+
+### Solution
+Switched to cloud build `vercel deploy --prod --yes` which uploads the source to Vercel and builds server-side. Cloud build works reliably with no `NEXT_MISSING_LAMBDA` errors. Updated CI/CD workflows and deploy scripts accordingly.
+
+### Prevention
+- Never use `vercel build` + `vercel deploy --prebuilt` for Next.js 14.2.29 with `@vercel/next` builder
+- Always use `vercel deploy --prod --yes` (cloud build) for production
+- For preview deployments, still use cloud build (slower but reliable)
+
+---
+
+## 2026-06-01: Sentry `withSentryConfig` Breaking Vercel Builds
+
+**Session**: ses-005
+**Category**: Workflow
+**Impact**: High
+
+### Situation
+`@sentry/nextjs` was installed at v10.54.0. The `withSentryConfig` wrapper in `next.config.mjs` was breaking both local and cloud Vercel builds.
+
+### Problem
+Builds crashed with Sentry-related build errors. The `withSentryConfig` wrapper intercepts the Next.js build process to inject Sentry webpack plugins, which conflicts with `@vercel/next` builder in Next.js 14.2.29.
+
+### Root Cause
+Sentry Next.js SDK v8+ changed the integration model. The old `withSentryConfig` wrapper pattern is deprecated in favor of `instrumentation.ts` for SDK v10+. The wrapper is no longer needed for runtime error capture.
+
+### Solution
+1. Removed `withSentryConfig` from `next.config.mjs` (empty config now)
+2. Created `packages/admin/src/instrumentation.ts` with `register()` function that conditionally imports server/edge sentry configs
+3. Kept `sentry.server.config.ts`, `sentry.client.config.ts`, `sentry.edge.config.ts` as-is
+4. Trade-off: No Sentry source map uploads without the wrapper — need to configure in CI separately
+
+### Prevention
+- For `@sentry/nextjs` v10+, use `instrumentation.ts` pattern, NOT `withSentryConfig`
+- Check Sentry SDK version docs for the correct integration pattern
+- Test both local and cloud builds after Sentry config changes
+
+---
+
+## 2026-06-01: NEXTAUTH_SECRET Hardcoded Fallback
+
+**Session**: ses-005
+**Category**: Security
+**Impact**: High
+
+### Situation
+`packages/admin/src/lib/auth.ts` had a hardcoded fallback for NEXTAUTH_SECRET: `process.env.NEXTAUTH_SECRET || 'gardenverse-admin-secret-change-in-production'`.
+
+### Problem
+The fallback secret was known (committed to the repo), making development-mode sessions trivially forgeable. If Vercel's `NEXTAUTH_SECRET` env var was ever missing, the fallback would activate silently, exposing production to forged JWT attacks.
+
+### Root Cause
+Convenience pattern for local development without `.env` setup. The fallback was never intended for production but had no guard against production use.
+
+### Solution
+Removed the fallback. `NEXTAUTH_SECRET` must now be set as a Vercel environment variable. Admin login will fail with an unhelpful error if it's not set — documented this in the deployment guide.
+
+### Prevention
+- Never use hardcoded secrets as fallbacks, even for development
+- Use clear error messages when required env vars are missing
+- Add NEXTAUTH_SECRET to the security checklist (pre-deployment)
+
+---
+
+## 2026-06-01: EAS Build — app.json Doesn't Support process.env
+
+**Session**: ses-005
+**Category**: Workflow
+**Impact**: Medium
+
+### Situation
+Configured `app.json` with `"process.env.API_URL || 'https://api.gardenverse.app'"` for dynamic API URL injection.
+
+### Problem
+EAS CLI (`eas init`, `eas project:info`) reads raw `app.json` JSON and doesn't evaluate JS expressions. The literal string `"process.env.EAS_PROJECT_ID || 'your-project-id'"` was used as the project ID, causing `Invalid UUID` errors.
+
+### Root Cause
+Expo's `app.json` is pure JSON — no JS expression support. EAS Build does NOT perform environment variable substitution on `app.json` values. `app.config.js` is required for dynamic config.
+
+### Solution
+1. Converted `app.json` → `app.config.js` with proper JS exports
+2. Environment variables now resolve correctly: `process.env.API_URL || 'https://api.gardenverse.app'`
+3. Removed `app.json` to avoid confusion
+
+### Prevention
+- Use `app.config.js` (not `app.json`) when you need environment variable injection
+- `app.json` is fine for static configs; `app.config.js` required for dynamic values
+- Test `eas init` after config changes to verify project linking
+
+---
+
+## 2026-06-01: Expo SDK Version Mismatches
+
+**Session**: ses-005
+**Category**: Workflow
+**Impact**: Medium
+
+### Situation
+After setting up EAS, `expo doctor` reported 5 packages with version mismatches against Expo SDK 51:
+- `expo-gl@56.0.5` → expected `~14.0.2`
+- `expo-image-picker@15.0.7` → expected `~15.1.0`
+- `expo-linking@56.0.13` → expected `~6.3.1`
+- `expo-status-bar@56.0.4` → expected `~1.12.1`
+- `react-native-safe-area-context@4.10.1` → expected `4.10.5`
+
+### Problem
+These packages had dramatically wrong major versions (likely from npm registry confusion or incorrect manual installation). Expo SDK 51 requires specific compatible versions of each package.
+
+### Root Cause
+Packages were installed without using `npx expo install`, which automatically selects SDK-compatible versions. Manual `npm install` picked up the latest versions regardless of SDK compatibility.
+
+### Solution
+Ran `npx expo install expo-gl@~14.0.2 expo-image-picker@~15.1.0 expo-linking@~6.3.1 expo-status-bar@~1.12.1 react-native-safe-area-context@4.10.5`.
+
+Also removed `@types/react-native` (types are bundled with `react-native` itself).
+
+### Prevention
+- Always use `npx expo install <package>` instead of `npm install <package>` for Expo-related packages
+- Run `npx expo-doctor` after adding any new package to catch version mismatches
+- Never manually install `@types/react-native` — types come with RN

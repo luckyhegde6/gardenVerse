@@ -1,10 +1,10 @@
-import { chromium, Browser, Page } from 'playwright';
-import * as path from 'path';
-import * as fs from 'fs';
+import { chromium, type Browser, type Page } from 'playwright';
+import { join, basename } from 'path';
+import { mkdirSync, writeFileSync } from 'fs';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-const SCREENSHOT_DIR = path.resolve(__dirname, '..', 'screenshots');
-const WORKFLOW_DATA_DIR = path.resolve(__dirname, '..', 'workflows-data');
+const SCREENSHOT_DIR = join(process.cwd(), 'e2e', 'screenshots');
+const WORKFLOW_DATA_DIR = join(process.cwd(), 'e2e', 'workflows-data');
 
 interface WorkflowStep {
   name: string;
@@ -18,14 +18,14 @@ interface WorkflowResult {
   duration: number;
 }
 
-fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
-fs.mkdirSync(WORKFLOW_DATA_DIR, { recursive: true });
+mkdirSync(SCREENSHOT_DIR, { recursive: true });
+mkdirSync(WORKFLOW_DATA_DIR, { recursive: true });
 
 async function screenshot(page: Page, workflow: string, step: string): Promise<string> {
-  const dir = path.join(SCREENSHOT_DIR, workflow);
-  fs.mkdirSync(dir, { recursive: true });
+  const dir = join(SCREENSHOT_DIR, workflow);
+  mkdirSync(dir, { recursive: true });
   const filename = `${step.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.png`;
-  const filepath = path.join(dir, filename);
+  const filepath = join(dir, filename);
   await page.screenshot({ path: filepath, fullPage: true });
   return filepath;
 }
@@ -124,7 +124,7 @@ function generateHtml(results: WorkflowResult[]): void {
 </body>
 </html>`;
 
-  fs.writeFileSync(path.join(WORKFLOW_DATA_DIR, 'index.html'), indexHtml);
+  writeFileSync(join(WORKFLOW_DATA_DIR, 'index.html'), indexHtml);
 
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
@@ -167,7 +167,10 @@ function generateHtml(results: WorkflowResult[]): void {
   <div class="container">
     <div class="viewer-card">
       <div class="screenshot-container" id="screenshotContainer">
-        ${r.steps.map((s, j) => `<img src="../screenshots/${r.id}/${path.basename(s.filepath)}" class="${j === 0 ? 'active' : ''}" alt="${escapeHtml(s.name)}" loading="lazy">`).join('')}
+        ${r.steps.map((s, j) => {
+    const filename = s.filepath.split(/[\\/]/).pop() || '';
+    return `<img src="../screenshots/${r.id}/${filename}" class="${j === 0 ? 'active' : ''}" alt="${escapeHtml(s.name)}" loading="lazy">`;
+  }).join('')}
       </div>
       <div class="progress-bar"><div class="progress-bar-fill" id="progressFill" style="width: ${100 / r.steps.length}%"></div></div>
       <div class="controls">
@@ -223,7 +226,7 @@ function generateHtml(results: WorkflowResult[]): void {
   </script>
 </body>
 </html>`;
-    fs.writeFileSync(path.join(WORKFLOW_DATA_DIR, `workflow-${i}.html`), workflowHtml);
+    writeFileSync(join(WORKFLOW_DATA_DIR, `workflow-${i}.html`), workflowHtml);
   }
 
   console.log(`\nHTML pages generated at: ${WORKFLOW_DATA_DIR}/`);
@@ -238,7 +241,7 @@ function escapeHtml(text: string): string {
 async function authWorkflow(): Promise<WorkflowResult> {
   return runWorkflow('auth', 'Authentication Flow', [
     { name: 'Login Page', action: async (page) => { await page.goto(`${BASE_URL}/login`); await page.waitForLoadState('networkidle'); } },
-    { name: 'Login Form Filled', action: async (page) => { await page.fill('input[type="email"]', 'admin@gardenverse.test'); await page.fill('input[type="password"]', 'Test@12345678'); } },
+    { name: 'Login Form Filled', action: async (page) => { await page.fill('input[type="email"]', 'admin@gardenverse.vercel.app'); await page.fill('input[type="password"]', 'Password123'); } },
     { name: 'Super Admin Login', action: async (page) => { await page.goto(`${BASE_URL}/super-admin`); await page.waitForLoadState('networkidle'); } },
     { name: 'Super Admin Register', action: async (page) => { const btn = page.locator('button:has-text("Register")'); if (await btn.isVisible()) await btn.click(); await page.waitForTimeout(500); } },
     { name: 'Protected Route Redirect', action: async (page) => { await page.goto(`${BASE_URL}/dashboard`); await page.waitForLoadState('networkidle'); } },
@@ -247,6 +250,7 @@ async function authWorkflow(): Promise<WorkflowResult> {
 
 async function gardenWorkflow(): Promise<WorkflowResult> {
   return runWorkflow('garden', 'Garden Management', [
+    { name: 'Admin Login', action: async (page) => { await loginAsAdmin(page); } },
     { name: 'Garden Overview', action: async (page) => { await page.goto(`${BASE_URL}/garden`); await page.waitForLoadState('networkidle'); } },
     { name: 'Plant Selection', action: async (page) => { await page.goto(`${BASE_URL}/garden/plant`); await page.waitForLoadState('networkidle'); } },
     { name: 'Plant Browser', action: async (page) => { await page.goto(`${BASE_URL}/plants`); await page.waitForLoadState('networkidle'); } },
@@ -256,6 +260,7 @@ async function gardenWorkflow(): Promise<WorkflowResult> {
 
 async function adminWorkflow(): Promise<WorkflowResult> {
   return runWorkflow('admin', 'Admin Portal', [
+    { name: 'Admin Login', action: async (page) => { await loginAsAdmin(page); } },
     { name: 'Admin Dashboard', action: async (page) => { await page.goto(`${BASE_URL}/dashboard`); await page.waitForLoadState('networkidle'); } },
     { name: 'Users Management', action: async (page) => { await page.goto(`${BASE_URL}/users`); await page.waitForLoadState('networkidle'); } },
     { name: 'Marketplace', action: async (page) => { await page.goto(`${BASE_URL}/marketplace`); await page.waitForLoadState('networkidle'); } },
@@ -266,12 +271,24 @@ async function adminWorkflow(): Promise<WorkflowResult> {
 
 async function weatherWorkflow(): Promise<WorkflowResult> {
   return runWorkflow('weather', 'Weather Dashboard', [
+    { name: 'Admin Login', action: async (page) => { await loginAsAdmin(page); } },
     { name: 'Weather Dashboard', action: async (page) => { await page.goto(`${BASE_URL}/weather`); await page.waitForLoadState('networkidle'); } },
   ]);
 }
 
+async function loginAsAdmin(page: Page): Promise<void> {
+  await page.goto(`${BASE_URL}/login`);
+  await page.waitForLoadState('networkidle');
+  await page.fill('input[type="email"]', 'admin@gardenverse.vercel.app');
+  await page.fill('input[type="password"]', 'Password123');
+  await page.click('button[type="submit"]');
+  await page.waitForURL('**/dashboard', { timeout: 10000 }).catch(() => {});
+  await page.waitForLoadState('networkidle');
+}
+
 async function marketplaceWorkflow(): Promise<WorkflowResult> {
   return runWorkflow('marketplace', 'Marketplace', [
+    { name: 'Admin Login', action: async (page) => { await loginAsAdmin(page); } },
     { name: 'Marketplace Overview', action: async (page) => { await page.goto(`${BASE_URL}/marketplace`); await page.waitForLoadState('networkidle'); } },
     { name: 'Create Listing', action: async (page) => { await page.goto(`${BASE_URL}/marketplace/create`); await page.waitForLoadState('networkidle'); } },
   ]);
@@ -279,6 +296,7 @@ async function marketplaceWorkflow(): Promise<WorkflowResult> {
 
 async function communityWorkflow(): Promise<WorkflowResult> {
   return runWorkflow('community', 'Community', [
+    { name: 'Admin Login', action: async (page) => { await loginAsAdmin(page); } },
     { name: 'Community Hub', action: async (page) => { await page.goto(`${BASE_URL}/community`); await page.waitForLoadState('networkidle'); } },
     { name: 'Groups', action: async (page) => { await page.goto(`${BASE_URL}/community/groups`); await page.waitForLoadState('networkidle'); } },
   ]);
@@ -286,13 +304,22 @@ async function communityWorkflow(): Promise<WorkflowResult> {
 
 async function aiScannerWorkflow(): Promise<WorkflowResult> {
   return runWorkflow('ai-scanner', 'AI Scanner', [
+    { name: 'Admin Login', action: async (page) => { await loginAsAdmin(page); } },
     { name: 'AI Scanner', action: async (page) => { await page.goto(`${BASE_URL}/ai-scanner`); await page.waitForLoadState('networkidle'); } },
     { name: 'Scan History', action: async (page) => { await page.goto(`${BASE_URL}/ai-scanner/history`); await page.waitForLoadState('networkidle'); } },
   ]);
 }
 
+async function gamificationWorkflow(): Promise<WorkflowResult> {
+  return runWorkflow('gamification', 'Gamification', [
+    { name: 'Admin Login', action: async (page) => { await loginAsAdmin(page); } },
+    { name: 'Gamification Overview', action: async (page) => { await page.goto(`${BASE_URL}/gamification`); await page.waitForLoadState('networkidle'); } },
+  ]);
+}
+
 async function invitesWorkflow(): Promise<WorkflowResult> {
   return runWorkflow('invites', 'Invite System', [
+    { name: 'Admin Login', action: async (page) => { await loginAsAdmin(page); } },
     { name: 'Invite System', action: async (page) => { await page.goto(`${BASE_URL}/invites`); await page.waitForLoadState('networkidle'); } },
     { name: 'Create Invite', action: async (page) => { await page.goto(`${BASE_URL}/invites/create`); await page.waitForLoadState('networkidle'); } },
   ]);
@@ -309,6 +336,7 @@ const WORKFLOWS: Record<string, () => Promise<WorkflowResult>> = {
   community: communityWorkflow,
   'ai-scanner': aiScannerWorkflow,
   invites: invitesWorkflow,
+  gamification: gamificationWorkflow,
 };
 
 async function main() {

@@ -1,5 +1,5 @@
 import { Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { AgentName, AgentStatus, AgentEvent, AgentConfig, AgentHealth, AGENT_CONFIGS } from './types/agent.types';
+import { AgentName, AgentStatus, AgentEvent, AgentConfig, AgentHealth } from './types/agent.types';
 import { AgentOrchestrator } from './agent-orchestrator.service';
 
 export abstract class BaseAgent implements OnModuleInit, OnModuleDestroy {

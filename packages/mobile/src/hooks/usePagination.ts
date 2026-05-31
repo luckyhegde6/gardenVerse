@@ -1,7 +1,9 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from "react";
 
 interface UsePaginationOptions<T> {
-  fetchFn: (page: number) => Promise<{ data: T[]; totalPages: number; total: number }>;
+  fetchFn: (
+    page: number,
+  ) => Promise<{ data: T[]; totalPages: number; total: number }>;
   initialPage?: number;
   pageSize?: number;
 }
@@ -45,20 +47,20 @@ export function usePagination<T>({
       try {
         const result = await fetchFn(pageNum);
         setData((prev) =>
-          pageNum === 1 ? result.data : [...prev, ...result.data]
+          pageNum === 1 ? result.data : [...prev, ...result.data],
         );
         setPage(pageNum);
         setTotalPages(result.totalPages);
         setTotal(result.total);
       } catch (err: any) {
-        setError(err.message || 'Failed to load data');
+        setError(err.message || "Failed to load data");
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);
         isLoadingRef.current = false;
       }
     },
-    [fetchFn]
+    [fetchFn],
   );
 
   const refresh = useCallback(async () => {

@@ -96,8 +96,6 @@ export class GeohashUtil {
   private static _calculateNeighbor(geohash: string, direction: string): string {
     const lastChar = geohash[geohash.length - 1];
     const parent = geohash.slice(0, -1);
-    const type = (geohash.length % 2 === 0) ? 'even' : 'odd';
-
     const type2 = (geohash.length % 2 === 0) ? 'even' : 'odd';
 
     if (direction === 'top') {

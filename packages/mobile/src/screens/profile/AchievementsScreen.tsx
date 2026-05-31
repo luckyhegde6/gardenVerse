@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { ProgressBar } from '../../components/ui/ProgressBar';
+import React from "react";
+import { View, Text, ScrollView } from "react-native";
+import { Card } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/Badge";
+import { ProgressBar } from "../../components/ui/ProgressBar";
 
 interface Achievement {
   id: string;
@@ -18,80 +18,80 @@ interface Achievement {
 
 const MOCK_ACHIEVEMENTS: Achievement[] = [
   {
-    id: '1',
-    title: 'Green Thumb',
-    description: 'Plant your first crop',
-    icon: '🌱',
+    id: "1",
+    title: "Green Thumb",
+    description: "Plant your first crop",
+    icon: "🌱",
     progress: 1,
     maxProgress: 1,
     unlocked: true,
     xpReward: 100,
   },
   {
-    id: '2',
-    title: 'Master Farmer',
-    description: 'Harvest 100 crops',
-    icon: '🌾',
+    id: "2",
+    title: "Master Farmer",
+    description: "Harvest 100 crops",
+    icon: "🌾",
     progress: 45,
     maxProgress: 100,
     unlocked: false,
     xpReward: 500,
   },
   {
-    id: '3',
-    title: 'Water Wizard',
-    description: 'Water crops 500 times',
-    icon: '💧',
+    id: "3",
+    title: "Water Wizard",
+    description: "Water crops 500 times",
+    icon: "💧",
     progress: 234,
     maxProgress: 500,
     unlocked: false,
     xpReward: 300,
   },
   {
-    id: '4',
-    title: 'Eco Champion',
-    description: 'Achieve 1000 sustainability score',
-    icon: '♻️',
+    id: "4",
+    title: "Eco Champion",
+    description: "Achieve 1000 sustainability score",
+    icon: "♻️",
     progress: 750,
     maxProgress: 1000,
     unlocked: false,
     xpReward: 1000,
   },
   {
-    id: '5',
-    title: 'Social Gardener',
-    description: 'Join 5 community groups',
-    icon: '👥',
+    id: "5",
+    title: "Social Gardener",
+    description: "Join 5 community groups",
+    icon: "👥",
     progress: 3,
     maxProgress: 5,
     unlocked: false,
     xpReward: 200,
   },
   {
-    id: '6',
-    title: 'Streak Master',
-    description: 'Maintain a 30-day login streak',
-    icon: '🔥',
+    id: "6",
+    title: "Streak Master",
+    description: "Maintain a 30-day login streak",
+    icon: "🔥",
     progress: 12,
     maxProgress: 30,
     unlocked: false,
     xpReward: 750,
   },
   {
-    id: '7',
-    title: 'Seed Collector',
-    description: 'Collect 20 different seed types',
-    icon: '🌰',
+    id: "7",
+    title: "Seed Collector",
+    description: "Collect 20 different seed types",
+    icon: "🌰",
     progress: 14,
     maxProgress: 20,
     unlocked: false,
     xpReward: 400,
   },
   {
-    id: '8',
-    title: 'IoT Pioneer',
-    description: 'Connect 5 IoT devices',
-    icon: '📡',
+    id: "8",
+    title: "IoT Pioneer",
+    description: "Connect 5 IoT devices",
+    icon: "📡",
     progress: 2,
     maxProgress: 5,
     unlocked: false,
@@ -115,9 +115,14 @@ export function AchievementsScreen() {
           <Text className="text-white text-2xl font-bold">
             {unlocked.length}/{MOCK_ACHIEVEMENTS.length}
           </Text>
-          <Text className="text-primary-200 text-sm">Achievements Unlocked</Text>
+          <Text className="text-primary-200 text-sm">
+            Achievements Unlocked
+          </Text>
           <Text className="text-white/60 text-xs mt-2">
-            {MOCK_ACHIEVEMENTS.reduce((s, a) => s + a.xpReward, 0).toLocaleString()}{' '}
+            {MOCK_ACHIEVEMENTS.reduce(
+              (s, a) => s + a.xpReward,
+              0,
+            ).toLocaleString()}{" "}
             Total XP Available
           </Text>
         </Card>
@@ -142,7 +147,11 @@ export function AchievementsScreen() {
                     {achievement.description}
                   </Text>
                 </View>
-                <Badge label={`+${achievement.xpReward}XP`} variant="success" size="sm" />
+                <Badge
+                  label={`+${achievement.xpReward}XP`}
+                  variant="success"
+                  size="sm"
+                />
               </Card>
             ))}
           </View>

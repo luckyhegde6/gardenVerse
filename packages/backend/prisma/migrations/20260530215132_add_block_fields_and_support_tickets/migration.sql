@@ -1,0 +1,39 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "blockedAt" TIMESTAMP(3),
+ADD COLUMN     "blockedReason" TEXT,
+ADD COLUMN     "isBlocked" BOOLEAN NOT NULL DEFAULT false;
+
+-- CreateTable
+CREATE TABLE "SupportTicket" (
+    "id" UUID NOT NULL,
+    "subject" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'OPEN',
+    "priority" TEXT NOT NULL DEFAULT 'MEDIUM',
+    "userId" UUID NOT NULL,
+    "assignedToId" UUID,
+    "adminNotes" TEXT,
+    "closedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SupportTicket_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "SupportTicket_userId_idx" ON "SupportTicket"("userId");
+
+-- CreateIndex
+CREATE INDEX "SupportTicket_status_idx" ON "SupportTicket"("status");
+
+-- CreateIndex
+CREATE INDEX "SupportTicket_assignedToId_idx" ON "SupportTicket"("assignedToId");
+
+-- CreateIndex
+CREATE INDEX "SupportTicket_priority_idx" ON "SupportTicket"("priority");
+
+-- AddForeignKey
+ALTER TABLE "SupportTicket" ADD CONSTRAINT "SupportTicket_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SupportTicket" ADD CONSTRAINT "SupportTicket_assignedToId_fkey" FOREIGN KEY ("assignedToId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

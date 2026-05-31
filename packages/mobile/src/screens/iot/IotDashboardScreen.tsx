@@ -1,13 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
-import { useIot } from '../../hooks/useIot';
-import { DeviceCard } from '../../components/iot/DeviceCard';
-import { SensorGauge } from '../../components/iot/SensorGauge';
-import { SensorChart } from '../../components/iot/SensorChart';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { EmptyState } from '../../components/ui/EmptyState';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+} from "react-native";
+import { useIot } from "../../hooks/useIot";
+import { DeviceCard } from "../../components/iot/DeviceCard";
+import { SensorGauge } from "../../components/iot/SensorGauge";
+import { SensorChart } from "../../components/iot/SensorChart";
+import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import { EmptyState } from "../../components/ui/EmptyState";
 
 export function IotDashboardScreen() {
   const { devices, readings, isLoading, error, refresh } = useIot();
@@ -41,11 +47,11 @@ export function IotDashboardScreen() {
   const latestReading = (sensorType: string) =>
     readings.find((r) => r.sensorType === sensorType);
 
-  const moisture = latestReading('moisture');
-  const ph = latestReading('ph');
-  const temperature = latestReading('temperature');
-  const light = latestReading('light');
-  const humidity = latestReading('humidity');
+  const moisture = latestReading("moisture");
+  const ph = latestReading("ph");
+  const temperature = latestReading("temperature");
+  const light = latestReading("light");
+  const humidity = latestReading("humidity");
 
   return (
     <ScrollView
@@ -60,9 +66,7 @@ export function IotDashboardScreen() {
         <Card className="mb-4 bg-primary-800">
           <View className="flex-row items-center justify-between">
             <View>
-              <Text className="text-white text-lg font-bold">
-                Trust Score
-              </Text>
+              <Text className="text-white text-lg font-bold">Trust Score</Text>
               <Text className="text-primary-200 text-sm">
                 Based on sensor accuracy and uptime
               </Text>
@@ -101,11 +105,7 @@ export function IotDashboardScreen() {
           </View>
         ) : (
           devices.map((device) => (
-            <DeviceCard
-              key={device.id}
-              device={device}
-              onPress={() => {}}
-            />
+            <DeviceCard key={device.id} device={device} onPress={() => {}} />
           ))
         )}
 

@@ -1,5 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 
 interface Props {
   children: ReactNode;
@@ -23,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     if (__DEV__) {
-      console.error('[ErrorBoundary]', error, errorInfo);
+      console.error("[ErrorBoundary]", error, errorInfo);
     }
   }
 
@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
             Oops! Something went wrong
           </Text>
           <Text className="text-sm text-gray-500 text-center mb-6">
-            {this.state.error?.message || 'An unexpected error occurred'}
+            {this.state.error?.message || "An unexpected error occurred"}
           </Text>
           <TouchableOpacity
             onPress={this.handleRetry}

@@ -29,6 +29,33 @@
     "playwright-cli-skills": {
       "command": "npx",
       "args": ["--no-install", "playwright-cli", "--help"]
+    },
+    "prisma": {
+      "command": "npx",
+      "args": ["prisma", "mcp"],
+      "env": {
+        "DATABASE_URL": "postgresql://gardenverse:gardenverse123@localhost:5432/gardenverse?schema=public"
+      }
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest"]
+    },
+    "supabase": {
+      "command": "npx",
+      "args": ["-y", "@supabase/mcp-server-supabase@latest"],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}",
+        "SUPABASE_PROJECT_REF": "${SUPABASE_PROJECT_REF}"
+      }
+    },
+    "vercel": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://mcp.vercel.com"]
+    },
+    "expo": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://mcp.expo.dev/mcp"]
     }
   }
 }

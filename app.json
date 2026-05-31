@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "15a4c8cc-8c02-4392-b863-e44b3366b3f0"
+      }
+    },
+    "owner": "luckyhegde-organization",
+    "android": {
+      "package": "com.gardenverse"
+    },
+    "ios": {
+      "bundleIdentifier": "com.gardenverse",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}

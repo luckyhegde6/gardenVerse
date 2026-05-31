@@ -12,10 +12,10 @@ async function main() {
   // Create admin user
   const adminPassword = await bcrypt.hash('Admin@123456', 12);
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@gardenverse.io' },
+    where: { email: 'admin@gardenverse.vercel.app' },
     update: {},
     create: {
-      email: 'admin@gardenverse.io',
+      email: 'admin@gardenverse.vercel.app',
       username: 'admin',
       displayName: 'Admin',
       passwordHash: adminPassword,
@@ -36,10 +36,10 @@ async function main() {
   // Create test user
   const userPassword = await bcrypt.hash('Test@123456', 12);
   const testUser = await prisma.user.upsert({
-    where: { email: 'test@gardenverse.io' },
+    where: { email: 'test@gardenverse.vercel.app' },
     update: {},
     create: {
-      email: 'test@gardenverse.io',
+      email: 'test@gardenverse.vercel.app',
       username: 'testgardener',
       displayName: 'Test Gardener',
       passwordHash: userPassword,
@@ -193,8 +193,8 @@ async function main() {
 
   console.log('\n✅ Database seeding complete!');
   console.log('\nTest credentials:');
-  console.log('  Admin: admin@gardenverse.io / Admin@123456');
-  console.log('  User:  test@gardenverse.io / Test@123456');
+  console.log('  Admin: admin@gardenverse.vercel.app / Admin@123456');
+  console.log('  User:  test@gardenverse.vercel.app / Test@123456');
 }
 
 main()

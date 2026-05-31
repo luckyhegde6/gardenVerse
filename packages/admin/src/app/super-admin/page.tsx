@@ -75,7 +75,7 @@ export default function SuperAdminPage() {
           <Input
             label="Email"
             type="email"
-            placeholder="superadmin@gardenverse.io"
+            placeholder="superadmin@gardenverse.vercel.app"
             value={form.email}
             onChange={e => setForm({ ...form, email: e.target.value })}
             required

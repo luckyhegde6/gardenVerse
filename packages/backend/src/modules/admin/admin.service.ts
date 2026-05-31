@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@/prisma/prisma.service';
 import { TokenUtil } from '@/common/utils/token.util';
-import { AdminRegisterDto, AdminLoginDto, AdminUserQueryDto, UpdateUserRoleDto } from './dto/admin.dto';
+import { AdminRegisterDto, AdminLoginDto, AdminUserQueryDto, UpdateUserRoleDto, BlockUserDto, AdminResetPasswordDto, CreateSupportTicketDto, UpdateTicketStatusDto, AssignTicketDto, SupportTicketQueryDto } from './dto/admin.dto';
 import { CreateAdminInviteDto, TokenTransactionQueryDto, AppLogQueryDto } from './dto/admin.dto';
 
 @Injectable()
@@ -295,5 +295,159 @@ export class AdminService {
       data: { isActive: false },
     });
     return invite;
+  }
+
+  async blockUser(userId: string, dto: BlockUserDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, username: true, isBlocked: true } });
+    if (!user) throw new BadRequestException('User not found');
+    if (user.isBlocked) throw new BadRequestException('User is already blocked');
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { isBlocked: true, blockedAt: new Date(), blockedReason: dto.reason },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        type: 'SUPPORT_TICKET',
+        title: 'Account Blocked',
+        body: `Your account has been blocked. Reason: ${dto.reason}. Contact support if you believe this is an error.`,
+        userId,
+      },
+    });
+
+    this.logger.warn(`User ${user.email} (${userId}) blocked. Reason: ${dto.reason}`);
+    return { message: 'User blocked successfully' };
+  }
+
+  async unblockUser(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, username: true, isBlocked: true } });
+    if (!user) throw new BadRequestException('User not found');
+    if (!user.isBlocked) throw new BadRequestException('User is not blocked');
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { isBlocked: false, blockedAt: null, blockedReason: null },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        type: 'SUPPORT_TICKET',
+        title: 'Account Unblocked',
+        body: `Your account has been unblocked. You can now log in and use GardenVerse normally.`,
+        userId,
+      },
+    });
+
+    this.logger.log(`User ${user.email} (${userId}) unblocked`);
+    return { message: 'User unblocked successfully' };
+  }
+
+  async resetUserPassword(userId: string, dto: AdminResetPasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true } });
+    if (!user) throw new BadRequestException('User not found');
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    this.logger.warn(`Password reset by admin for user ${user.email} (${userId})`);
+    return { message: 'Password reset successfully' };
+  }
+
+  async getSupportTickets(query: SupportTicketQueryDto) {
+    const { status, limit = 50, offset = 0 } = query;
+    const where: any = {};
+    if (status) where.status = status;
+
+    const [tickets, total] = await Promise.all([
+      this.prisma.supportTicket.findMany({
+        where, orderBy: { createdAt: 'desc' }, take: limit, skip: offset,
+        include: {
+          user: { select: { id: true, username: true, email: true } },
+          assignedTo: { select: { id: true, username: true, email: true } },
+        },
+      }),
+      this.prisma.supportTicket.count({ where }),
+    ]);
+    return { tickets, total, limit, offset };
+  }
+
+  async updateTicketStatus(ticketId: string, dto: UpdateTicketStatusDto) {
+    const ticket = await this.prisma.supportTicket.findUnique({ where: { id: ticketId } });
+    if (!ticket) throw new BadRequestException('Ticket not found');
+
+    const updateData: any = { status: dto.status };
+    if (dto.adminNotes !== undefined) updateData.adminNotes = dto.adminNotes;
+    if (dto.status === 'CLOSED' || dto.status === 'RESOLVED') updateData.closedAt = new Date();
+
+    const updated = await this.prisma.supportTicket.update({
+      where: { id: ticketId }, data: updateData,
+      include: {
+        user: { select: { id: true, username: true, email: true } },
+        assignedTo: { select: { id: true, username: true, email: true } },
+      },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        type: 'SUPPORT_TICKET',
+        title: `Support Ticket ${dto.status === 'CLOSED' ? 'Closed' : 'Updated'}`,
+        body: `Your support ticket "${ticket.subject}" has been updated to ${dto.status}.${dto.adminNotes ? ` Notes: ${dto.adminNotes}` : ''}`,
+        userId: ticket.userId,
+      },
+    });
+
+    return updated;
+  }
+
+  async assignTicket(ticketId: string, dto: AssignTicketDto) {
+    const ticket = await this.prisma.supportTicket.findUnique({ where: { id: ticketId } });
+    if (!ticket) throw new BadRequestException('Ticket not found');
+
+    const updated = await this.prisma.supportTicket.update({
+      where: { id: ticketId },
+      data: { assignedToId: dto.assignedToId, status: 'IN_PROGRESS' },
+      include: {
+        user: { select: { id: true, username: true, email: true } },
+        assignedTo: { select: { id: true, username: true, email: true } },
+      },
+    });
+    return updated;
+  }
+
+  async createSupportTicket(userId: string, dto: CreateSupportTicketDto) {
+    const ticket = await this.prisma.supportTicket.create({
+      data: {
+        subject: dto.subject,
+        message: dto.message,
+        status: 'OPEN',
+        userId,
+      },
+      include: {
+        user: { select: { id: true, username: true, email: true } },
+      },
+    });
+
+    this.logger.log(`Support ticket created by user ${userId}: ${ticket.subject}`);
+    return ticket;
+  }
+
+  async getAdminNotifications(userId: string, limit = 20) {
+    const notifications = await this.prisma.notification.findMany({
+      where: { userId, type: 'SUPPORT_TICKET' },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+    const unreadCount = await this.prisma.notification.count({
+      where: { userId, type: 'SUPPORT_TICKET', isRead: false },
+    });
+    return { notifications, unreadCount };
+  }
+
+  async getOpenTicketCount() {
+    return this.prisma.supportTicket.count({ where: { status: { notIn: ['CLOSED', 'RESOLVED'] } } });
   }
 }

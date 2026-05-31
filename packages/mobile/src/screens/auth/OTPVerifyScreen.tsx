@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -7,21 +7,21 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-} from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Button } from '../../components/ui/Button';
-import { AuthStackParamList } from '../../types';
-import AuthService from '../../services/auth';
-type OTPVerifyRouteProp = RouteProp<AuthStackParamList, 'OTPVerify'>;
+} from "react-native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { Button } from "../../components/ui/Button";
+import { AuthStackParamList } from "../../types";
+import AuthService from "../../services/auth";
+type OTPVerifyRouteProp = RouteProp<AuthStackParamList, "OTPVerify">;
 
 export function OTPVerifyScreen() {
   const navigation = useNavigation();
   const route = useRoute<OTPVerifyRouteProp>();
   const { email } = route.params;
 
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   const handleOtpChange = (value: string, index: number) => {
@@ -35,25 +35,25 @@ export function OTPVerifyScreen() {
   };
 
   const handleKeyPress = (key: string, index: number) => {
-    if (key === 'Backspace' && !otp[index] && index > 0) {
+    if (key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
 
   const handleVerify = async () => {
-    const code = otp.join('');
+    const code = otp.join("");
     if (code.length !== 6) {
-      setError('Please enter the complete 6-digit code');
+      setError("Please enter the complete 6-digit code");
       return;
     }
 
     setIsLoading(true);
-    setError('');
+    setError("");
     try {
       const response = await AuthService.verifyOTP({ email, otp: code });
       navigation.goBack();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid verification code');
+      setError(err.response?.data?.message || "Invalid verification code");
     } finally {
       setIsLoading(false);
     }
@@ -63,14 +63,15 @@ export function OTPVerifyScreen() {
     setIsLoading(true);
     try {
       await AuthService.requestPasswordReset({ email });
-    } catch {} finally {
+    } catch {
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-white"
     >
       <ScrollView
@@ -79,7 +80,10 @@ export function OTPVerifyScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View className="flex-1 px-6 py-8">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="mb-6">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="mb-6"
+          >
             <Text className="text-gray-500 text-lg">←</Text>
           </TouchableOpacity>
 
@@ -123,7 +127,7 @@ export function OTPVerifyScreen() {
 
           <View className="flex-row justify-center mt-6">
             <Text className="text-gray-500 text-sm">
-              Didn't receive the code?{' '}
+              Didn't receive the code?{" "}
             </Text>
             <TouchableOpacity onPress={handleResend}>
               <Text className="text-primary-600 text-sm font-semibold">

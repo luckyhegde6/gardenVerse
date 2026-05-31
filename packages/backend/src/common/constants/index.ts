@@ -53,6 +53,7 @@ export enum NotificationType {
   MARKETPLACE = 'MARKETPLACE',
   GOVT_SCHEME = 'GOVT_SCHEME',
   SEASONAL_EVENT = 'SEASONAL_EVENT',
+  SUPPORT_TICKET = 'SUPPORT_TICKET',
 }
 
 export const ERROR_CODES = {

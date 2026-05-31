@@ -1,7 +1,7 @@
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
-const isWeb = Platform.OS === 'web';
+const isWeb = Platform.OS === "web";
 
 const memoryStore = new Map<string, string>();
 
@@ -39,10 +39,10 @@ export async function removeItem(key: string): Promise<void> {
 }
 
 export const StorageKeys = {
-  ACCESS_TOKEN: 'access_token',
-  REFRESH_TOKEN: 'refresh_token',
-  USER_DATA: 'user_data',
-  ONBOARDING_COMPLETE: 'onboarding_complete',
-  THEME_MODE: 'theme_mode',
-  NOTIFICATION_PREFERENCES: 'notification_preferences',
+  ACCESS_TOKEN: "access_token",
+  REFRESH_TOKEN: "refresh_token",
+  USER_DATA: "user_data",
+  ONBOARDING_COMPLETE: "onboarding_complete",
+  THEME_MODE: "theme_mode",
+  NOTIFICATION_PREFERENCES: "notification_preferences",
 } as const;

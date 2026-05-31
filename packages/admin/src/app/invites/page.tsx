@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Mail, Plus, Copy, XCircle, RefreshCw, Users, BarChart3 } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Mail, Plus, Copy, XCircle, RefreshCw, Users, BarChart3, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { DataTable } from '@/components/DataTable'
@@ -9,15 +9,11 @@ import { Modal, ModalFooter } from '@/components/Modal'
 import { Input } from '@/components/Input'
 import { Select } from '@/components/Select'
 import { Toggle } from '@/components/Toggle'
+import api from '@/lib/api'
 
-const mockInvites = [
-  { id: 'inv1', code: 'GROW2026', createdBy: 'admin_alex', maxUses: 100, used: 78, status: 'active', expiresAt: '2026-12-31', createdAt: '2026-01-01', tier: 'premium' },
-  { id: 'inv2', code: 'SPRING25', createdBy: 'admin_alex', maxUses: 50, used: 50, status: 'exhausted', expiresAt: '2026-06-01', createdAt: '2026-03-01', tier: 'standard' },
-  { id: 'inv3', code: 'BETA-TEST', createdBy: 'dev_sarah', maxUses: 25, used: 12, status: 'active', expiresAt: '2026-09-30', createdAt: '2026-04-15', tier: 'beta' },
-  { id: 'inv4', code: 'PARTNER-FLOW', createdBy: 'admin_alex', maxUses: 10, used: 3, status: 'active', expiresAt: '2026-08-15', createdAt: '2026-05-01', tier: 'premium' },
-  { id: 'inv5', code: 'LEAKED-CODE', createdBy: 'hacker_old', maxUses: 999, used: 542, status: 'revoked', expiresAt: '2025-12-31', createdAt: '2025-06-01', tier: 'standard' },
-  { id: 'inv6', code: 'COMMUNITY-V2', createdBy: 'mod_nina', maxUses: 200, used: 145, status: 'active', expiresAt: '2026-11-30', createdAt: '2026-02-14', tier: 'standard' },
-]
+interface InviteEntry {
+  id: string; code: string; createdBy: string; maxUses: number; used: number; status: string; expiresAt: string; createdAt: string; tier: string
+}
 
 const usageStats = [
   { label: 'Total Codes', value: 48 },
@@ -28,17 +24,75 @@ const usageStats = [
 ]
 
 export default function InvitesPage() {
-  const [invites, setInvites] = useState(mockInvites)
+  const [invites, setInvites] = useState<InviteEntry[]>([])
   const [showCreate, setShowCreate] = useState(false)
   const [bulkCount, setBulkCount] = useState(1)
-  const [selectedInvite, setSelectedInvite] = useState<typeof mockInvites[0] | null>(null)
+  const [selectedInvite, setSelectedInvite] = useState<InviteEntry | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchInvites = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const res = await api.get('/admin/invites')
+      const body = res.data as Record<string, unknown>
+      const rawData = (body.data as unknown[]) || (body.invites as unknown[]) || (Array.isArray(body) ? body : [])
+
+      if (rawData.length > 0) {
+        setInvites(rawData.map(inv => {
+          const entry = inv as Record<string, unknown>
+          return {
+            id: String(entry.id ?? ''),
+            code: String(entry.code ?? ''),
+            createdBy: String(entry.createdBy ?? entry.created_by ?? 'unknown'),
+            maxUses: typeof entry.maxUses === 'number' ? entry.maxUses : typeof entry.max_uses === 'number' ? entry.max_uses : Number(entry.maxUses ?? entry.max_uses ?? 0),
+            used: typeof entry.used === 'number' ? entry.used : Number(entry.used ?? 0),
+            status: String(entry.status ?? 'active'),
+            expiresAt: String(entry.expiresAt ?? entry.expires_at ?? ''),
+            createdAt: String(entry.createdAt ?? entry.created_at ?? new Date().toISOString()),
+            tier: String(entry.tier ?? 'standard'),
+          }
+        }))
+      }
+    } catch {
+      setError('Could not load invites from server.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchInvites() }, [fetchInvites])
 
   const revokeInvite = (id: string) => {
     setInvites(prev => prev.map(i => i.id === id ? { ...i, status: 'revoked' } : i))
   }
 
+  if (isLoading && invites.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-admin-400 animate-spin" />
+          <p className="text-slate-400 text-sm">Loading invites...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-400/10 border border-amber-400/20">
+          <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm text-amber-300">{error}</p>
+
+          </div>
+          <Button variant="ghost" size="sm" onClick={fetchInvites}>Retry</Button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Mail className="w-5 h-5 text-admin-400" />
@@ -136,7 +190,7 @@ export default function InvitesPage() {
           keyExtractor={item => String(item.id)}
           searchable
           searchPlaceholder="Search codes..."
-          onRowClick={r => setSelectedInvite(r as typeof mockInvites[0])}
+          onRowClick={r => setSelectedInvite(r as unknown as InviteEntry)}
           pageSize={10}
         />
       </div>

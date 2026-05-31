@@ -1,6 +1,6 @@
-import 'react-native';
+import "react-native";
 
-declare module 'react-native' {
+declare module "react-native" {
   interface ViewProps {
     className?: string;
     cssInterop?: boolean;
@@ -20,8 +20,7 @@ declare module 'react-native' {
     className?: string;
     cssInterop?: boolean;
   }
-  interface ScrollViewProps
-    extends ViewProps {
+  interface ScrollViewProps extends ViewProps {
     contentContainerClassName?: string;
     indicatorClassName?: string;
   }
@@ -50,5 +49,3 @@ declare module 'react-native' {
     presentationClassName?: string;
   }
 }
-
-

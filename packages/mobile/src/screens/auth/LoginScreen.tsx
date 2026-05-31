@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,31 +6,35 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { useAuthStore } from '../../stores/authStore';
-import { validateEmail, validatePassword } from '../../utils/validation';
-import { AuthStackParamList } from '../../types';
+  Linking,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { useAuthStore } from "../../stores/authStore";
+import { validateEmail, validatePassword } from "../../utils/validation";
+import { AuthStackParamList } from "../../types";
 
-type LoginNavProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
+type LoginNavProp = NativeStackNavigationProp<AuthStackParamList, "Login">;
 
 export function LoginScreen() {
   const navigation = useNavigation<LoginNavProp>();
+  const router = useRouter();
   const { login, isLoading, error, clearError } = useAuthStore();
+  const isBlockedError = error?.toLowerCase().includes("account blocked") || error?.toLowerCase().includes("blocked");
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const validate = (): boolean => {
     const e = validateEmail(email);
     const p = validatePassword(password);
-    setEmailError(e || '');
-    setPasswordError(p || '');
+    setEmailError(e || "");
+    setPasswordError(p || "");
     return !e && !p;
   };
 
@@ -44,7 +48,7 @@ export function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-white"
     >
       <ScrollView
@@ -64,8 +68,18 @@ export function LoginScreen() {
           </View>
 
           {error && (
-            <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
-              <Text className="text-red-700 text-sm">{error}</Text>
+            <View className={`rounded-xl px-4 py-3 mb-4 ${isBlockedError ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'}`}>
+              <Text className={`text-sm ${isBlockedError ? 'text-amber-800' : 'text-red-700'}`}>{error}</Text>
+              {isBlockedError && (
+                <TouchableOpacity
+                  onPress={() => router.push("/(auth)/support")}
+                  className="mt-2"
+                >
+                  <Text className="text-primary-600 text-sm font-semibold underline">
+                    Contact Support
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -75,7 +89,7 @@ export function LoginScreen() {
             value={email}
             onChangeText={(t) => {
               setEmail(t);
-              setEmailError('');
+              setEmailError("");
               clearError();
             }}
             error={emailError}
@@ -89,7 +103,7 @@ export function LoginScreen() {
             value={password}
             onChangeText={(t) => {
               setPassword(t);
-              setPasswordError('');
+              setPasswordError("");
               clearError();
             }}
             error={passwordError}
@@ -97,7 +111,7 @@ export function LoginScreen() {
           />
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('ForgotPassword')}
+            onPress={() => navigation.navigate("ForgotPassword")}
             className="self-end mb-6"
           >
             <Text className="text-primary-600 text-sm font-medium">
@@ -113,8 +127,10 @@ export function LoginScreen() {
           />
 
           <View className="flex-row justify-center mt-6 mb-4">
-            <Text className="text-gray-500 text-sm">Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text className="text-gray-500 text-sm">
+              Don't have an account?{" "}
+            </Text>
+            <TouchableOpacity onPress={() => navigation.navigate("Register")}>
               <Text className="text-primary-600 text-sm font-semibold">
                 Create one
               </Text>

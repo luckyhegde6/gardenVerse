@@ -1,12 +1,12 @@
-import React from 'react';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
-import { useWeather } from '../../hooks/useWeather';
-import { WeatherCard } from '../../components/weather/WeatherCard';
-import { ForecastCard } from '../../components/weather/ForecastCard';
-import { WeatherAlert } from '../../components/weather/WeatherAlert';
-import { Card } from '../../components/ui/Card';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { EmptyState } from '../../components/ui/EmptyState';
+import React from "react";
+import { View, Text, ScrollView, RefreshControl } from "react-native";
+import { useWeather } from "../../hooks/useWeather";
+import { WeatherCard } from "../../components/weather/WeatherCard";
+import { ForecastCard } from "../../components/weather/ForecastCard";
+import { WeatherAlert } from "../../components/weather/WeatherAlert";
+import { Card } from "../../components/ui/Card";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import { EmptyState } from "../../components/ui/EmptyState";
 
 export function WeatherScreen() {
   const { weather, isLoading, error, refresh } = useWeather();

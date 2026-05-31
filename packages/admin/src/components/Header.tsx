@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
+import Link from 'next/link'
 import {
   Bell,
   Search,
@@ -13,22 +14,39 @@ import {
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
+import api from '@/lib/api'
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/users': 'User Management',
+  '/support': 'Support Tickets',
   '/moderation': 'Moderation Queue',
   '/marketplace': 'Marketplace',
   '/analytics': 'Analytics',
   '/features': 'Feature Flags',
   '/invites': 'Invite Management',
   '/campaigns': 'Campaigns',
+  '/onboarding': 'Getting Started',
+  '/monitoring': 'System Monitoring',
 }
 
 export function Header() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
   const [showSearch, setShowSearch] = useState(false)
+  const [openTickets, setOpenTickets] = useState(0)
+
+  useEffect(() => {
+    const fetchOpenCount = async () => {
+      try {
+        const res = await api.get('/admin/tickets/open-count')
+        setOpenTickets(res.data || 0)
+      } catch {}
+    }
+    fetchOpenCount()
+    const interval = setInterval(fetchOpenCount, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   const title = Object.entries(pageTitles).find(([path]) => pathname.startsWith(path))?.[1] || 'Admin'
 
@@ -57,10 +75,17 @@ export function Header() {
           />
         </div>
 
-        <button className="relative p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">
+        <Link
+          href="/support"
+          className="relative p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+        >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-slate-950" />
-        </button>
+          {openTickets > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-slate-950 px-1">
+              {openTickets > 99 ? '99+' : openTickets}
+            </span>
+          )}
+        </Link>
 
         <DropdownMenu.Root>
           <DropdownMenu.Trigger className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-slate-800 transition-colors">

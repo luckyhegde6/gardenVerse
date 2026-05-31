@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Group } from '../../types';
-import { Avatar } from '../ui/Avatar';
-import { Badge } from '../ui/Badge';
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { Group } from "../../types";
+import { Avatar } from "../ui/Avatar";
+import { Badge } from "../ui/Badge";
 
 interface GroupCardProps {
   group: Group;
@@ -17,10 +17,7 @@ export function GroupCard({ group, onPress }: GroupCardProps) {
       activeOpacity={0.7}
     >
       <View className="flex-row items-start">
-        <Avatar
-          name={group.name}
-          size="lg"
-        />
+        <Avatar name={group.name} size="lg" />
         <View className="flex-1 ml-3">
           <View className="flex-row items-center justify-between">
             <Text className="text-base font-semibold text-gray-900 flex-1">
@@ -41,7 +38,9 @@ export function GroupCard({ group, onPress }: GroupCardProps) {
             {group.region && (
               <>
                 <Text className="text-xs text-gray-400 ml-3">📍</Text>
-                <Text className="text-xs text-gray-400 ml-1">{group.region}</Text>
+                <Text className="text-xs text-gray-400 ml-1">
+                  {group.region}
+                </Text>
               </>
             )}
           </View>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,42 +6,40 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { validateEmail } from '../../utils/validation';
-import { AuthStackParamList } from '../../types';
-import AuthService from '../../services/auth';
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { validateEmail } from "../../utils/validation";
+import { AuthStackParamList } from "../../types";
+import AuthService from "../../services/auth";
 
 type ForgotPasswordNavProp = NativeStackNavigationProp<
   AuthStackParamList,
-  'ForgotPassword'
+  "ForgotPassword"
 >;
 
 export function ForgotPasswordScreen() {
   const navigation = useNavigation<ForgotPasswordNavProp>();
-  const [email, setEmail] = useState('');
-  const [emailError, setEmailError] = useState('');
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async () => {
     const e = validateEmail(email);
-    setEmailError(e || '');
+    setEmailError(e || "");
     if (e) return;
 
     setIsLoading(true);
-    setError('');
+    setError("");
     try {
       await AuthService.requestPasswordReset({ email });
       setIsSent(true);
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || 'Failed to send reset email'
-      );
+      setError(err.response?.data?.message || "Failed to send reset email");
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +47,7 @@ export function ForgotPasswordScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-white"
     >
       <ScrollView
@@ -58,7 +56,10 @@ export function ForgotPasswordScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View className="flex-1 px-6 py-8">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="mb-6">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="mb-6"
+          >
             <Text className="text-gray-500 text-lg">←</Text>
           </TouchableOpacity>
 
@@ -86,7 +87,7 @@ export function ForgotPasswordScreen() {
               </Text>
               <Button
                 title="Back to Login"
-                onPress={() => navigation.navigate('Login')}
+                onPress={() => navigation.navigate("Login")}
                 variant="outline"
               />
             </View>
@@ -98,7 +99,7 @@ export function ForgotPasswordScreen() {
                 value={email}
                 onChangeText={(t) => {
                   setEmail(t);
-                  setEmailError('');
+                  setEmailError("");
                 }}
                 error={emailError}
                 autoCapitalize="none"
@@ -114,11 +115,9 @@ export function ForgotPasswordScreen() {
 
               <View className="flex-row justify-center mt-6">
                 <Text className="text-gray-500 text-sm">
-                  Remember your password?{' '}
+                  Remember your password?{" "}
                 </Text>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('Login')}
-                >
+                <TouchableOpacity onPress={() => navigation.navigate("Login")}>
                   <Text className="text-primary-600 text-sm font-semibold">
                     Login
                   </Text>

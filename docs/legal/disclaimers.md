@@ -247,5 +247,5 @@ POSSIBILITY OF SUCH DAMAGE.
     These disclaimers may be updated. Continued use after changes constitutes
     acceptance of the updated terms.
 
-For questions about these disclaimers, contact: legal@gardenverse.io
+For questions about these disclaimers, contact: legal@gardenverse.vercel.app
 ```

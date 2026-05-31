@@ -1,108 +1,160 @@
-import React from 'react';
+import React from "react";
 import {
   TouchableOpacity,
   Text,
   ActivityIndicator,
   ViewStyle,
   TextStyle,
-  TouchableOpacityProps,
-} from 'react-native';
+  StyleSheet,
+} from "react-native";
+import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
-type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
+type ButtonSize = "sm" | "md" | "lg";
 
-interface ButtonProps extends TouchableOpacityProps {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  isLoading?: boolean;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+interface ButtonProps {
   title: string;
+  onPress: () => void;
+  isLoading?: boolean;
+  size?: ButtonSize;
+  variant?: ButtonVariant;
+  icon?: string;
+  disabled?: boolean;
+  fullWidth?: boolean;
+  /** @deprecated Use StyleSheet instead of className */
   className?: string;
 }
 
-const variantStyles: Record<ButtonVariant, { container: string; text: string }> =
-  {
-    primary: {
-      container: 'bg-primary-600 active:bg-primary-700',
-      text: 'text-white font-semibold',
-    },
-    secondary: {
-      container: 'bg-earth-500 active:bg-earth-600',
-      text: 'text-white font-semibold',
-    },
-    outline: {
-      container: 'border-2 border-primary-600 bg-transparent active:bg-primary-50',
-      text: 'text-primary-600 font-semibold',
-    },
-    ghost: {
-      container: 'bg-transparent active:bg-gray-100',
-      text: 'text-primary-600 font-semibold',
-    },
-  };
-
-const sizeStyles: Record<ButtonSize, { container: string; text: string }> = {
-  sm: {
-    container: 'px-3 py-2 rounded-lg',
-    text: 'text-sm',
-  },
-  md: {
-    container: 'px-5 py-3 rounded-xl',
-    text: 'text-base',
-  },
-  lg: {
-    container: 'px-6 py-4 rounded-xl',
-    text: 'text-lg',
-  },
-};
-
 export function Button({
-  variant = 'primary',
-  size = 'md',
-  isLoading = false,
-  leftIcon,
-  rightIcon,
   title,
-  disabled,
-  className = '',
-  ...props
+  onPress,
+  isLoading = false,
+  size = "md",
+  variant = "primary",
+  icon,
+  disabled = false,
+  fullWidth = false,
+  className: _className,
 }: ButtonProps) {
-  const vStyles = variantStyles[variant];
-  const sStyles = sizeStyles[size];
   const isDisabled = disabled || isLoading;
+
+  const buttonStyles: ViewStyle[] = [
+    styles.base,
+    size === "sm" && styles.sm,
+    size === "lg" && styles.lg,
+    variant === "primary" && styles.primary,
+    variant === "secondary" && styles.secondary,
+    variant === "outline" && styles.outline,
+    variant === "ghost" && styles.ghost,
+    variant === "danger" && styles.danger,
+    fullWidth && styles.fullWidth,
+    isDisabled && styles.disabled,
+  ].filter(Boolean) as ViewStyle[];
+
+  const textStyles: TextStyle[] = [
+    styles.textBase,
+    variant === "secondary" && styles.textSecondary,
+    (variant === "outline" || variant === "ghost") && styles.textOutlineGhost,
+    variant === "danger" && styles.textDanger,
+    size === "sm" && styles.textSm,
+    size === "lg" && styles.textLg,
+  ].filter(Boolean) as TextStyle[];
 
   return (
     <TouchableOpacity
+      style={buttonStyles}
+      onPress={onPress}
       disabled={isDisabled}
-      className={`
-        flex-row items-center justify-center
-        ${vStyles.container}
-        ${sStyles.container}
-        ${isDisabled ? 'opacity-50' : ''}
-        ${className}
-      `}
-      {...props}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled }}
     >
       {isLoading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'outline' || variant === 'ghost' ? '#16a34a' : '#fff'}
+          color={
+            variant === "outline" || variant === "ghost"
+              ? colors.primary
+              : colors.white
+          }
         />
       ) : (
         <>
-          {leftIcon && <Text className="mr-2">{leftIcon}</Text>}
-          <Text
-            className={`
-              ${vStyles.text}
-              ${sStyles.text}
-              ${isLoading ? 'hidden' : ''}
-            `}
-          >
-            {title}
-          </Text>
-          {rightIcon && <Text className="ml-2">{rightIcon}</Text>}
+          {icon ? <Text style={styles.icon}>{icon}</Text> : null}
+          <Text style={textStyles}>{title}</Text>
         </>
       )}
     </TouchableOpacity>
   );
 }
+
+export default Button;
+
+const styles = StyleSheet.create({
+  base: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: borderRadius.md,
+    height: 52,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  sm: {
+    height: 40,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.sm,
+  },
+  lg: {
+    height: 56,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.md,
+  },
+  fullWidth: {
+    width: "100%",
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  primary: {
+    backgroundColor: colors.primary,
+  },
+  secondary: {
+    backgroundColor: colors.surfaceSecondary,
+  },
+  outline: {
+    backgroundColor: "transparent",
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  ghost: {
+    backgroundColor: "transparent",
+  },
+  danger: {
+    backgroundColor: colors.error,
+  },
+  textBase: {
+    ...typography.button,
+    color: colors.white,
+  },
+  textSecondary: {
+    color: colors.text,
+  },
+  textOutlineGhost: {
+    color: colors.primary,
+  },
+  textDanger: {
+    color: colors.white,
+  },
+  textSm: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  textLg: {
+    fontSize: 18,
+    lineHeight: 22,
+  },
+  icon: {
+    fontSize: 18,
+  },
+});

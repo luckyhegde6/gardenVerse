@@ -109,7 +109,7 @@ export class CropsService {
   }
 
   async update(id: string, userId: string, dto: UpdateCropDto) {
-    const crop = await this.getById(id, userId);
+    await this.getById(id, userId);
     return this.prisma.crop.update({
       where: { id },
       data: dto,

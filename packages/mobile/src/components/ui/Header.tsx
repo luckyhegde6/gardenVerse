@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 interface HeaderProps {
   title: string;
@@ -17,7 +17,7 @@ export function Header({
   rightAction,
   onRightActionPress,
   subtitle,
-  className = '',
+  className = "",
 }: HeaderProps) {
   const navigation = useNavigation();
 

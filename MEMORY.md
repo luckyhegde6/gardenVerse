@@ -4,36 +4,28 @@
 
 ## Current Session
 
-**Date**: May 27, 2026
-**Session ID**: ses-002
-**Focus**: Agent-driven development infrastructure + E2E demo system + Production debugging tools
+**Date**: June 1, 2026
+**Session ID**: ses-005
+**Focus**: Vercel Deploy + CI/CD + EAS Build + Gamification Docs + Documentation Refresh
 
 ### Active Context
 
-- **Phase 1 (Initial Build - Session 1)**: Created 334 files across 8 major components. Agent-based architecture with 7 specialized agents + orchestrator. Event-driven communication via EventEmitter (future: BullMQ extraction).
-- **Phase 2 (API Integrations - Session 1)**: Replaced all simulated/mocked data with real APIs:
-  - OpenWeatherMap for weather, Google Maps for geospatial, OpenFarm/Trefle for plants
-  - Prisma schema with PlantSpecies, CropVariety, GardenPlan models
-  - VisionAgent now calls Python AI service, falls back to mock
-  - UploadModule with file validation, PlantsModule with search/cron sync
-- **Phase 3 (E2E Demo System - Session 1)**: Automated demo generation with Playwright:
-  - 8 workflow screenshot capture, 7 screen recordings
-  - HTML animated pages with keyboard nav, auto-play
-  - Vercel deploy test pipeline
-- **Phase 4 (Dev Infrastructure - This Session)**: Agent-driven development setup:
-  - `.opencode/` directory with config, MCP, 5 agent profiles, plan templates
-  - 8 PowerShell scripts: docker-local, docker-prod-debug, health-check, db-diagnostic, reset-db, run-migrations, stop-all
-  - `.env.local.example` for local dev with clear API key documentation
-  - Sequence diagrams (10 Mermaid diagrams documenting all major workflows)
-  - Support docs: FAQ, troubleshooting guide
-  - `.opencode/RULES.md` with mandatory agentic development rules
-  - `package.json` updated with 7 new script commands
+- **Phase 5 (This Session — Vercel Deploy + CI/CD + EAS + Docs)**:
+  - Admin dashboard deployed to Vercel: https://gardenverse.vercel.app (31/31 routes)
+  - CI/CD workflows created: admin-deploy.yml (Vercel cloud build + post-deploy verify), backend-deploy.yml (Railway)
+  - Post-deploy verification scripts: verify-deployment.sh + .ps1
+  - EAS Build fully configured: project initialized (ID: `5c01de7d`), app.json → app.config.js conversion, expo-dev-client installed, 5 dependency version mismatches fixed, @types/react-native removed
+  - Android dev APK submitted to EAS cloud build
+  - Gamification flow guide created: `docs/architecture/gamification-flow.md`
+  - Sentry re-enabled via instrumentation.ts (v10+ pattern — no withSentryConfig wrapper)
+  - Swagger API docs link added to admin sidebar
+  - AGENTS.md/MEMORY.md/lessons-learned.md/docs/api/README.md all refreshed
 
 ### Open Questions
 
-- Need to run full E2E demo generation (backend re-started)
-- IoT simulator needs actual MQTT broker for testing
-- Prisma migration status: 1 migration applied (`20260527003948_init`)
+- EAS cloud build is still running (was queued during partial outage) — check status
+- Railway deploy not yet done — blocks full admin API functionality and NEXT_PUBLIC_API_URL
+- `expo-doctor` network check #17 fails behind proxy — need to verify on clean network
 
 ### Active Specs
 
@@ -41,94 +33,127 @@
 
 ### Recent Decisions
 
-- ADR-001: Adopted EventEmitter2 pattern for in-process agent communication
-  - Rationale: Simplest path for monolith, BullMQ queues ready for future extraction
-  - Trade-off: In-process events don't survive process restart
-- ADR-002: Each agent has independent scaling config in AGENT_CONFIGS
-  - Rationale: Enables per-service scaling when extracting to microservices
-- ADR-003: `.opencode/` structure mirrors homeGallery reference architecture
-  - Rationale: Proven pattern for multi-agent development with MCP tooling
-  - Decision: agents/ for subagent profiles, plans/ for templates, opencode.json for config
+- **ADR-004**: Use `instrumentation.ts` pattern for Sentry instead of `withSentryConfig` wrapper
+  - Rationale: `withSentryConfig` breaks `@vercel/next` builder on both local and cloud builds
+  - Trade-off: No Sentry source map uploads during build (manual upload via CI instead)
+  - Status: ✅ Applied (wrote `packages/admin/src/instrumentation.ts`)
+- **ADR-005**: Use `app.config.js` with JS expressions instead of raw `app.json`
+  - Rationale: `app.json` doesn't support `process.env`; `app.config.js` enables env var injection at build time
+  - Trade-off: Slightly more complex config, but enables per-environment API URLs and secrets
+  - Status: ✅ Applied (converted `packages/mobile/app.json` → `app.config.js`)
+- **ADR-006**: Use cloud build (`vercel deploy --prod --yes`) for Vercel deploys
+  - Rationale: `vercel build` (local) has `NEXT_MISSING_LAMBDA` bug with `@vercel/next` builder + Next.js 14.2.29
+  - Trade-off: Slower deploy (must upload to Vercel first), but reliable
+  - Status: ✅ Applied in CI/CD workflows and deploy scripts
 
 ### Key Numbers
 
-- 370+ total source files
-- 7 specialized agents implemented
-- 30+ event types defined
-- 50+ typed event payloads
-- 22 NestJS backend modules
-- 16 React Native screens
-- 8 Solidity smart contracts
-- 8 new PowerShell scripts this session
-- 10 sequence diagrams created
-- 5 agent subagent profiles (.opencode/agents/)
+- **Admin**: 31/31 routes live on Vercel
+- **Backend**: 24 NestJS modules, 30+ event types, 7 agents
+- **Mobile**: 23 Expo Router screens, 5 bottom tabs, EAS project live
+- **Contracts**: 8 Solidity contracts, 41 Hardhat tests passing
+- **E2E**: 48 Playwright tests, 8 workflow screenshot modules
+- **Docs**: 35+ markdown files across 8 doc categories
+- **Scripts**: 12+ PowerShell scripts, 2 bash scripts
+- **Workflows**: 3 CI/CD workflows (admin-deploy, backend-deploy, mobile)
 
 ## Previous Sessions
 
-### Session 1 (May 27, 2026)
-- **Focus**: Initial build + API integrations + E2E demo system
-- **Files**: 334 files created across 8 major components
-- **APIs**: OpenWeatherMap, Google Maps, OpenFarm/Trefle integrated
-- **Agents**: 7 specialized agents (Gameplay, Weather, IoT, Vision, Marketplace, Safety, Recommendation)
-- **Prisma**: Full schema with 20+ models including PlantSpecies, GardenPlan, CropVariety
-- **E2E**: Playwright screenshot system for 8 workflows + 7 recordings
-- **Deploy**: Vercel deploy test pipeline
+### Session 4 (Backend Stability + E2E Full Pass)
+- Fixed backend `main.ts`: unhandledRejection, uncaughtException handlers
+- Created `scripts/start-backend.ps1` — robust startup with port cleanup, health check
+- Fixed 3 flaky E2E tests (admin, invites — waitUntil, toBeVisible)
+- 48/48 E2E tests passing against live backend with real seeded data
+- Verified all admin APIs return real data (dashboard, marketplace, features, weather, analytics)
+
+### Session 3 (E2E Testing + Config Fixes)
+- Fixed MCP configs, created module-by-module E2E runner (8 modules)
+- Created `.opencode/skills/e2e-testing.md`
+- Installed Playwright CLI 1.60.0 + MCP 0.0.75
+- 28 E2E screenshots across 8 modules, HTML gallery generated
+- Contracts: 41/41 Hardhat tests passing
+
+### Session 2 (Dev Infrastructure + Docs)
+- `.opencode/` with 5 agent profiles, plan templates, MCP config, RULES.md
+- 8 PowerShell scripts for Docker, DB, health check
+- 10 Mermaid sequence diagrams, FAQ, troubleshooting guide
+
+### Session 1 (Initial Build)
+- 334 files across 8 components, 7 agents, 30+ event types
+- 22 NestJS modules, 16 React Native screens, 8 Solidity contracts
+- Prisma schema (20+ models), E2E Playwright screenshot system
 
 ## Agent Status
 
-| Agent | Status | Events Processed | Errors |
-|-------|--------|-----------------|--------|
-| AgentOrchestrator | LISTENING | - | - |
-| GameplayAgent | LISTENING | 0 | 0 |
-| WeatherAgent | LISTENING | 0 | 0 |
-| IotAgent | LISTENING | 0 | 0 |
-| VisionAgent | LISTENING | 0 | 0 |
-| MarketplaceAgent | LISTENING | 0 | 0 |
-| SafetyAgent | LISTENING | 0 | 0 |
-| RecommendationAgent | LISTENING | 0 | 0 |
+| Agent | Status | Notes |
+|-------|--------|-------|
+| AgentOrchestrator | LISTENING | Event bus routing all 7 agents |
+| GameplayAgent | LISTENING | Gamification events (plant/harvest/streak) |
+| WeatherAgent | LISTENING | Cron-driven, HTTP emitter |
+| IotAgent | LISTENING | MQTT-driven, HTTP emitter |
+| VisionAgent | LISTENING | Calls AI service + mock fallback |
+| MarketplaceAgent | LISTENING | Listing/purchase/escrow events |
+| SafetyAgent | LISTENING | Moderation/reputation events |
+| RecommendationAgent | LISTENING | Plant/crop recommendations |
 
 ## Next Actions
 
-1. Restart backend and run E2E demo screenshots/recordings
-2. Verify TypeScript compilation of agent framework
-3. Run E2E tests against backend with Playwright
-4. Start IoT simulator for sensor integration testing
-5. Write integration tests for agent event flows
-6. Deploy smart contracts to testnet
+1. Deploy backend to Railway (blocks full admin functionality)
+2. Set NEXT_PUBLIC_API_URL on Vercel (depends on Railway deploy)
+3. Deploy AI service to Railway
+4. Check EAS build status and download APK
+5. Run full E2E workflows against live Vercel deployment
+6. Re-enable Sentry source map uploads in CI
+7. Write backend Jest unit tests for critical services
 
 ## File Map
 
 ```
-.opencode/
-  opencode.json              # Main opencode config with 5 agent profiles
-  mcp.json                   # MCP servers (Docker, Playwright, GitHub, Postgres, Git)
-  RULES.md                   # Agentic development rules (mandatory)
-  agents/
-    backend-dev.md           # NestJS backend subagent profile
-    mobile-dev.md            # React Native mobile subagent profile
-    admin-dev.md             # Next.js admin subagent profile
-    testing.md               # Playwright/Jest testing subagent profile
-    devops.md                # Docker/CI/CD devops subagent profile
-  plans/
-    feature-template.md      # Feature implementation plan template
-    fix-template.md          # Bug fix plan template
-    release-template.md      # Release checklist template
+.github/workflows/
+  admin-deploy.yml       # Vercel admin deploy (cloud build + verify)
+  backend-deploy.yml     # Railway backend deploy (migrate + deploy)
+  mobile.yml             # EAS Build for mobile
+  admin.yml              # Old: lint + build only (superseded by admin-deploy.yml)
+  backend.yml            # Old: lint + test + build only (superseded by backend-deploy.yml)
+  contracts.yml          # Hardhat compile + test
+
+packages/
+  admin/                 # Next.js 14 admin dashboard (Vercel)
+    src/
+      app/               # 31 routes
+      components/
+        Sidebar.tsx      # Has Swagger API Docs link
+      instrumentation.ts # Sentry v10+ runtime init
+    sentry.client.config.ts
+    sentry.server.config.ts
+    sentry.edge.config.ts
+  backend/               # NestJS API (Railway)
+    src/modules/         # 24 modules with Swagger decorators
+      gamification/      # XP, levels, mastery, collections, hybrids, achievements
+    prisma/              # Schema with 30+ models
+  mobile/                # Expo SDK 51 (EAS Build)
+      app.config.js        # Dynamic config with env vars
+    eas.json             # Build profiles: dev/preview/production
+    .eas/workflows/      # 3 EAS workflows (build, dev-build, ota-update)
+    app/                 # Expo Router (23 screens, 5 tabs)
+
+contracts/               # 8 Solidity contracts (Hardhat)
+  contracts/
+    tokens/              # GreenCreditToken, EcoPointToken, ReputationToken, InviteToken
+    marketplace/         # Marketplace, Escrow
+    reputation/          # ReputationManager, RewardDistributor
 
 scripts/
-  docker-local.ps1           # Start local dev (Docker + optional apps)
-  docker-prod-debug.ps1      # Run locally with Supabase production DB
-  health-check.ps1           # Full service health check
-  db-diagnostic.ps1          # Database inspection + repair
-  reset-db.ps1               # Drop + recreate + seed database
-  run-migrations.ps1         # Apply Prisma migrations
-  stop-all.ps1               # Stop Docker + Node apps
-  vercel-deploy-test.ps1     # Full Vercel deploy pipeline (existing)
-  seed-data.js               # Database seed data
+  verify-deployment.sh   # Admin + backend + cross-service checks (bash)
+  verify-deployment.ps1  # Same for PowerShell
 
 docs/
   architecture/
-    sequence-diagrams.md     # 10 Mermaid diagrams for all workflows
-  support/
-    faq.md                   # Frequently asked questions
-    troubleshooting.md       # Common issues and solutions
+    gamification-flow.md # NEW: Complete gamification guide + EAS publishing
+  deployment/
+    production-deployment.md # Full production deployment guide
+  improvements/
+    lessons-learned.md   # Session 5 entries added
+  api/
+    README.md            # Updated with gamification endpoints
 ```

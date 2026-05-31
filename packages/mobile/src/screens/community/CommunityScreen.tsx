@@ -1,34 +1,65 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { GroupCard } from '../../components/community/GroupCard';
-import { CommunityStackParamList } from '../../types';
+import React from "react";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Card } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/Badge";
+import { GroupCard } from "../../components/community/GroupCard";
+import { CommunityStackParamList } from "../../types";
 
 type CommunityNavProp = NativeStackNavigationProp<
   CommunityStackParamList,
-  'CommunityHome'
+  "CommunityHome"
 >;
 
 export function CommunityScreen() {
   const navigation = useNavigation<CommunityNavProp>();
 
   const mockGroups = [
-    { id: '1', name: 'SF Bay Gardeners', description: 'Local gardening community in the Bay Area', type: 'REGIONAL', region: 'California', memberCount: 234 },
-    { id: '2', name: 'Organic Farmers United', description: 'Sharing organic farming tips and resources', type: 'TOPIC', memberCount: 1567 },
-    { id: '3', name: 'Seed Swappers', description: 'Trade seeds with gardeners worldwide', type: 'TOPIC', memberCount: 892 },
-    { id: '4', name: 'Urban Garden Collective', description: 'Gardening in small spaces', type: 'REGIONAL', region: 'Global', memberCount: 3451 },
+    {
+      id: "1",
+      name: "SF Bay Gardeners",
+      description: "Local gardening community in the Bay Area",
+      type: "REGIONAL",
+      region: "California",
+      memberCount: 234,
+    },
+    {
+      id: "2",
+      name: "Organic Farmers United",
+      description: "Sharing organic farming tips and resources",
+      type: "TOPIC",
+      memberCount: 1567,
+    },
+    {
+      id: "3",
+      name: "Seed Swappers",
+      description: "Trade seeds with gardeners worldwide",
+      type: "TOPIC",
+      memberCount: 892,
+    },
+    {
+      id: "4",
+      name: "Urban Garden Collective",
+      description: "Gardening in small spaces",
+      type: "REGIONAL",
+      region: "Global",
+      memberCount: 3451,
+    },
   ];
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      className="flex-1 bg-gray-50"
+      showsVerticalScrollIndicator={false}
+    >
       {/* Find Nearby Gardeners */}
       <Card className="mx-4 mt-4 bg-primary-800 mb-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-1">
-            <Text className="text-white text-lg font-bold">Find Nearby Gardeners</Text>
+            <Text className="text-white text-lg font-bold">
+              Find Nearby Gardeners
+            </Text>
             <Text className="text-primary-200 text-sm mt-1">
               Connect with gardeners in your area
             </Text>
@@ -44,13 +75,15 @@ export function CommunityScreen() {
         <View className="flex-row justify-between items-center mb-3">
           <Text className="text-lg font-bold text-gray-900">Leaderboard</Text>
           <TouchableOpacity>
-            <Text className="text-primary-600 text-sm font-medium">See All</Text>
+            <Text className="text-primary-600 text-sm font-medium">
+              See All
+            </Text>
           </TouchableOpacity>
         </View>
         {[
-          { rank: 1, name: 'GreenMaster', score: 15420, avatar: '🌿' },
-          { rank: 2, name: 'EcoWarrior', score: 12380, avatar: '🌍' },
-          { rank: 3, name: 'SeedKing', score: 10950, avatar: '🌱' },
+          { rank: 1, name: "GreenMaster", score: 15420, avatar: "🌿" },
+          { rank: 2, name: "EcoWarrior", score: 12380, avatar: "🌍" },
+          { rank: 3, name: "SeedKing", score: 10950, avatar: "🌱" },
         ].map((entry) => (
           <View
             key={entry.rank}
@@ -109,7 +142,7 @@ export function CommunityScreen() {
             key={group.id}
             group={group}
             onPress={() =>
-              navigation.navigate('GroupDetail', { groupId: group.id })
+              navigation.navigate("GroupDetail", { groupId: group.id })
             }
           />
         ))}

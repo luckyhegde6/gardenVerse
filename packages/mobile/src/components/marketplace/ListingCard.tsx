@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { MarketplaceListing } from '../../types';
-import { Avatar } from '../ui/Avatar';
-import { Badge } from '../ui/Badge';
-import { formatRelativeTime } from '../../utils/formatting';
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { MarketplaceListing } from "../../types";
+import { Avatar } from "../ui/Avatar";
+import { Badge } from "../ui/Badge";
+import { formatRelativeTime } from "../../utils/formatting";
 
 interface ListingCardProps {
   listing: MarketplaceListing;
@@ -24,7 +24,10 @@ export function ListingCard({ listing, onPress }: ListingCardProps) {
         </Text>
       </View>
 
-      <Text className="text-base font-semibold text-gray-900 mb-1" numberOfLines={2}>
+      <Text
+        className="text-base font-semibold text-gray-900 mb-1"
+        numberOfLines={2}
+      >
         {listing.title}
       </Text>
 
@@ -50,9 +53,7 @@ export function ListingCard({ listing, onPress }: ListingCardProps) {
           <Text className="text-lg font-bold text-primary-700">
             {listing.price} {listing.currency}
           </Text>
-          <Text className="text-xs text-gray-400">
-            Qty: {listing.quantity}
-          </Text>
+          <Text className="text-xs text-gray-400">Qty: {listing.quantity}</Text>
         </View>
       </View>
     </TouchableOpacity>

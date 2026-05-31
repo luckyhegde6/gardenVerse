@@ -58,7 +58,7 @@ export const authOptions: AuthOptions = {
     strategy: 'jwt',
     maxAge: 8 * 60 * 60,
   },
-  secret: process.env.NEXTAUTH_SECRET || 'gardenverse-admin-secret-change-in-production',
+  secret: process.env.NEXTAUTH_SECRET,
 }
 
 export function isAdmin(role?: string): boolean {

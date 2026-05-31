@@ -1,12 +1,12 @@
-import React from 'react';
-import { TouchableOpacity, Text, View } from 'react-native';
+import React from "react";
+import { TouchableOpacity, Text, View } from "react-native";
 
 interface ChipProps {
   label: string;
   selected?: boolean;
   onPress?: () => void;
-  variant?: 'filled' | 'outlined';
-  size?: 'sm' | 'md';
+  variant?: "filled" | "outlined";
+  size?: "sm" | "md";
   leftIcon?: React.ReactNode;
   className?: string;
 }
@@ -15,28 +15,29 @@ export function Chip({
   label,
   selected = false,
   onPress,
-  variant = 'filled',
-  size = 'md',
+  variant = "filled",
+  size = "md",
   leftIcon,
-  className = '',
+  className = "",
 }: ChipProps) {
-  const isFilled = variant === 'filled';
+  const isFilled = variant === "filled";
 
   const containerStyle = selected
     ? isFilled
-      ? 'bg-primary-600 border-primary-600'
-      : 'bg-primary-50 border-primary-600'
+      ? "bg-primary-600 border-primary-600"
+      : "bg-primary-50 border-primary-600"
     : isFilled
-    ? 'bg-gray-100 border-gray-200'
-    : 'bg-transparent border-gray-300';
+      ? "bg-gray-100 border-gray-200"
+      : "bg-transparent border-gray-300";
 
   const textStyle = selected
     ? isFilled
-      ? 'text-white'
-      : 'text-primary-700'
-    : 'text-gray-600';
+      ? "text-white"
+      : "text-primary-700"
+    : "text-gray-600";
 
-  const sizeStyle = size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm';
+  const sizeStyle =
+    size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm";
 
   return (
     <TouchableOpacity

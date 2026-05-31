@@ -24,6 +24,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "App.tsx", "nativewind-env.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "app/**/*.{ts,tsx}", "nativewind-env.d.ts"],
   "exclude": ["node_modules", "babel.config.js", "tailwind.config.js"]
 }

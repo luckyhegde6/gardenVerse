@@ -1,37 +1,53 @@
-import React from 'react';
-import { View, ActivityIndicator, Text } from 'react-native';
+import React from "react";
+import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { colors, spacing, typography } from "../../styles/theme";
 
 interface LoadingSpinnerProps {
-  size?: 'small' | 'large';
-  color?: string;
-  message?: string;
   fullScreen?: boolean;
+  message?: string;
+  size?: "small" | "large";
+  color?: string;
+  /** @deprecated Use StyleSheet instead of className */
   className?: string;
 }
 
 export function LoadingSpinner({
-  size = 'large',
-  color = '#16a34a',
-  message,
   fullScreen = false,
-  className = '',
+  message,
+  size = "large",
+  color = colors.primary,
+  className: _className,
 }: LoadingSpinnerProps) {
   const content = (
-    <View className={`items-center justify-center ${className}`}>
+    <View style={styles.content}>
       <ActivityIndicator size={size} color={color} />
-      {message && (
-        <Text className="text-gray-500 text-sm mt-3">{message}</Text>
-      )}
+      {message ? <Text style={styles.message}>{message}</Text> : null}
     </View>
   );
 
   if (fullScreen) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white">
-        {content}
-      </View>
-    );
+    return <View style={styles.fullScreen}>{content}</View>;
   }
 
   return content;
 }
+
+export default LoadingSpinner;
+
+const styles = StyleSheet.create({
+  fullScreen: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+  },
+  content: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  message: {
+    ...typography.bodySmall,
+    marginTop: spacing.md,
+    textAlign: "center",
+  },
+});

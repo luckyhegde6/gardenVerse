@@ -105,9 +105,9 @@ export function DataTable<T extends Record<string, unknown>>({
         <table className="w-full">
           <thead>
             <tr className="bg-slate-900/80">
-              {columns.map(col => (
+              {columns.map((col, i) => (
                 <th
-                  key={col.key}
+                  key={`${col.key}-${i}`}
                   className={cn(
                     'table-header',
                     col.sortable && 'cursor-pointer select-none hover:text-slate-200',
@@ -127,8 +127,8 @@ export function DataTable<T extends Record<string, unknown>>({
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="table-row">
-                  {columns.map(col => (
-                    <td key={col.key} className="table-cell">
+                  {columns.map((col, j) => (
+                    <td key={`${col.key}-${j}`} className="table-cell">
                       <div className="h-4 w-24 rounded bg-slate-800/50 animate-pulse" />
                     </td>
                   ))}
@@ -150,8 +150,8 @@ export function DataTable<T extends Record<string, unknown>>({
                   )}
                   onClick={() => onRowClick?.(item)}
                 >
-                  {columns.map(col => (
-                    <td key={col.key} className="table-cell">
+                  {columns.map((col, j) => (
+                    <td key={`${col.key}-${j}`} className="table-cell">
                       {col.render ? col.render(item) : String(item[col.key] ?? '')}
                     </td>
                   ))}

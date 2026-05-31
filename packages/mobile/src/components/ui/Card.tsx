@@ -1,45 +1,71 @@
-import React from 'react';
-import { View, TouchableOpacity, ViewProps } from 'react-native';
+import React from "react";
+import { View, TouchableOpacity, ViewStyle, StyleSheet } from "react-native";
+import { colors, spacing, borderRadius, shadows } from "../../styles/theme";
 
-interface CardProps extends ViewProps {
-  onPress?: () => void;
-  elevated?: boolean;
-  padded?: boolean;
+type CardVariant = "default" | "elevated";
+type CardPadding = "sm" | "md" | "lg";
+
+interface CardProps {
+  children: React.ReactNode;
+  variant?: CardVariant;
+  padding?: CardPadding;
+  style?: ViewStyle;
+  /** @deprecated Use StyleSheet instead of className */
   className?: string;
+  onPress?: () => void;
 }
 
 export function Card({
   children,
-  onPress,
-  elevated = true,
-  padded = true,
-  className = '',
+  variant = "default",
+  padding = "md",
   style,
-  ...props
+  className: _className,
+  onPress,
 }: CardProps) {
-  const baseStyles = `
-    bg-white rounded-2xl
-    ${elevated ? 'shadow-sm' : ''}
-    ${padded ? 'p-4' : ''}
-    ${className}
-  `;
+  const cardStyles: ViewStyle[] = [
+    styles.base,
+    variant === "elevated" && styles.elevated,
+    padding === "sm" && styles.paddingSm,
+    padding === "lg" && styles.paddingLg,
+    style,
+  ].filter(Boolean) as ViewStyle[];
+
+  const content = <>{children}</>;
 
   if (onPress) {
     return (
       <TouchableOpacity
+        style={cardStyles}
         onPress={onPress}
-        className={baseStyles}
         activeOpacity={0.7}
-        {...(props as any)}
+        accessibilityRole="button"
       >
-        {children}
+        {content}
       </TouchableOpacity>
     );
   }
 
-  return (
-    <View className={baseStyles} style={style} {...props}>
-      {children}
-    </View>
-  );
+  return <View style={cardStyles}>{content}</View>;
 }
+
+export default Card;
+
+const styles = StyleSheet.create({
+  base: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    ...shadows.sm,
+  },
+  elevated: {
+    borderRadius: borderRadius.lg,
+    ...shadows.lg,
+  },
+  paddingSm: {
+    padding: spacing.sm,
+  },
+  paddingLg: {
+    padding: spacing.lg,
+  },
+});

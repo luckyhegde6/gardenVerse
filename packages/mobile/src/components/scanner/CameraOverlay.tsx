@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React from "react";
+import { View, Text } from "react-native";
 
 interface CameraOverlayProps {
   isScanning: boolean;
@@ -24,7 +24,7 @@ export function CameraOverlay({ isScanning }: CameraOverlayProps) {
       </View>
       <View className="flex-1 bg-black/40 items-center pt-6">
         <Text className="text-white text-sm font-medium">
-          {isScanning ? 'Analyzing plant...' : 'Align plant in frame'}
+          {isScanning ? "Analyzing plant..." : "Align plant in frame"}
         </Text>
       </View>
     </View>

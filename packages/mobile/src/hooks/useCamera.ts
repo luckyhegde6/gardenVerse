@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
-import * as ImagePicker from 'expo-image-picker';
-import { Camera } from 'expo-camera';
-import { ensurePermission } from '../utils/permissions';
+import { useState, useCallback } from "react";
+import * as ImagePicker from "expo-image-picker";
+import { Camera } from "expo-camera";
+import { ensurePermission } from "../utils/permissions";
 
 interface UseCameraReturn {
   hasPermission: boolean | null;
@@ -21,7 +21,7 @@ export function useCamera(): UseCameraReturn {
   const [error, setError] = useState<string | null>(null);
 
   const requestPermission = useCallback(async () => {
-    const result = await ensurePermission('camera');
+    const result = await ensurePermission("camera");
     setHasPermission(result);
     return result;
   }, []);
@@ -31,9 +31,9 @@ export function useCamera(): UseCameraReturn {
     setError(null);
 
     try {
-      const hasCamPermission = await ensurePermission('camera');
+      const hasCamPermission = await ensurePermission("camera");
       if (!hasCamPermission) {
-        setError('Camera permission denied');
+        setError("Camera permission denied");
         return null;
       }
 
@@ -51,7 +51,7 @@ export function useCamera(): UseCameraReturn {
       }
       return null;
     } catch (err: any) {
-      setError(err.message || 'Failed to capture photo');
+      setError(err.message || "Failed to capture photo");
       return null;
     } finally {
       setIsCapturing(false);
@@ -63,9 +63,9 @@ export function useCamera(): UseCameraReturn {
     setError(null);
 
     try {
-      const hasGalleryPermission = await ensurePermission('gallery');
+      const hasGalleryPermission = await ensurePermission("gallery");
       if (!hasGalleryPermission) {
-        setError('Gallery permission denied');
+        setError("Gallery permission denied");
         return null;
       }
 
@@ -83,7 +83,7 @@ export function useCamera(): UseCameraReturn {
       }
       return null;
     } catch (err: any) {
-      setError(err.message || 'Failed to pick image');
+      setError(err.message || "Failed to pick image");
       return null;
     } finally {
       setIsCapturing(false);

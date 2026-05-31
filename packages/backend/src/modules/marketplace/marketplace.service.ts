@@ -74,7 +74,9 @@ export class MarketplaceService {
       this.prisma.marketplaceListing.count({ where }),
     ]);
 
-    return { items, total, limit, offset };
+    const page = Math.floor(offset / limit) + 1;
+    const totalPages = Math.ceil(total / limit);
+    return { listings: items, total, page, totalPages, limit, offset };
   }
 
   async getListingById(id: string) {

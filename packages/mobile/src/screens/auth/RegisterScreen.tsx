@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,40 +6,44 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { useAuthStore } from '../../stores/authStore';
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { useAuthStore } from "../../stores/authStore";
 import {
   validateEmail,
   validatePassword,
   validateUsername,
   validateConfirmPassword,
   validateInviteCode,
-} from '../../utils/validation';
+} from "../../utils/validation";
+import { AuthStackParamList } from "../../types";
+
+type RegisterNavProp = NativeStackNavigationProp<AuthStackParamList, "Register">;
 
 export function RegisterScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<RegisterNavProp>();
   const { register, isLoading, error, clearError } = useAuthStore();
 
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {
-      username: validateUsername(username) || '',
-      email: validateEmail(email) || '',
-      password: validatePassword(password) || '',
-      confirmPassword: validateConfirmPassword(password, confirmPassword) || '',
-      inviteCode: inviteCode ? validateInviteCode(inviteCode) || '' : '',
-      terms: acceptTerms ? '' : 'You must accept the terms',
+      username: validateUsername(username) || "",
+      email: validateEmail(email) || "",
+      password: validatePassword(password) || "",
+      confirmPassword: validateConfirmPassword(password, confirmPassword) || "",
+      inviteCode: inviteCode ? validateInviteCode(inviteCode) || "" : "",
+      terms: acceptTerms ? "" : "You must accept the terms",
     };
     setErrors(newErrors);
     return Object.values(newErrors).every((e) => !e);
@@ -55,26 +59,27 @@ export function RegisterScreen() {
         password,
         inviteCode: inviteCode || undefined,
       });
+      navigation.navigate('OTPVerify', { email });
     } catch {}
   };
 
   const updateField = (field: string, value: string) => {
-    setErrors((prev) => ({ ...prev, [field]: '' }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
     clearError();
     switch (field) {
-      case 'username':
+      case "username":
         setUsername(value);
         break;
-      case 'email':
+      case "email":
         setEmail(value);
         break;
-      case 'password':
+      case "password":
         setPassword(value);
         break;
-      case 'confirmPassword':
+      case "confirmPassword":
         setConfirmPassword(value);
         break;
-      case 'inviteCode':
+      case "inviteCode":
         setInviteCode(value);
         break;
     }
@@ -82,7 +87,7 @@ export function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-white"
     >
       <ScrollView
@@ -91,7 +96,10 @@ export function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View className="flex-1 px-6 py-8">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="mb-6">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="mb-6"
+          >
             <Text className="text-gray-500 text-lg">←</Text>
           </TouchableOpacity>
 
@@ -112,7 +120,7 @@ export function RegisterScreen() {
             label="Username"
             placeholder="Choose a username"
             value={username}
-            onChangeText={(t) => updateField('username', t)}
+            onChangeText={(t) => updateField("username", t)}
             error={errors.username}
             autoCapitalize="none"
           />
@@ -121,7 +129,7 @@ export function RegisterScreen() {
             label="Email"
             placeholder="Enter your email"
             value={email}
-            onChangeText={(t) => updateField('email', t)}
+            onChangeText={(t) => updateField("email", t)}
             error={errors.email}
             autoCapitalize="none"
             keyboardType="email-address"
@@ -131,7 +139,7 @@ export function RegisterScreen() {
             label="Password"
             placeholder="Min 8 chars, uppercase, lowercase, number"
             value={password}
-            onChangeText={(t) => updateField('password', t)}
+            onChangeText={(t) => updateField("password", t)}
             error={errors.password}
             isPassword
           />
@@ -140,7 +148,7 @@ export function RegisterScreen() {
             label="Confirm Password"
             placeholder="Repeat your password"
             value={confirmPassword}
-            onChangeText={(t) => updateField('confirmPassword', t)}
+            onChangeText={(t) => updateField("confirmPassword", t)}
             error={errors.confirmPassword}
             isPassword
           />
@@ -149,7 +157,7 @@ export function RegisterScreen() {
             label="Invite Code (optional)"
             placeholder="Enter invite code"
             value={inviteCode}
-            onChangeText={(t) => updateField('inviteCode', t)}
+            onChangeText={(t) => updateField("inviteCode", t)}
             error={errors.inviteCode}
             autoCapitalize="characters"
           />
@@ -161,8 +169,8 @@ export function RegisterScreen() {
             <View
               className={`w-5 h-5 rounded border-2 items-center justify-center ${
                 acceptTerms
-                  ? 'bg-primary-600 border-primary-600'
-                  : 'border-gray-300'
+                  ? "bg-primary-600 border-primary-600"
+                  : "border-gray-300"
               }`}
             >
               {acceptTerms && <Text className="text-white text-xs">✓</Text>}
@@ -172,7 +180,9 @@ export function RegisterScreen() {
             </Text>
           </TouchableOpacity>
           {errors.terms && (
-            <Text className="text-red-500 text-xs -mt-4 mb-4">{errors.terms}</Text>
+            <Text className="text-red-500 text-xs -mt-4 mb-4">
+              {errors.terms}
+            </Text>
           )}
 
           <Button
@@ -184,7 +194,7 @@ export function RegisterScreen() {
 
           <View className="flex-row justify-center mt-6">
             <Text className="text-gray-500 text-sm">
-              Already have an account?{' '}
+              Already have an account?{" "}
             </Text>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text className="text-primary-600 text-sm font-semibold">

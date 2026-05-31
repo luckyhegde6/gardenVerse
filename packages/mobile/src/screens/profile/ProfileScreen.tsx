@@ -1,17 +1,17 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useAuthStore } from '../../stores/authStore';
-import { Avatar } from '../../components/ui/Avatar';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { ProgressBar } from '../../components/ui/ProgressBar';
-import { ProfileStackParamList, UserRole } from '../../types';
+import React from "react";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useAuthStore } from "../../stores/authStore";
+import { Avatar } from "../../components/ui/Avatar";
+import { Card } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/Badge";
+import { ProgressBar } from "../../components/ui/ProgressBar";
+import { ProfileStackParamList, UserRole } from "../../types";
 
 type ProfileNavProp = NativeStackNavigationProp<
   ProfileStackParamList,
-  'ProfileHome'
+  "ProfileHome"
 >;
 
 export function ProfileScreen() {
@@ -21,19 +21,22 @@ export function ProfileScreen() {
   if (!user) return null;
 
   const menuItems = [
-    { icon: '🌱', label: 'My Garden', screen: 'GardenHome' as string },
-    { icon: '🎒', label: 'Inventory', screen: 'Inventory' },
-    { icon: '🏆', label: 'Achievements', screen: 'Achievements' },
-    { icon: '📨', label: 'Invites', screen: 'Invites' },
-    { icon: '⚙️', label: 'Settings', screen: 'Settings' },
+    { icon: "🌱", label: "My Garden", screen: "GardenHome" as string },
+    { icon: "🎒", label: "Inventory", screen: "Inventory" },
+    { icon: "🏆", label: "Achievements", screen: "Achievements" },
+    { icon: "📨", label: "Invites", screen: "Invites" },
+    { icon: "⚙️", label: "Settings", screen: "Settings" },
   ];
 
   if (user.role === UserRole.ADMIN || user.role === UserRole.MODERATOR) {
-    menuItems.push({ icon: '🛡️', label: 'Admin Panel', screen: 'AdminPanel' });
+    menuItems.push({ icon: "🛡️", label: "Admin Panel", screen: "AdminPanel" });
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      className="flex-1 bg-gray-50"
+      showsVerticalScrollIndicator={false}
+    >
       {/* Profile Header */}
       <View className="bg-white items-center py-8 px-4">
         <Avatar
@@ -49,7 +52,13 @@ export function ProfileScreen() {
         <Text className="text-sm text-gray-500">@{user.username}</Text>
         <Badge
           label={user.role}
-          variant={user.role === 'ADMIN' ? 'error' : user.role === 'MODERATOR' ? 'warning' : 'primary'}
+          variant={
+            user.role === "ADMIN"
+              ? "error"
+              : user.role === "MODERATOR"
+                ? "warning"
+                : "primary"
+          }
           className="mt-2"
         />
       </View>
@@ -69,9 +78,21 @@ export function ProfileScreen() {
 
       {/* Stats Grid */}
       <View className="flex-row flex-wrap px-4 mt-4 gap-3">
-        <StatCard icon="💰" label="Green Credits" value={user.greenCredits.toString()} />
-        <StatCard icon="♻️" label="Eco Points" value={user.ecoPoints.toString()} />
-        <StatCard icon="🌍" label="Sustainability" value={`${user.sustainabilityScore}`} />
+        <StatCard
+          icon="💰"
+          label="Green Credits"
+          value={user.greenCredits.toString()}
+        />
+        <StatCard
+          icon="♻️"
+          label="Eco Points"
+          value={user.ecoPoints.toString()}
+        />
+        <StatCard
+          icon="🌍"
+          label="Sustainability"
+          value={`${user.sustainabilityScore}`}
+        />
         <StatCard icon="🤝" label="Trust Score" value={`${user.trustScore}`} />
       </View>
 
@@ -94,18 +115,18 @@ export function ProfileScreen() {
           <TouchableOpacity
             key={item.label}
             onPress={() => {
-              if (item.screen === 'GardenHome') {
-                (navigation as any).navigate('GardenTab');
+              if (item.screen === "GardenHome") {
+                (navigation as any).navigate("GardenTab");
               } else {
                 (navigation as any).navigate(item.screen);
               }
             }}
             className={`flex-row items-center bg-white px-4 py-4 ${
               index === 0
-                ? 'rounded-t-2xl'
+                ? "rounded-t-2xl"
                 : index === menuItems.length - 1
-                ? 'rounded-b-2xl'
-                : ''
+                  ? "rounded-b-2xl"
+                  : ""
             } border-b border-gray-100`}
           >
             <Text className="text-xl mr-3">{item.icon}</Text>

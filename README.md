@@ -60,7 +60,7 @@ GardenVerse bridges the gap between digital gardening and real-world agriculture
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js >= 18.0.0
+- Node.js >= 22.0.0 (LTS)
 - Docker & Docker Compose
 - npm (comes with Node.js)
 - API Keys: OpenWeatherMap, Google Maps (optional for local dev)
@@ -126,6 +126,78 @@ npm run test:e2e
 # Generate workflow screenshots:
 npm run workflow:all
 ```
+
+---
+
+## 🧪 Demo Accounts
+
+Use these pre-seeded accounts for testing the platform:
+
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | admin@gardenverse.vercel.app | password123 |
+| **Super Admin** | superadmin@gardenverse.vercel.app | password123 |
+| **Demo User** | demo@gardenverse.vercel.app | password123 |
+
+---
+
+## 🖥️ Admin Dashboard Pages
+
+| Page | URL | Description |
+|------|-----|-------------|
+| **Dashboard** | `/dashboard` | Main admin overview with stats cards |
+| **Users** | `/users` | User management, search, and roles |
+| **Garden** | `/garden` | View all gardens and plant selections |
+| **Plant Browser** | `/garden/plant` | Browse plant species catalog |
+| **Crop Detail** | `/garden/crop/[id]` | Individual crop growth details |
+| **Weather** | `/weather` | Real-time weather dashboard |
+| **Marketplace** | `/marketplace` | Browse and manage listings |
+| **Create Listing** | `/marketplace/create` | Create new marketplace listing |
+| **Community** | `/community` | Community hub and activity feed |
+| **Community Groups** | `/community/groups` | Group management |
+| **AI Scanner** | `/ai-scanner` | AI plant disease scanner |
+| **Scan History** | `/ai-scanner/history` | Past scan results |
+| **Invites** | `/invites` | QR and invite link management |
+| **Create Invite** | `/invites/create` | Generate new invites |
+| **Analytics** | `/analytics` | Platform analytics and charts |
+| **Moderation** | `/moderation` | Content moderation queue |
+| **Feature Flags** | `/features` | Toggle features on/off |
+| **Campaigns** | `/campaigns` | Marketing campaign management |
+| **Super Admin** | `/super-admin/dashboard` | Super admin controls |
+| **Settings** | `/settings` | Platform configuration |
+| **Notes** | `/notes` | Internal admin notes |
+
+---
+
+## 🌐 Local Development URLs
+
+| Service | URL | Port |
+|---------|-----|------|
+| **Admin Dashboard** | http://localhost:3000 | 3000 |
+| **Backend API** | http://localhost:3001 | 3001 |
+| **API Swagger Docs** | http://localhost:3001/api/docs | 3001 |
+| **AI Service** | http://localhost:8000 | 8000 |
+| **PostgreSQL** | localhost:5432 | 5432 |
+| **Redis** | localhost:6379 | 6379 |
+| **MQTT Broker** | localhost:1883 | 1883 |
+
+---
+
+## 🔒 Security
+
+GardenVerse follows security best practices:
+
+- **CORS** — Restricted to known origins (localhost in dev, Vercel domain in prod)
+- **Authentication** — JWT with 15-minute access tokens and 7-day refresh tokens
+- **Authorization** — Role-based access (User, Admin, Super Admin) with NestJS guards
+- **Password Hashing** — bcrypt with 12 salt rounds
+- **Rate Limiting** — Configured on all public endpoints
+- **Helmet** — Security headers set for production
+- **Input Validation** — All endpoints use `class-validator` DTOs
+- **SQL Injection** — Prevented via Prisma ORM (no raw queries)
+- **Geolocation** — Only geohashes stored, never exact coordinates
+- **File Uploads** — Type and size validation (max 10MB)
+- **QR Payloads** — Encrypted + signed with expiration timestamps
 
 ---
 
@@ -296,9 +368,9 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 ## 📞 Contact
 
-- **Website:** [https://gardenverse.io](https://gardenverse.io)
-- **Email:** hello@gardenverse.io
-- **Twitter/X:** [@gardenverse](https://twitter.com/gardenverse)
+- **Website:** [https://gardenverse.vercel.app](https://gardenverse.vercel.app)
+- **GitHub:** [luckyhegde6](https://github.com/luckyhegde6)
+- **Project:** [github/luckyhegde6](https://github.com/luckyhegde6/gardenverse)
 
 ---
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,39 +7,37 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Chip } from '../../components/ui/Chip';
-import { validatePrice } from '../../utils/validation';
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { Chip } from "../../components/ui/Chip";
+import { validatePrice } from "../../utils/validation";
 
-const CATEGORIES = [
-  'seeds', 'fertilizers', 'tools', 'services', 'harvest',
-];
+const CATEGORIES = ["seeds", "fertilizers", "tools", "services", "harvest"];
 
-const CURRENCIES = ['GVC', 'USD', 'EUR'];
+const CURRENCIES = ["GVC", "USD", "EUR"];
 
 export function CreateListingScreen() {
   const navigation = useNavigation();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [price, setPrice] = useState('');
-  const [currency, setCurrency] = useState('GVC');
-  const [quantity, setQuantity] = useState('1');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
+  const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("GVC");
+  const [quantity, setQuantity] = useState("1");
   const [isLocal, setIsLocal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!title.trim()) newErrors.title = 'Title is required';
-    if (!category) newErrors.category = 'Category is required';
+    if (!title.trim()) newErrors.title = "Title is required";
+    if (!category) newErrors.category = "Category is required";
     const priceError = validatePrice(price);
     if (priceError) newErrors.price = priceError;
     if (!quantity || parseInt(quantity) < 1)
-      newErrors.quantity = 'Quantity must be at least 1';
+      newErrors.quantity = "Quantity must be at least 1";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -50,14 +48,15 @@ export function CreateListingScreen() {
     try {
       await new Promise((r) => setTimeout(r, 1000));
       navigation.goBack();
-    } catch {} finally {
+    } catch {
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-gray-50"
     >
       <ScrollView
@@ -77,7 +76,7 @@ export function CreateListingScreen() {
           value={title}
           onChangeText={(t) => {
             setTitle(t);
-            setErrors((p) => ({ ...p, title: '' }));
+            setErrors((p) => ({ ...p, title: "" }));
           }}
           error={errors.title}
         />
@@ -110,7 +109,7 @@ export function CreateListingScreen() {
                 selected={category === cat}
                 onPress={() => {
                   setCategory(cat);
-                  setErrors((p) => ({ ...p, category: '' }));
+                  setErrors((p) => ({ ...p, category: "" }));
                 }}
               />
             ))}
@@ -166,7 +165,7 @@ export function CreateListingScreen() {
         >
           <View
             className={`w-5 h-5 rounded border-2 items-center justify-center ${
-              isLocal ? 'bg-primary-600 border-primary-600' : 'border-gray-300'
+              isLocal ? "bg-primary-600 border-primary-600" : "border-gray-300"
             }`}
           >
             {isLocal && <Text className="text-white text-xs">✓</Text>}

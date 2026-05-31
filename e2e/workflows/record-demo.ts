@@ -23,7 +23,7 @@ const RECORDINGS: RecordingConfig[] = [
     filename: '01-auth-super-admin',
     steps: [
       { name: 'Navigate to login page', action: async (page) => { await page.goto(`${BASE_URL}/login`); await page.waitForLoadState('networkidle'); }, delay: 2000 },
-      { name: 'Fill login credentials', action: async (page) => { await page.fill('input[type="email"]', 'admin@gardenverse.test'); await page.fill('input[type="password"]', 'Test@12345678'); }, delay: 2000 },
+      { name: 'Fill login credentials', action: async (page) => { await page.fill('input[type="email"]', 'admin@gardenverse.vercel.app'); await page.fill('input[type="password"]', 'Password123'); }, delay: 2000 },
       { name: 'Visit Super Admin portal', action: async (page) => { await page.goto(`${BASE_URL}/super-admin`); }, delay: 2000 },
       { name: 'Toggle to registration form', action: async (page) => { const btn = page.locator('button:has-text("Register")'); if (await btn.isVisible()) await btn.click(); }, delay: 2000 },
     ],

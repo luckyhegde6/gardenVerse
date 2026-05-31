@@ -28,7 +28,7 @@ GardenVerse Ltd. acts as data controller for all user data processed through the
 
 ### Data Processing Records
 - All data processing activities logged in internal register
-- DPO contact: dpo@gardenverse.io
+- DPO contact: dpo@gardenverse.vercel.app
 - Data Protection Impact Assessment (DPIA) conducted for AI, geo, and IoT features
 
 ---

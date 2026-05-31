@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsNumber, Min, Max, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsNumber, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CropStatus } from '@prisma/client';
 

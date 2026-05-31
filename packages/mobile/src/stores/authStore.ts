@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { User } from '../types';
-import AuthService, { LoginRequest, RegisterRequest } from '../services/auth';
-import { getItem, setItem, removeItem, StorageKeys } from '../utils/storage';
+import { create } from "zustand";
+import { User } from "../types";
+import AuthService, { LoginRequest, RegisterRequest } from "../services/auth";
+import { getItem, setItem, removeItem, StorageKeys } from "../utils/storage";
 
 interface AuthState {
   user: User | null;
@@ -10,13 +10,17 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
+  registeredEmail: string | null;
 
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   loadStoredAuth: () => Promise<void>;
-  updateProfile: (data: Partial<Pick<User, 'displayName' | 'avatarUrl'>>) => Promise<void>;
+  updateProfile: (
+    data: Partial<Pick<User, "displayName" | "avatarUrl">>,
+  ) => Promise<void>;
   clearError: () => void;
+  clearRegisteredEmail: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -26,6 +30,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: true,
   isAuthenticated: false,
   error: null,
+  registeredEmail: null,
 
   login: async (data: LoginRequest) => {
     set({ isLoading: true, error: null });
@@ -43,7 +48,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
     } catch (error: any) {
       const message =
-        error.response?.data?.message || error.message || 'Login failed';
+        error.response?.data?.message || error.message || "Login failed";
       set({ error: message, isLoading: false });
       throw error;
     }
@@ -52,20 +57,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   register: async (data: RegisterRequest) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await AuthService.register(data);
-      await setItem(StorageKeys.ACCESS_TOKEN, response.accessToken);
-      await setItem(StorageKeys.REFRESH_TOKEN, response.refreshToken);
-      await setItem(StorageKeys.USER_DATA, JSON.stringify(response.user));
+      await AuthService.register(data);
       set({
-        user: response.user,
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-        isAuthenticated: true,
+        registeredEmail: data.email,
         isLoading: false,
       });
     } catch (error: any) {
       const message =
-        error.response?.data?.message || error.message || 'Registration failed';
+        error.response?.data?.message || error.message || "Registration failed";
       set({ error: message, isLoading: false });
       throw error;
     }
@@ -126,7 +125,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   updateProfile: async (
-    data: Partial<Pick<User, 'displayName' | 'avatarUrl'>>
+    data: Partial<Pick<User, "displayName" | "avatarUrl">>,
   ) => {
     const currentUser = get().user;
     if (!currentUser) return;
@@ -136,10 +135,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await setItem(StorageKeys.USER_DATA, JSON.stringify(updatedUser));
       set({ user: updatedUser });
     } catch (error: any) {
-      set({ error: error.message || 'Profile update failed' });
+      set({ error: error.message || "Profile update failed" });
       throw error;
     }
   },
 
   clearError: () => set({ error: null }),
+
+  clearRegisteredEmail: () => set({ registeredEmail: null }),
 }));

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsNumber, IsBoolean, Min, Max, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsBoolean, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateListingDto {
@@ -99,6 +99,12 @@ export class ListingsQueryDto {
   @IsNumber()
   @Min(1)
   limit?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  page?: number;
 
   @ApiPropertyOptional()
   @IsOptional()

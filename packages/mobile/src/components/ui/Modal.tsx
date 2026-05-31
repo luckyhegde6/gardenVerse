@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Modal as RNModal,
@@ -6,7 +6,7 @@ import {
   Dimensions,
   TouchableWithoutFeedback,
   StyleSheet,
-} from 'react-native';
+} from "react-native";
 
 interface ModalProps {
   visible: boolean;
@@ -15,13 +15,13 @@ interface ModalProps {
   height?: number | string;
 }
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export function Modal({
   visible,
   onClose,
   children,
-  height = 'auto',
+  height = "auto",
 }: ModalProps) {
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
@@ -60,7 +60,7 @@ export function Modal({
               className="bg-white rounded-t-3xl p-6"
               style={[
                 { transform: [{ translateY }] },
-                height !== 'auto' ? { height: height as number } : undefined,
+                height !== "auto" ? { height: height as number } : undefined,
               ]}
             >
               <View className="w-10 h-1 bg-gray-300 rounded-full self-center mb-4" />

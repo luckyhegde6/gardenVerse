@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import api from '../services/api';
-import { Garden, Crop, CropStatus } from '../types';
+import { create } from "zustand";
+import api from "../services/api";
+import { Garden, Crop, CropStatus } from "../types";
 
 interface GardenState {
   gardens: Garden[];
@@ -15,7 +15,7 @@ interface GardenState {
     gardenId: string,
     seedId: string,
     plotX: number,
-    plotY: number
+    plotY: number,
   ) => Promise<Crop>;
   waterCrop: (cropId: string) => Promise<void>;
   fertilizeCrop: (cropId: string) => Promise<void>;
@@ -34,7 +34,7 @@ export const useGardenStore = create<GardenState>((set, get) => ({
   fetchGardens: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.get<Garden[]>('/gardens');
+      const response = await api.get<Garden[]>("/gardens");
       const gardens = response.data;
       const selectedGardenId = gardens[0]?.id ?? null;
       set({
@@ -45,7 +45,7 @@ export const useGardenStore = create<GardenState>((set, get) => ({
       });
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || 'Failed to fetch gardens',
+        error: error.response?.data?.message || "Failed to fetch gardens",
         isLoading: false,
       });
     }
@@ -63,7 +63,7 @@ export const useGardenStore = create<GardenState>((set, get) => ({
     gardenId: string,
     seedId: string,
     plotX: number,
-    plotY: number
+    plotY: number,
   ) => {
     set({ isLoading: true });
     try {
@@ -80,7 +80,7 @@ export const useGardenStore = create<GardenState>((set, get) => ({
       return newCrop;
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || 'Failed to plant crop',
+        error: error.response?.data?.message || "Failed to plant crop",
         isLoading: false,
       });
       throw error;
@@ -94,12 +94,12 @@ export const useGardenStore = create<GardenState>((set, get) => ({
         crops: state.crops.map((c) =>
           c.id === cropId
             ? { ...c, hydration: Math.min(c.hydration + 20, 100) }
-            : c
+            : c,
         ),
       }));
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || 'Failed to water crop',
+        error: error.response?.data?.message || "Failed to water crop",
       });
     }
   },
@@ -111,12 +111,12 @@ export const useGardenStore = create<GardenState>((set, get) => ({
         crops: state.crops.map((c) =>
           c.id === cropId
             ? { ...c, nutrientLevel: Math.min(c.nutrientLevel + 30, 100) }
-            : c
+            : c,
         ),
       }));
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || 'Failed to fertilize crop',
+        error: error.response?.data?.message || "Failed to fertilize crop",
       });
     }
   },
@@ -126,12 +126,12 @@ export const useGardenStore = create<GardenState>((set, get) => ({
       await api.post(`/crops/${cropId}/harvest`);
       set((state) => ({
         crops: state.crops.map((c) =>
-          c.id === cropId ? { ...c, status: CropStatus.HARVESTED } : c
+          c.id === cropId ? { ...c, status: CropStatus.HARVESTED } : c,
         ),
       }));
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || 'Failed to harvest crop',
+        error: error.response?.data?.message || "Failed to harvest crop",
       });
     }
   },
@@ -139,7 +139,7 @@ export const useGardenStore = create<GardenState>((set, get) => ({
   updateCropGrowth: (cropId: string, growthStage: number) => {
     set((state) => ({
       crops: state.crops.map((c) =>
-        c.id === cropId ? { ...c, growthStage } : c
+        c.id === cropId ? { ...c, growthStage } : c,
       ),
     }));
   },

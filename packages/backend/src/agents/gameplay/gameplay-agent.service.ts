@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@/prisma/prisma.service';
+import { GamificationService } from '@/modules/gamification/gamification.service';
 import { BaseAgent } from '../base-agent.service';
 import { AgentOrchestrator } from '../agent-orchestrator.service';
 import { AgentName, AgentEvent, EVENT_TYPES, AGENT_CONFIGS } from '../types/agent.types';
@@ -13,6 +14,7 @@ export class GameplayAgent extends BaseAgent {
     EVENT_TYPES.CROP_PLANTED,
     EVENT_TYPES.CROP_WATERED,
     EVENT_TYPES.CROP_FERTILIZED,
+    EVENT_TYPES.CROP_HARVESTED,
     EVENT_TYPES.WEATHER_UPDATED,
     EVENT_TYPES.WEATHER_ALERT,
     EVENT_TYPES.SENSOR_DATA,
@@ -40,6 +42,7 @@ export class GameplayAgent extends BaseAgent {
   constructor(
     orchestrator: AgentOrchestrator,
     private prisma: PrismaService,
+    private gamificationService: GamificationService,
   ) {
     super(orchestrator);
     this.logger = new Logger(GameplayAgent.name);
@@ -74,6 +77,9 @@ export class GameplayAgent extends BaseAgent {
         break;
       case EVENT_TYPES.TRADE_COMPLETE:
         await this.handleAwardXp(event.payload as { userId: string }, 50, 'marketplace_trade');
+        break;
+      case EVENT_TYPES.CROP_HARVESTED:
+        await this.handleCropHarvested(event);
         break;
     }
   }
@@ -115,8 +121,11 @@ export class GameplayAgent extends BaseAgent {
     let newGrowthStage = crop.growthStage;
     let newStatus = crop.status;
 
+    const isVirtual = crop.garden?.type === 'VIRTUAL';
+    const growthSpeedMultiplier = isVirtual ? 100 : 1;
+
     if (newHealth > 20) {
-      newGrowthStage = Math.min(100, crop.growthStage + (5 + weatherImpact * 3));
+      newGrowthStage = Math.min(100, crop.growthStage + (5 + weatherImpact * 3) * growthSpeedMultiplier);
     }
 
     if (newGrowthStage >= 100 && crop.status === 'GROWING') {
@@ -183,11 +192,20 @@ export class GameplayAgent extends BaseAgent {
   }
 
   private async handleCropPlanted(event: AgentEvent) {
+    const userId = (event.payload as any).userId;
+    const speciesId = (event.payload as any).speciesId;
     await this.emit(EVENT_TYPES.XP_AWARDED, {
-      userId: (event.payload as any).userId,
-      amount: 15,
-      reason: 'planted_crop',
+      userId, amount: 15, reason: 'planted_crop',
     });
+    try {
+      await this.gamificationService.awardXP(userId, 15);
+      if (speciesId) {
+        await this.gamificationService.discoverSpecies(userId, speciesId);
+        await this.gamificationService.recordPlantAction(userId, speciesId, 'plant');
+      }
+    } catch (err) {
+      this.logger.error(`Gamification error in handleCropPlanted: ${(err as Error).message}`);
+    }
   }
 
   private async handleCropWatered(event: AgentEvent) {
@@ -196,6 +214,14 @@ export class GameplayAgent extends BaseAgent {
       where: { id: payload.cropId },
       data: { hydration: Math.min(100, payload.hydrationLevel || 80), lastWateredAt: new Date() },
     });
+    try {
+      await this.gamificationService.awardXP(payload.userId, 5);
+      if (payload.cropId) {
+        await this.gamificationService.updateCareStreak(payload.cropId, payload.userId);
+      }
+    } catch (err) {
+      this.logger.error(`Gamification error in handleCropWatered: ${(err as Error).message}`);
+    }
   }
 
   private async handleCropFertilized(event: AgentEvent) {
@@ -204,6 +230,34 @@ export class GameplayAgent extends BaseAgent {
       where: { id: payload.cropId },
       data: { nutrientLevel: Math.min(100, payload.nutrientLevel || 80), lastFertilizedAt: new Date() },
     });
+    try {
+      await this.gamificationService.awardXP(payload.userId, 10);
+      if (payload.cropId) {
+        await this.gamificationService.updateCareStreak(payload.cropId, payload.userId);
+      }
+    } catch (err) {
+      this.logger.error(`Gamification error in handleCropFertilized: ${(err as Error).message}`);
+    }
+  }
+
+  private async handleCropHarvested(event: AgentEvent) {
+    const payload = event.payload as any;
+    const speciesId = payload.speciesId;
+    const healthBonus = payload.health ? Math.floor(payload.health / 4) : 0;
+    const xpAmount = 25 + healthBonus;
+    try {
+      const result = await this.gamificationService.awardXP(payload.userId, xpAmount);
+      if (speciesId) {
+        await this.gamificationService.recordPlantAction(payload.userId, speciesId, 'harvest');
+      }
+      if (result.leveledUp) {
+        await this.emit(EVENT_TYPES.LEVEL_UP, {
+          userId: payload.userId, newLevel: result.newLevel, tokensAwarded: result.tokensAwarded,
+        });
+      }
+    } catch (err) {
+      this.logger.error(`Gamification error in handleCropHarvested: ${(err as Error).message}`);
+    }
   }
 
   private async handleWeatherUpdated(event: AgentEvent) {

@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { IotDevice } from '../../types';
-import { formatRelativeTime } from '../../utils/formatting';
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { IotDevice } from "../../types";
+import { formatRelativeTime } from "../../utils/formatting";
 
 interface DeviceCardProps {
   device: IotDevice;
@@ -9,14 +9,14 @@ interface DeviceCardProps {
 }
 
 const deviceIcons: Record<string, string> = {
-  moisture_sensor: '💧',
-  ph_sensor: '🧪',
-  temperature_sensor: '🌡️',
-  light_sensor: '☀️',
-  humidity_sensor: '💨',
-  weather_station: '🌤️',
-  irrigation_controller: '🚿',
-  default: '📡',
+  moisture_sensor: "💧",
+  ph_sensor: "🧪",
+  temperature_sensor: "🌡️",
+  light_sensor: "☀️",
+  humidity_sensor: "💨",
+  weather_station: "🌤️",
+  irrigation_controller: "🚿",
+  default: "📡",
 };
 
 export function DeviceCard({ device, onPress }: DeviceCardProps) {
@@ -32,7 +32,7 @@ export function DeviceCard({ device, onPress }: DeviceCardProps) {
       <View className="flex-row items-center">
         <View
           className={`w-12 h-12 rounded-xl items-center justify-center ${
-            device.isOnline ? 'bg-green-50' : 'bg-gray-100'
+            device.isOnline ? "bg-green-50" : "bg-gray-100"
           }`}
         >
           <Text className="text-2xl">{icon}</Text>
@@ -44,13 +44,13 @@ export function DeviceCard({ device, onPress }: DeviceCardProps) {
             </Text>
             <View
               className={`w-2.5 h-2.5 rounded-full ${
-                device.isOnline ? 'bg-green-500' : 'bg-gray-400'
+                device.isOnline ? "bg-green-500" : "bg-gray-400"
               }`}
             />
           </View>
           <View className="flex-row items-center mt-0.5">
             <Text className="text-xs text-gray-500 capitalize">
-              {device.deviceType.replace(/_/g, ' ')}
+              {device.deviceType.replace(/_/g, " ")}
             </Text>
             {device.lastSeenAt && (
               <Text className="text-xs text-gray-400 ml-2">

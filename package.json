@@ -15,8 +15,8 @@
     "admin:dev": "npm run dev -w packages/admin",
     "admin:build": "npm run build -w packages/admin",
     "ai:dev": "npm run dev -w services/ai",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
+    "docker:up": "docker compose -f docker-compose.local.yml up -d",
+    "docker:down": "docker compose -f docker-compose.local.yml down",
     "lint": "npm run lint -w packages/backend && npm run lint -w packages/mobile",
     "typecheck": "npm run typecheck -w packages/backend && npm run typecheck -w packages/mobile && npm run typecheck -w packages/admin",
     "typecheck:backend": "npm run typecheck -w packages/backend",
@@ -49,23 +49,54 @@
     "prisma:migrate": "npm run prisma:migrate -w packages/backend",
     "prisma:seed": "npm run prisma:seed -w packages/backend",
     "prepare": "husky",
-
     "script:docker-local": "powershell -ExecutionPolicy Bypass -File scripts/docker-local.ps1",
     "script:docker-prod-debug": "powershell -ExecutionPolicy Bypass -File scripts/docker-prod-debug.ps1",
     "script:health-check": "powershell -ExecutionPolicy Bypass -File scripts/health-check.ps1",
     "script:db-diagnostic": "powershell -ExecutionPolicy Bypass -File scripts/db-diagnostic.ps1 -All",
     "script:reset-db": "powershell -ExecutionPolicy Bypass -File scripts/reset-db.ps1",
     "script:run-migrations": "powershell -ExecutionPolicy Bypass -File scripts/run-migrations.ps1",
-    "script:stop-all": "powershell -ExecutionPolicy Bypass -File scripts/stop-all.ps1"
+    "script:stop-all": "powershell -ExecutionPolicy Bypass -File scripts/stop-all.ps1",
+    "script:docker-cleanup": "powershell -ExecutionPolicy Bypass -File scripts/docker-cleanup.ps1",
+    "script:start-backend": "powershell -ExecutionPolicy Bypass -File scripts/start-backend.ps1",
+    "backend:prod": "node packages/backend/dist/main"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "@playwright/test": "^1.60.0",
-    "playwright": "^1.60.0"
+    "@react-native/js-polyfills": "^0.85.3",
+    "metro": "^0.80.12",
+    "metro-babel-transformer": "^0.80.12",
+    "metro-cache": "^0.80.12",
+    "metro-cache-key": "^0.80.12",
+    "metro-config": "^0.80.12",
+    "metro-core": "^0.80.12",
+    "metro-file-map": "^0.80.12",
+    "metro-minify-terser": "^0.80.12",
+    "metro-resolver": "^0.80.12",
+    "metro-runtime": "^0.80.12",
+    "metro-source-map": "^0.80.12",
+    "metro-symbolicate": "^0.80.12",
+    "metro-transform-plugins": "^0.80.12",
+    "metro-transform-worker": "^0.80.12",
+    "playwright": "^1.60.0",
+    "react-native-css-interop": "^0.2.4",
+    "react-native-worklets": "^0.9.1"
   },
   "devDependencies": {
-    "husky": "^9.1.7"
+    "@babel/plugin-transform-class-static-block": "^7.29.7",
+    "@typescript-eslint/eslint-plugin": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.0",
+    "husky": "^9.1.7",
+    "turbo": "^2.9.16"
+  },
+  "overrides": {
+    "cross-spawn": ">=7.0.5",
+    "axios": ">=1.7.0",
+    "cookie": ">=0.7.0",
+    "path-to-regexp": ">=0.1.12",
+    "semver": ">=7.5.2",
+    "tough-cookie": ">=4.1.3"
   }
 }

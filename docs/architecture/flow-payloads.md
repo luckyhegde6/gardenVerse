@@ -679,7 +679,7 @@ GET /api/v1/feature-flags
       "rolloutPercentage": 25,
       "regions": ["IN-MH", "US-CA"],
       "updatedAt": "2026-05-26T12:00:00.000Z",
-      "updatedBy": "admin@gardenverse.io"
+      "updatedBy": "admin@gardenverse.vercel.app"
     },
     {
       "id": "ff_marketplace_auction",
@@ -690,7 +690,7 @@ GET /api/v1/feature-flags
       "rolloutPercentage": 0,
       "regions": [],
       "updatedAt": "2026-05-20T09:00:00.000Z",
-      "updatedBy": "admin@gardenverse.io"
+      "updatedBy": "admin@gardenverse.vercel.app"
     }
   ]
 }

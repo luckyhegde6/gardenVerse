@@ -1,23 +1,23 @@
-import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import { WeatherForecast } from '../../types';
-import dayjs from 'dayjs';
+import React from "react";
+import { View, Text, ScrollView } from "react-native";
+import { WeatherForecast } from "../../types";
+import dayjs from "dayjs";
 
 interface ForecastCardProps {
   forecast: WeatherForecast[];
 }
 
 const conditionIcons: Record<string, string> = {
-  sunny: '☀️',
-  clear: '🌙',
-  cloudy: '☁️',
-  partly_cloudy: '⛅',
-  rainy: '🌧️',
-  storm: '⛈️',
-  snowy: '❄️',
-  foggy: '🌫️',
-  windy: '💨',
-  drizzle: '🌦️',
+  sunny: "☀️",
+  clear: "🌙",
+  cloudy: "☁️",
+  partly_cloudy: "⛅",
+  rainy: "🌧️",
+  storm: "⛈️",
+  snowy: "❄️",
+  foggy: "🌫️",
+  windy: "💨",
+  drizzle: "🌦️",
 };
 
 export function ForecastCard({ forecast }: ForecastCardProps) {
@@ -28,13 +28,10 @@ export function ForecastCard({ forecast }: ForecastCardProps) {
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {forecast.map((day, index) => {
-          const icon = conditionIcons[day.condition?.toLowerCase()] || '🌤️';
-          const dayName = index === 0 ? 'Today' : dayjs(day.date).format('ddd');
+          const icon = conditionIcons[day.condition?.toLowerCase()] || "🌤️";
+          const dayName = index === 0 ? "Today" : dayjs(day.date).format("ddd");
           return (
-            <View
-              key={day.date}
-              className="items-center mr-5 min-w-[60px]"
-            >
+            <View key={day.date} className="items-center mr-5 min-w-[60px]">
               <Text className="text-xs text-gray-500 mb-1">{dayName}</Text>
               <Text className="text-2xl mb-1">{icon}</Text>
               <Text className="text-sm font-semibold text-gray-900">

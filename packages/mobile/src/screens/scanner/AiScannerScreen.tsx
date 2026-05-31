@@ -1,25 +1,26 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-} from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Button } from '../../components/ui/Button';
-import { CameraOverlay } from '../../components/scanner/CameraOverlay';
-import { ScanResult } from '../../components/scanner/ScanResult';
-import { ScanHistory } from '../../components/scanner/ScanHistory';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { useAI } from '../../hooks/useAI';
-import { AiScanResult } from '../../types';
+import React, { useState, useRef } from "react";
+import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { Button } from "../../components/ui/Button";
+import { CameraOverlay } from "../../components/scanner/CameraOverlay";
+import { ScanResult } from "../../components/scanner/ScanResult";
+import { ScanHistory } from "../../components/scanner/ScanHistory";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import { useAI } from "../../hooks/useAI";
+import { AiScanResult } from "../../types";
 
 export function AiScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
-  const [mode, setMode] = useState<'camera' | 'result' | 'history'>('camera');
+  const [mode, setMode] = useState<"camera" | "result" | "history">("camera");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const { isScanning, currentResult, scanHistory, error, scanImage, setCurrentResult } = useAI();
+  const {
+    isScanning,
+    currentResult,
+    scanHistory,
+    error,
+    scanImage,
+    setCurrentResult,
+  } = useAI();
   const cameraRef = useRef<any>(null);
 
   const handleCapture = async () => {
@@ -31,27 +32,27 @@ export function AiScannerScreen() {
       });
       setCapturedImage(photo.uri);
       await scanImage(photo.uri);
-      setMode('result');
+      setMode("result");
     } catch {}
   };
 
   const handleGalleryPick = async () => {
-    const { launchImageLibraryAsync } = require('expo-image-picker');
+    const { launchImageLibraryAsync } = require("expo-image-picker");
     const result = await launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ["images"],
       quality: 0.7,
       base64: true,
     });
     if (!result.canceled && result.assets[0]) {
       setCapturedImage(result.assets[0].uri);
       await scanImage(result.assets[0].uri);
-      setMode('result');
+      setMode("result");
     }
   };
 
   const handleRetake = () => {
     setCapturedImage(null);
-    setMode('camera');
+    setMode("camera");
   };
 
   if (!permission) {
@@ -75,13 +76,9 @@ export function AiScannerScreen() {
 
   return (
     <View className="flex-1 bg-black">
-      {mode === 'camera' && (
+      {mode === "camera" && (
         <View className="flex-1">
-          <CameraView
-            ref={cameraRef}
-            style={{ flex: 1 }}
-            facing="back"
-          >
+          <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back">
             <CameraOverlay isScanning={isScanning} />
             <View className="absolute bottom-0 left-0 right-0 p-6">
               <View className="flex-row items-center justify-center mb-6 gap-6">
@@ -101,7 +98,7 @@ export function AiScannerScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => setMode('history')}
+                  onPress={() => setMode("history")}
                   className="w-12 h-12 rounded-full bg-white/30 items-center justify-center"
                 >
                   <Text className="text-xl">📋</Text>
@@ -112,7 +109,7 @@ export function AiScannerScreen() {
         </View>
       )}
 
-      {mode === 'result' && currentResult && (
+      {mode === "result" && currentResult && (
         <ScrollView className="flex-1 bg-gray-50">
           {capturedImage && (
             <Image
@@ -123,7 +120,10 @@ export function AiScannerScreen() {
           )}
 
           {isScanning ? (
-            <LoadingSpinner fullScreen message="AI is analyzing your plant..." />
+            <LoadingSpinner
+              fullScreen
+              message="AI is analyzing your plant..."
+            />
           ) : (
             <>
               <ScanResult result={currentResult} />
@@ -136,7 +136,7 @@ export function AiScannerScreen() {
                 />
                 <Button
                   title="View History"
-                  onPress={() => setMode('history')}
+                  onPress={() => setMode("history")}
                   variant="ghost"
                 />
               </View>
@@ -145,20 +145,17 @@ export function AiScannerScreen() {
         </ScrollView>
       )}
 
-      {mode === 'history' && (
+      {mode === "history" && (
         <View className="flex-1 bg-gray-50 px-4 pt-4">
           <ScanHistory
             scans={scanHistory}
             onScanPress={(scan) => {
               setCurrentResult(scan);
-              setMode('result');
+              setMode("result");
             }}
           />
           <View className="py-4">
-            <Button
-              title="Back to Scanner"
-              onPress={() => setMode('camera')}
-            />
+            <Button title="Back to Scanner" onPress={() => setMode("camera")} />
           </View>
         </View>
       )}

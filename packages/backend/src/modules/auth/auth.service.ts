@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@/prisma/prisma.service';
+import { GamificationService } from '@/modules/gamification/gamification.service';
 import { TokenUtil } from '@/common/utils/token.util';
 import {
   RegisterDto,
@@ -31,6 +32,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private gamificationService: GamificationService,
   ) {}
 
   async register(dto: RegisterDto): Promise<{ message: string; userId: string }> {
@@ -67,12 +69,24 @@ export class AuthService {
       },
     });
 
-    // Generate and send OTP
-    const otp = TokenUtil.generateOtp();
-    this.otpStore.set(dto.email, { otp, expiresAt: Date.now() + 10 * 60 * 1000 });
-    this.logger.log(`OTP for ${dto.email}: ${otp}`);
+    // Auto-verify if email verification is disabled (no SMTP configured)
+    const requireVerification = this.configService.get('REQUIRE_EMAIL_VERIFICATION', 'false') === 'true';
 
-    return { message: 'Registration successful. Please verify your email with OTP.', userId: user.id };
+    if (requireVerification) {
+      const otp = TokenUtil.generateOtp();
+      this.otpStore.set(dto.email, { otp, expiresAt: Date.now() + 10 * 60 * 1000 });
+      this.logger.log(`OTP sent to ${dto.email} (for verification)`);
+      return { message: 'Registration successful. Please verify your email with OTP.', userId: user.id };
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { isVerified: true },
+    });
+
+    await this.gamificationService.initUserGamification(user.id);
+
+    return { message: 'Registration successful.', userId: user.id };
   }
 
   async login(dto: LoginDto, deviceInfo?: DeviceInfo): Promise<AuthTokens> {
@@ -85,6 +99,8 @@ export class AuthService {
         passwordHash: true,
         role: true,
         isVerified: true,
+        isBlocked: true,
+        blockedReason: true,
       },
     });
 
@@ -99,6 +115,14 @@ export class AuthService {
 
     if (!user.isVerified) {
       throw new UnauthorizedException('Please verify your email first');
+    }
+
+    if (user.isBlocked) {
+      throw new UnauthorizedException(
+        user.blockedReason
+          ? `Account blocked: ${user.blockedReason}. Please contact support for assistance.`
+          : 'Account blocked. Please contact support for assistance.'
+      );
     }
 
     await this.prisma.user.update({
@@ -117,8 +141,10 @@ export class AuthService {
 
   async refreshToken(dto: RefreshTokenDto): Promise<AuthTokens> {
     try {
+      const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+      if (!refreshSecret) throw new Error('JWT_REFRESH_SECRET is not configured');
       const payload = this.jwtService.verify(dto.refreshToken, {
-        secret: this.configService.get('JWT_REFRESH_SECRET', 'default-refresh-secret'),
+        secret: refreshSecret,
       });
 
       const user = await this.prisma.user.findUnique({
@@ -174,7 +200,7 @@ export class AuthService {
 
     const otp = TokenUtil.generateOtp();
     this.otpStore.set(`reset:${dto.email}`, { otp, expiresAt: Date.now() + 10 * 60 * 1000 });
-    this.logger.log(`Password reset OTP for ${dto.email}: ${otp}`);
+    this.logger.log(`Password reset OTP sent to ${dto.email}`);
 
     return { message: 'If the email exists, a reset OTP has been sent.' };
   }
@@ -241,13 +267,18 @@ export class AuthService {
   private async generateTokens(userId: string, email: string, role: string): Promise<AuthTokens> {
     const payload: JwtPayload = { sub: userId, email, role };
 
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    const jwtRefreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+    if (!jwtSecret) throw new Error('JWT_SECRET is not configured');
+    if (!jwtRefreshSecret) throw new Error('JWT_REFRESH_SECRET is not configured');
+
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_SECRET', 'default-secret'),
+      secret: jwtSecret,
       expiresIn: this.configService.get('JWT_EXPIRATION', '15m'),
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_REFRESH_SECRET', 'default-refresh-secret'),
+      secret: jwtRefreshSecret,
       expiresIn: this.configService.get('JWT_REFRESH_EXPIRATION', '7d'),
     });
 

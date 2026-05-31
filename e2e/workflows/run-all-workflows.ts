@@ -223,6 +223,23 @@ async function runAiScannerWorkflow(browser: Browser): Promise<WorkflowResult> {
   return { name: 'AI Scanner', steps, duration: Date.now() - start };
 }
 
+async function runGamificationWorkflow(browser: Browser): Promise<WorkflowResult> {
+  const context = await browser.newContext({ recordVideo: { dir: VIDEO_DIR, size: { width: 1440, height: 900 } } });
+  const page = await context.newPage();
+  const steps: { name: string; screenshotPath: string }[] = [];
+  const start = Date.now();
+
+  try {
+    await page.goto(`${BASE_URL}/gamification`);
+    await page.waitForLoadState('networkidle');
+    steps.push({ name: 'Gamification Dash', screenshotPath: await takeScreenshot(page, 'gamification', '01-gamification') });
+  } finally {
+    await context.close();
+  }
+
+  return { name: 'Gamification', steps, duration: Date.now() - start };
+}
+
 async function runInvitesWorkflow(browser: Browser): Promise<WorkflowResult> {
   const context = await browser.newContext({ recordVideo: { dir: VIDEO_DIR, size: { width: 1440, height: 900 } } });
   const page = await context.newPage();
@@ -456,6 +473,7 @@ async function main() {
     { name: 'Community', fn: runCommunityWorkflow },
     { name: 'AI Scanner', fn: runAiScannerWorkflow },
     { name: 'Invites', fn: runInvitesWorkflow },
+    { name: 'Gamification', fn: runGamificationWorkflow },
   ];
 
   const results: WorkflowResult[] = [];

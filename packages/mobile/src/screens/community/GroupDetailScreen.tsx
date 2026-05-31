@@ -1,17 +1,17 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { Button } from '../../components/ui/Button';
-import { MemberListItem } from '../../components/community/MemberListItem';
-import { CommunityStackParamList } from '../../types';
+import React from "react";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Card } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/Badge";
+import { Button } from "../../components/ui/Button";
+import { MemberListItem } from "../../components/community/MemberListItem";
+import { CommunityStackParamList } from "../../types";
 
-type GroupDetailRouteProp = RouteProp<CommunityStackParamList, 'GroupDetail'>;
+type GroupDetailRouteProp = RouteProp<CommunityStackParamList, "GroupDetail">;
 type GroupDetailNavProp = NativeStackNavigationProp<
   CommunityStackParamList,
-  'GroupDetail'
+  "GroupDetail"
 >;
 
 export function GroupDetailScreen() {
@@ -20,15 +20,48 @@ export function GroupDetailScreen() {
   const { groupId } = route.params;
 
   const mockMembers = [
-    { username: 'greenmaster', displayName: 'Green Master', role: 'ADMIN', isOnline: true, level: 42 },
-    { username: 'ecowarrior', displayName: 'Eco Warrior', role: 'MODERATOR', isOnline: true, level: 38 },
-    { username: 'seedking', displayName: 'Seed King', role: 'MEMBER', isOnline: false, level: 35 },
-    { username: 'plantlover', displayName: 'Plant Lover', role: 'MEMBER', isOnline: true, level: 28 },
-    { username: 'gardenqueen', displayName: 'Garden Queen', role: 'MEMBER', isOnline: false, level: 31 },
+    {
+      username: "greenmaster",
+      displayName: "Green Master",
+      role: "ADMIN",
+      isOnline: true,
+      level: 42,
+    },
+    {
+      username: "ecowarrior",
+      displayName: "Eco Warrior",
+      role: "MODERATOR",
+      isOnline: true,
+      level: 38,
+    },
+    {
+      username: "seedking",
+      displayName: "Seed King",
+      role: "MEMBER",
+      isOnline: false,
+      level: 35,
+    },
+    {
+      username: "plantlover",
+      displayName: "Plant Lover",
+      role: "MEMBER",
+      isOnline: true,
+      level: 28,
+    },
+    {
+      username: "gardenqueen",
+      displayName: "Garden Queen",
+      role: "MEMBER",
+      isOnline: false,
+      level: 31,
+    },
   ];
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      className="flex-1 bg-gray-50"
+      showsVerticalScrollIndicator={false}
+    >
       {/* Group Info */}
       <View className="bg-white items-center py-6 px-4">
         <View className="w-20 h-20 bg-primary-100 rounded-full items-center justify-center mb-3">
@@ -52,9 +85,7 @@ export function GroupDetailScreen() {
         <View className="flex-row gap-3 mb-4">
           <Button
             title="💬 Chat"
-            onPress={() =>
-              navigation.navigate('ChatScreen', { groupId })
-            }
+            onPress={() => navigation.navigate("ChatScreen", { groupId })}
             className="flex-1"
           />
           <Button

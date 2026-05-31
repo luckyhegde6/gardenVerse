@@ -1,4 +1,5 @@
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const ALPHABET =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const BASE = ALPHABET.length;
 
 export function generateId(length = 16): string {
@@ -6,7 +7,7 @@ export function generateId(length = 16): string {
   crypto.getRandomValues(bytes);
   return Array.from(bytes)
     .map((byte) => ALPHABET[byte % BASE])
-    .join('');
+    .join("");
 }
 
 export function generateInviteCode(): string {
@@ -24,15 +25,15 @@ export function hashData(data: string): string {
 }
 
 export function obfuscateEmail(email: string): string {
-  const [local, domain] = email.split('@');
+  const [local, domain] = email.split("@");
   if (!local || !domain) return email;
   const visible = local.slice(0, 2);
-  const obfuscated = visible + '*'.repeat(local.length - 2);
+  const obfuscated = visible + "*".repeat(local.length - 2);
   return `${obfuscated}@${domain}`;
 }
 
 export function obfuscateString(value: string, visibleChars = 3): string {
-  if (value.length <= visibleChars) return '*'.repeat(value.length);
+  if (value.length <= visibleChars) return "*".repeat(value.length);
   const visible = value.slice(0, visibleChars);
-  return visible + '*'.repeat(value.length - visibleChars);
+  return visible + "*".repeat(value.length - visibleChars);
 }

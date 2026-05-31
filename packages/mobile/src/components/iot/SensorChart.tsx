@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, Dimensions } from 'react-native';
-import { SensorReading } from '../../types';
-import { Card } from '../ui/Card';
-import dayjs from 'dayjs';
+import React from "react";
+import { View, Text, Dimensions } from "react-native";
+import { SensorReading } from "../../types";
+import { Card } from "../ui/Card";
+import dayjs from "dayjs";
 
 interface SensorChartProps {
   readings: SensorReading[];
@@ -15,7 +15,7 @@ export function SensorChart({
   readings,
   title,
   unit,
-  color = '#22c55e',
+  color = "#22c55e",
 }: SensorChartProps) {
   if (readings.length === 0) {
     return (
@@ -36,9 +36,7 @@ export function SensorChart({
   const range = maxVal - minVal || 1;
   const barWidth = Math.max(
     4,
-    Math.floor(
-      (Dimensions.get('window').width - 80) / recentReadings.length
-    )
+    Math.floor((Dimensions.get("window").width - 80) / recentReadings.length),
   );
 
   return (
@@ -50,8 +48,7 @@ export function SensorChart({
 
       <View className="h-32 flex-row items-end justify-between">
         {recentReadings.map((reading, index) => {
-          const heightPercent =
-            ((reading.value - minVal) / range) * 100;
+          const heightPercent = ((reading.value - minVal) / range) * 100;
           const height = Math.max(4, (heightPercent / 100) * 120);
 
           return (
@@ -75,10 +72,12 @@ export function SensorChart({
 
       <View className="flex-row justify-between mt-2">
         <Text className="text-xs text-gray-400">
-          {dayjs(recentReadings[0]?.timestamp).format('h:mm A')}
+          {dayjs(recentReadings[0]?.timestamp).format("h:mm A")}
         </Text>
         <Text className="text-xs text-gray-400">
-          {dayjs(recentReadings[recentReadings.length - 1]?.timestamp).format('h:mm A')}
+          {dayjs(recentReadings[recentReadings.length - 1]?.timestamp).format(
+            "h:mm A",
+          )}
         </Text>
       </View>
     </Card>

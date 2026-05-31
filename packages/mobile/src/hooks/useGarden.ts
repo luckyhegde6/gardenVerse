@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from 'react';
-import { useGardenStore } from '../stores/gardenStore';
-import { Crop } from '../types';
+import { useEffect, useCallback } from "react";
+import { useGardenStore } from "../stores/gardenStore";
+import { Crop } from "../types";
 
 export function useGarden() {
   const {
@@ -31,35 +31,35 @@ export function useGarden() {
       if (!selectedGardenId) return null;
       return plantCrop(selectedGardenId, seedId, plotX, plotY);
     },
-    [selectedGardenId, plantCrop]
+    [selectedGardenId, plantCrop],
   );
 
   const handleWaterCrop = useCallback(
     async (cropId: string) => {
       await waterCrop(cropId);
     },
-    [waterCrop]
+    [waterCrop],
   );
 
   const handleFertilizeCrop = useCallback(
     async (cropId: string) => {
       await fertilizeCrop(cropId);
     },
-    [fertilizeCrop]
+    [fertilizeCrop],
   );
 
   const handleHarvestCrop = useCallback(
     async (cropId: string) => {
       await harvestCrop(cropId);
     },
-    [harvestCrop]
+    [harvestCrop],
   );
 
   const getCropById = useCallback(
     (cropId: string): Crop | undefined => {
       return crops.find((c) => c.id === cropId);
     },
-    [crops]
+    [crops],
   );
 
   return {

@@ -1,0 +1,27 @@
+name: OTA Update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/mobile/src/**'
+      - 'packages/mobile/app/**'
+
+jobs:
+  lint:
+    name: Lint & Typecheck
+    type: custom
+    runs_on: linux-medium
+    steps:
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+
+  ota-update:
+    name: Deploy OTA Update
+    type: update
+    needs: [lint]
+    if: ${{ github.ref == 'refs/heads/main' }}
+    params:
+      channel: production
+      message: 'Auto-deployed from main branch'

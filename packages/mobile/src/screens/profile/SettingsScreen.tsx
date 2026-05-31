@@ -1,21 +1,15 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Card } from '../../components/ui/Card';
-import { useAuthStore } from '../../stores/authStore';
+import React, { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { Card } from "../../components/ui/Card";
+import { useAuthStore } from "../../stores/authStore";
 
 export function SettingsScreen() {
   const navigation = useNavigation();
   const { user, updateProfile, logout } = useAuthStore();
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [notifications, setNotifications] = useState(true);
   const [locationSharing, setLocationSharing] = useState(true);
   const [twoFactor, setTwoFactor] = useState(false);
@@ -25,17 +19,18 @@ export function SettingsScreen() {
     setIsSaving(true);
     try {
       await updateProfile({ displayName });
-    } catch {} finally {
+    } catch {
+    } finally {
       setIsSaving(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: 'Logout',
-        style: 'destructive',
+        text: "Logout",
+        style: "destructive",
         onPress: async () => {
           await logout();
         },
@@ -45,16 +40,16 @@ export function SettingsScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'This action is irreversible. All your data will be permanently deleted.',
+      "Delete Account",
+      "This action is irreversible. All your data will be permanently deleted.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: () => {},
         },
-      ]
+      ],
     );
   };
 
@@ -81,12 +76,12 @@ export function SettingsScreen() {
       </View>
       <View
         className={`w-12 h-7 rounded-full p-1 ${
-          value ? 'bg-primary-600' : 'bg-gray-300'
+          value ? "bg-primary-600" : "bg-gray-300"
         }`}
       >
         <View
           className={`w-5 h-5 rounded-full bg-white shadow-sm ${
-            value ? 'ml-5' : ''
+            value ? "ml-5" : ""
           }`}
         />
       </View>
@@ -94,7 +89,10 @@ export function SettingsScreen() {
   );
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      className="flex-1 bg-gray-50"
+      showsVerticalScrollIndicator={false}
+    >
       <View className="px-4 py-4">
         {/* Profile Section */}
         <Card className="mb-4">
@@ -111,6 +109,7 @@ export function SettingsScreen() {
             label="Username"
             value={`@${user?.username}`}
             editable={false}
+            onChangeText={() => {}}
           />
           <Button
             title="Save Changes"
@@ -205,9 +204,7 @@ export function SettingsScreen() {
             <Text className="text-sm text-gray-700">Privacy Policy</Text>
           </TouchableOpacity>
           <TouchableOpacity className="py-3">
-            <Text className="text-sm text-gray-700">
-              Data Deletion Request
-            </Text>
+            <Text className="text-sm text-gray-700">Data Deletion Request</Text>
           </TouchableOpacity>
         </Card>
 

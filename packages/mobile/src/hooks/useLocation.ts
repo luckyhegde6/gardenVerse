@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import * as Location from 'expo-location';
-import { ensurePermission } from '../utils/permissions';
-import { encodeGeohash } from '../utils/geo';
+import { useState, useEffect, useCallback } from "react";
+import * as Location from "expo-location";
+import { ensurePermission } from "../utils/permissions";
+import { encodeGeohash } from "../utils/geo";
 
 interface LocationState {
   latitude: number | null;
@@ -33,7 +33,7 @@ export function useLocation(): UseLocationReturn {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
   const requestPermission = useCallback(async () => {
-    const result = await ensurePermission('location');
+    const result = await ensurePermission("location");
     setHasPermission(result);
     return result;
   }, []);
@@ -43,11 +43,11 @@ export function useLocation(): UseLocationReturn {
     setError(null);
 
     try {
-      const permGranted = await ensurePermission('location');
+      const permGranted = await ensurePermission("location");
       setHasPermission(permGranted);
 
       if (!permGranted) {
-        setError('Location permission denied');
+        setError("Location permission denied");
         return;
       }
 
@@ -74,7 +74,7 @@ export function useLocation(): UseLocationReturn {
             addr.country,
           ]
             .filter(Boolean)
-            .join(', ');
+            .join(", ");
         }
       } catch {}
 
@@ -86,7 +86,7 @@ export function useLocation(): UseLocationReturn {
         address,
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to get location');
+      setError(err.message || "Failed to get location");
     } finally {
       setIsFetching(false);
     }

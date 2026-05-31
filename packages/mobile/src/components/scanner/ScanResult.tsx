@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import { AiScanResult } from '../../types';
-import { Card } from '../ui/Card';
-import { Badge } from '../ui/Badge';
-import { ProgressBar } from '../ui/ProgressBar';
+import React from "react";
+import { View, Text, ScrollView } from "react-native";
+import { AiScanResult } from "../../types";
+import { Card } from "../ui/Card";
+import { Badge } from "../ui/Badge";
+import { ProgressBar } from "../ui/ProgressBar";
 
 interface ScanResultProps {
   result: AiScanResult;
@@ -14,10 +14,12 @@ export function ScanResult({ result }: ScanResultProps) {
     <ScrollView className="px-4" showsVerticalScrollIndicator={false}>
       <Card className="mb-4">
         <Text className="text-lg font-bold text-gray-900 mb-1">
-          {result.plantName || 'Unknown Plant'}
+          {result.plantName || "Unknown Plant"}
         </Text>
         {result.species && (
-          <Text className="text-sm text-gray-500 italic mb-3">{result.species}</Text>
+          <Text className="text-sm text-gray-500 italic mb-3">
+            {result.species}
+          </Text>
         )}
 
         {result.healthScore !== undefined && (
@@ -32,10 +34,10 @@ export function ScanResult({ result }: ScanResultProps) {
               value={result.healthScore}
               color={
                 result.healthScore >= 70
-                  ? '#22c55e'
+                  ? "#22c55e"
                   : result.healthScore >= 40
-                  ? '#f59e0b'
-                  : '#ef4444'
+                    ? "#f59e0b"
+                    : "#ef4444"
               }
               height={10}
             />
@@ -64,7 +66,9 @@ export function ScanResult({ result }: ScanResultProps) {
           </Text>
           {result.recommendations.map((rec, index) => (
             <View key={index} className="flex-row items-start mb-2">
-              <Text className="text-primary-600 font-bold mr-2">{index + 1}.</Text>
+              <Text className="text-primary-600 font-bold mr-2">
+                {index + 1}.
+              </Text>
               <Text className="text-sm text-gray-700 flex-1">{rec}</Text>
             </View>
           ))}

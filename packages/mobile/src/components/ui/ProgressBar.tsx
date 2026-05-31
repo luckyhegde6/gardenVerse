@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Animated, Text } from 'react-native';
+import React, { useEffect, useRef } from "react";
+import { View, Animated, Text } from "react-native";
 
 interface ProgressBarProps {
   value: number;
   maxValue?: number;
   showLabel?: boolean;
-  labelPosition?: 'top' | 'right' | 'none';
+  labelPosition?: "top" | "right" | "none";
   height?: number;
   color?: string;
   trackColor?: string;
@@ -17,12 +17,12 @@ export function ProgressBar({
   value,
   maxValue = 100,
   showLabel = false,
-  labelPosition = 'right',
+  labelPosition = "right",
   height = 8,
-  color = '#22c55e',
-  trackColor = '#e5e7eb',
+  color = "#22c55e",
+  trackColor = "#e5e7eb",
   animated = true,
-  className = '',
+  className = "",
 }: ProgressBarProps) {
   const animatedValue = useRef(new Animated.Value(0)).current;
   const percentage = Math.min((value / maxValue) * 100, 100);
@@ -42,13 +42,13 @@ export function ProgressBar({
   const width = animated
     ? animatedValue.interpolate({
         inputRange: [0, 100],
-        outputRange: ['0%', '100%'],
+        outputRange: ["0%", "100%"],
       })
     : `${percentage}%`;
 
   return (
     <View className={`flex-row items-center ${className}`}>
-      {showLabel && labelPosition === 'top' && (
+      {showLabel && labelPosition === "top" && (
         <Text className="text-xs text-gray-500 mb-1">
           {Math.round(percentage)}%
         </Text>
@@ -62,7 +62,7 @@ export function ProgressBar({
           style={{ backgroundColor: color, width: width as any }}
         />
       </View>
-      {showLabel && labelPosition === 'right' && (
+      {showLabel && labelPosition === "right" && (
         <Text className="text-xs text-gray-500 ml-2 min-w-[32px]">
           {Math.round(percentage)}%
         </Text>

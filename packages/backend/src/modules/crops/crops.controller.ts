@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CropsService } from './crops.service';
-import { PlantCropDto, BatchPlantCropDto, UpdateCropDto, CropStatusDto } from './dto/crop.dto';
+import { PlantCropDto, BatchPlantCropDto, UpdateCropDto } from './dto/crop.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 

@@ -2,9 +2,27 @@
 
 ## Session Metadata
 - **Project**: GardenVerse - Hybrid Agriculture Simulation Ecosystem
-- **Session Started**: May 27, 2026
+- **Session Started**: May 27, 2026 (Active: Session 5 — Vercel Deploy + CI/CD + EAS + Gamification Docs)
 - **Architecture**: Modular Monolith (NestJS) → Future Microservices
 - **Monorepo**: npm workspaces
+- **Platform**: Windows (PowerShell)
+
+## Project Topology
+
+```
+Production:
+  Vercel  ─── Admin Dashboard (Next.js 14) → https://gardenverse.vercel.app
+  Railway ─── Backend API (NestJS)          → https://gardenverse-backend.railway.app
+  Railway ─── AI Service (FastAPI)          → https://gardenverse-ai.railway.app
+  Railway ─── MQTT Broker (Mosquitto)       → (single stateful)
+  Supabase ── PostgreSQL 16 + Auth + Storage → Managed
+  Upstash ─── Redis (HTTP-based cache/queue) → Serverless
+  Expo/EAS ── Mobile App (React Native)     → EAS Build → App Store/Play Store
+
+Local Dev:
+  Docker ─── PostgreSQL (5432) + Redis (6379) + MQTT (1883)
+  Local ──── Backend (:3001) + Admin (:3000) + Mobile (Expo) + AI (:8000)
+```
 
 ## Engineering Standards
 
@@ -13,7 +31,7 @@
 - No `any` types (use `unknown` + type guards)
 - 100% typed interfaces for all DTOs, responses, events
 - No `console.log` in production code (use structured logging)
-- All API endpoints must have validation DTOs
+- All API endpoints must have validation DTOs and Swagger decorators (`@ApiTags`, `@ApiOperation`, `@ApiBearerAuth`)
 - All database queries must use Prisma transactions for atomicity
 
 ### Security Hard Rules
@@ -27,6 +45,7 @@
 8. Helmet + CORS configured for production
 9. Upload validation (file type, size, virus scan)
 10. Geolocation: store geohash only, never exact coordinates
+11. NEXTAUTH_SECRET must never have a hardcoded fallback — always use env var
 
 ### Architecture Principles
 - **Single Responsibility**: One module = one domain concern
@@ -52,7 +71,7 @@
 ```
 module-name/
   module.ts        # NestJS module definition
-  controller.ts    # REST endpoints
+  controller.ts    # REST endpoints with Swagger decorators
   service.ts       # Business logic
   dto/
     create.dto.ts
@@ -84,10 +103,12 @@ Examples:
 ```
 
 ### Testing Requirements
-- Backend: Unit tests for all services, E2E for critical flows
+- Backend: Jest unit tests for all services, E2E for critical flows
 - Mobile: Component tests with React Native Testing Library
-- AI: Unit tests for recommendation logic (already created)
-- Contracts: Hardhat tests (already created)
+- Admin: 48 Playwright E2E tests (auth, admin, invites)
+- AI: Unit tests for recommendation logic
+- Contracts: 41 Hardhat tests (tokens, reputation, marketplace, escrow)
+- E2E Workflows: 8 automated screenshot workflows (auth, garden, admin, weather, marketplace, community, ai-scanner, invites)
 
 ### Dependency Rules
 - Backend modules should NOT import from other modules directly
@@ -116,6 +137,8 @@ Examples:
 - [ ] Brute force protection on auth endpoints
 - [ ] Session management tested
 - [ ] Audit logging active
+- [ ] Sentry error tracking configured (instrumentation.ts + sentry.*.config.ts)
+- [ ] Vercel env vars: NEXTAUTH_SECRET, SUPABASE_*, SENTRY_* set
 
 ### IoT Security
 - Devices register with public key
@@ -139,37 +162,104 @@ Examples:
 - Error rate thresholds
 - API latency p50/p95/p99 tracking
 
-### Session Feedback & Improvements
-<!-- This section updated each session -->
-- **Session 1 (Initial Build)**: Ledger of 334 files created across 8 major components
-- **Architecture Decisions**: Modular monolith with event-driven design for future microservices split
-- **Observations**: Need to verify that all generated code compiles and passes lint
-- **Next Steps**: Run lint/typecheck on backend, verify mobile app builds, test contract deployment
-- **Session 2 (Dev Infrastructure + Docs)**: 
-  - Created `.opencode/` with 5 agent profiles, plan templates, MCP config, and RULES.md
-  - Created 8 PowerShell scripts (docker-local, docker-prod-debug, health-check, db-diagnostic, reset-db, run-migrations, stop-all, updated seed-data)
-  - Created `.env.local.example` with documented API keys
-  - Created 10 Mermaid sequence diagrams documenting all major workflows
-  - Created support docs: FAQ and troubleshooting guide
-  - Updated package.json with 7 new script commands
-  - Updated AGENTS.md with new sections (scripts, diagnostic workflows, .opencode, sequence diagrams, support docs)
-  - Updated MEMORY.md with session tracking and file map
-- **Session 3 (E2E Testing + Config Fixes)**:
-  - Fixed MCP configs (Docker → mcp/docker container, Superpowers plugin added)
-  - Created module-by-module E2E test runner (`e2e/modules/run-module.ts`) — runs 8 workflows independently
-  - Created `.opencode/skills/e2e-testing.md` skill document
-  - Installed Superpowers plugin for agent orchestration
-  - Installed Playwright CLI 1.60.0 + Playwright MCP 0.0.75
-  - Admin dashboard deployed: 10/10 routes live
-  - Smart contracts verified: 41/41 Hardhat tests passing
-  - Captured 28 E2E workflow screenshots across 8 modules (auth, garden, admin, weather, marketplace, community, ai-scanner, invites)
-  - Generated HTML gallery at `e2e/workflows-data/` with animated step viewer
-  - Updated package.json with 10 new `e2e:*` module scripts
-  - Updated AGENTS.md with E2E module commands and session tracking
-  - Updated sequence diagrams with Admin UX flow (11 diagrams total)
-  - Created `docs/architecture/flow-payloads.md` with sample API request/response payloads
-  - Documented failure handling by layer, idempotency strategy, scalability & fault tolerance in overview.md
-  - Gitignored contract build artifacts (artifacts/, cache/)
+### Self-Improvement Cycle
+
+Each session MUST update:
+1. **AGENTS.md** — Session Feedback section with accomplishments, mistakes, corrections
+2. **MEMORY.md** — Session tracking, file map, decisions, key numbers
+3. **docs/improvements/lessons-learned.md** — Detailed lessons in structured format
+
+Context minimization rules:
+- Reference docs paths instead of duplicating content
+- Keep AGENTS.md as an index/guide — detailed specs in docs/
+- MEMORY.md tracks session-to-session context
+- Lessons-learned prevents repeat mistakes
+- File map in MEMORY.md keeps project structure accessible
+
+---
+
+## Session Feedback & Improvements
+
+### Session 5 (May 31 - Jun 1, 2026): Vercel Deploy + CI/CD + EAS + Gamification Docs
+**Focus**: Production deployment, CI/CD automation, mobile publishing, comprehensive documentation
+
+**Accomplishments:**
+- **Admin dashboard deployed to Vercel** at https://gardenverse.vercel.app — 31/31 routes live
+- **CI/CD workflows created**: admin-deploy.yml (cloud build + post-deploy verification) and backend-deploy.yml (Railway deploy)
+- **Security fixes**: removed NEXTAUTH_SECRET hardcoded fallback from auth.ts, disabled Sentry build plugin, created instrumentation.ts for v10+ SDK
+- **Post-deploy verification scripts**: verify-deployment.sh + .ps1 (checks admin, backend, cross-service)
+- **Swagger API docs link** added to admin sidebar
+- **EAS Build fixed**: installed CLI, initialized project (ID: `5c01de7d`), converted app.json → app.config.js for env vars, installed expo-dev-client, fixed 5 dependency version mismatches, removed @types/react-native
+- **Android APK build** submitted to EAS (development profile)
+- **Gamification flow guide created**: `docs/architecture/gamification-flow.md` (550+ lines) covering XP system, mastery, care streaks, contracts, mobile game UI, EAS publishing
+- **eas.json** created with development/preview/production profiles
+- **EAS Workflows** created: 3 workflows in `.eas/workflows/` (build, dev-build, ota-update) — validated against EAS schema
+- **Expo MCP** configured: `expo-mcp` package installed, MCP server added to `.opencode/mcp.json` for AI-assisted build management
+- **Mobile workflow** updated with production EAS build profile and env vars
+
+**Discoveries & Learning:**
+1. `vercel build` (local) has `NEXT_MISSING_LAMBDA` bug with @vercel/next builder — always use cloud build (`vercel deploy --prod --yes`)
+2. `withSentryConfig` wrapper in next.config.mjs breaks both local and cloud builds — use `instrumentation.ts` pattern for Sentry v10+
+3. `app.json` doesn't support `process.env` — must use `app.config.js` for dynamic env vars
+4. EAS project initialization requires valid UUID — can't have placeholder `"your-project-id"`
+5. `expo-doctor` network check may fail behind proxies — 16/17 checks passing is OK
+6. `@sentry/nextjs` v10+ uses `instrumentation.ts` instead of `withSentryConfig` — 3 sentry config files remain (server/edge/client)
+
+**Mistakes & Corrections:**
+1. ❌ Put `process.env.X` in raw `app.json` — EAS CLI can't parse it
+   ✅ Converted to `app.config.js` with JS expressions
+2. ❌ Left placeholder `eas.projectId` as `"your-project-id"` — EAS init fails
+   ✅ Removed field, ran init, got real ID, added back with fallback
+3. ❌ `@types/react-native` installed directly — types come with RN package
+   ✅ Removed with `npm uninstall`
+4. ❌ Several Expo packages mismatched with SDK 51 versions
+   ✅ Ran `npx expo install` with correct versions
+
+**Next Steps:**
+- Deploy backend to Railway (blocks full admin API functionality)
+- Set NEXT_PUBLIC_API_URL on Vercel (depends on Railway deploy)
+- Deploy AI service to Railway
+- Complete EAS build (wait for cloud build to finish)
+- Re-enable Sentry source map uploads
+
+### Session 4 (Backend Stability + E2E Full Pass)
+- Fixed backend `main.ts`: added `unhandledRejection` handler, `uncaughtException` handler, `bootstrap().catch()` for graceful failure logging
+- Created `scripts/start-backend.ps1` — robust startup script with port cleanup, PID tracking, health check wait loop, and process monitoring
+- Added `package.json` scripts: `script:start-backend` and `backend:prod`
+- Fixed 3 flaky E2E tests in `admin.spec.ts` and `invites.spec.ts`
+- **48/48 E2E Playwright tests passing** (auth, admin, invites, 24 screenshots)
+- Verified all admin APIs return real data: dashboard (10 users, 16 crops), marketplace (3 listings), feature flags (6 flags), weather (5-day forecast), analytics (DAU/MAU)
+- Agents audit: Weather/IoT/Vision agents have empty `eventSubscriptions` by design (cron/MQTT/HTTP-driven emitters, not listeners) — no bug
+
+### Session 3 (E2E Testing + Config Fixes)
+- Fixed MCP configs (Docker → mcp/docker container, Superpowers plugin added)
+- Created module-by-module E2E test runner (`e2e/modules/run-module.ts`) — 8 workflows independently
+- Created `.opencode/skills/e2e-testing.md` skill document
+- Installed Playwright CLI 1.60.0 + Playwright MCP 0.0.75
+- Admin dashboard deployed: 10/10 routes live
+- Smart contracts verified: 41/41 Hardhat tests passing
+- Captured 28 E2E workflow screenshots across 8 modules
+- Created `docs/architecture/flow-payloads.md` with sample API request/response payloads
+
+### Session 2 (Dev Infrastructure + Docs)
+- Created `.opencode/` with 5 agent profiles, plan templates, MCP config, and RULES.md
+- Created 8 PowerShell scripts (docker-local, docker-prod-debug, health-check, db-diagnostic, reset-db, run-migrations, stop-all, updated seed-data)
+- Created `.env.local.example` with documented API keys
+- Created 10 Mermaid sequence diagrams documenting all major workflows
+- Created support docs: FAQ and troubleshooting guide
+- Updated package.json with 7 new script commands
+
+### Session 1 (Initial Build)
+- Ledger of 334 files created across 8 major components
+- 7 specialized agents implemented (Gameplay, Weather, IoT, Vision, Marketplace, Safety, Recommendation)
+- 30+ event types defined with 50+ typed payloads
+- 22 NestJS backend modules
+- 16 React Native screens
+- 8 Solidity smart contracts
+- Prisma schema with 20+ models
+- E2E Playwright screenshot system for 8 workflows + 7 recordings
+
+---
 
 ## External API Integrations
 
@@ -182,7 +272,7 @@ Examples:
 | **Vercel** | Vercel token | Deployment, env management | ✅ Configured |
 | **Supabase** | Supabase keys | Auth, storage, DB | ✅ Configured |
 | **Upstash Redis** | `UPSTASH_REDIS_*` | Serverless Redis for Vercel prod (replaces ioredis) | ✅ Documented |
-| **Sentry** | Sentry keys | Error monitoring | ✅ Configured |
+| **Sentry** | Sentry keys | Error monitoring (instrumentation.ts) | ✅ Configured |
 
 ## Plant Data Pipeline
 - `PlantSpecies` model stores plants from OpenFarm (public) + Trefle APIs
@@ -209,7 +299,35 @@ Examples:
 - Vision Agent: Calls AI service → falls back to local mock analysis
 - PlantNet / disease detection models (configurable paths in `services/ai/.env`)
 
+---
+
+## Gamification System
+
+Full documentation: `docs/architecture/gamification-flow.md`
+
+**Core concepts:** XP/Levels, Species Collections, Mastery (1-10 per species), Plant Hybrids, 10 Achievements, Care Streaks (3/7/14/30 day), Shop & Inventory (5 rarity tiers), Energy system, Daily Rewards
+
+**Smart contracts (8 total):** GreenCreditToken (ERC20), EcoPointToken (ERC20 soulbound), ReputationToken (ERC721 badges, 5 levels), InviteToken (ERC721 soulbound), Marketplace (2% fee), Escrow (7-day timeout), ReputationManager (5 ranks), RewardDistributor (merkle claims)
+
+**Mobile game UI:** 23 screens across auth/garden/marketplace/community/profile/scanner tabs. Isometric SVG grid, animated crop sprites (5 growth stages), XP bar, streak badges, action buttons with spring animations.
+
+## Mobile App Publishing (EAS)
+
+Config: `packages/mobile/eas.json`, `packages/mobile/app.config.js`
+
+**Build profiles:** development (internal APK), preview (internal IPA), production (App Store AAB/IPA)
+
+**Key steps:**
+1. `eas init` — creates project on expo.dev (ID: `5c01de7d-484e-4704-b4a1-d5833b59d62c`)
+2. `eas build --profile development --platform android` — dev APK
+3. `eas build --profile production --platform all` — production build
+4. `eas submit --platform all` — submit to stores
+5. `eas update --channel production` — OTA JS updates
+
+**CI/CD:** `.github/workflows/mobile.yml` runs lint → typecheck → test → EAS build on main branch
+
 ## Workflow Screenshot Generation
+
 The E2E system can auto-generate workflow screenshots and demo recordings:
 
 ```bash
@@ -223,36 +341,40 @@ Output:
 - `e2e/workflows-data/` — HTML pages (index + per-workflow with animated gallery)
 - `playwright-report/recordings/` — WebM demo videos + manifest.json
 
+---
+
+## CI/CD Workflows
+
+### Admin Dashboard (`.github/workflows/admin-deploy.yml`)
+- **test**: lint + typecheck + build
+- **deploy-preview** (PR): cloud build → smoke tests → PR comment
+- **deploy-production** (main): cloud build (`vercel deploy --prod --yes`) → 6-step post-deploy verification → E2E tests → Slack notification
+
+### Backend (`.github/workflows/backend-deploy.yml`)
+- **test**: lint + typecheck + Jest with Postgres/Redis containers
+- **db-migrate** (main): prisma migrate deploy + validate
+- **deploy** (main): Railway deploy with health check wait loop
+
+### Mobile (`.github/workflows/mobile.yml`)
+- **lint**: ESLint
+- **typecheck**: TypeScript strict check
+- **test**: Jest
+- **eas-build** (main): `eas build --profile production --platform all`
+
 ## Vercel Deployment
 ```bash
 npm run deploy:test     # Full deploy test: link → env pull → build → preview → health check → E2E tests
-npm run deploy:preview  # Quick preview deploy
-npm run deploy:prod     # Production deploy
+npm run deploy:preview  # Quick preview deploy (WARNING: uses vercel build which has NEXT_MISSING_LAMBDA bug)
+npm run deploy:prod     # Production deploy (uses cloud build)
 ```
 
-The `scripts/vercel-deploy-test.ps1` script automates:
-1. Project linking
-2. Environment variable pull
-3. Admin package build
-4. Preview deployment
-5. Health check against live URL
-6. E2E test suite against deployment
+**Critical:** Always use `vercel deploy --prod --yes` (cloud build) for production. `vercel build` (local) has `@vercel/next` builder bug with Next.js 14.2.29 that intermittently fails.
 
 ### ⚠️ Redis on Vercel Limitation
-
-Vercel's serverless functions do **not** support persistent TCP connections, so direct `ioredis` connections (used by `RedisModule`, BullMQ, and Socket.IO) will not work in a Vercel deployment. For production on Vercel:
-
-- Use **Upstash Redis** (HTTP-based) or **Vercel KV** for caching, sessions, and rate limiting
-- Run BullMQ and Socket.IO on a **separate long-running worker service** (e.g., Railway, Fly.io)
-- Docker Redis remains the recommended setup for **local development**
-
-See [`docs/deployment/deployment-guide.md`](./docs/deployment/deployment-guide.md) for the full Vercel deployment considerations and migration paths.
-
-## GitHub Pages
-Workflow documentation HTML pages are built for GitHub Pages publishing:
-- `e2e/workflows-data/index.html` — Main demo portal
-- `e2e/workflows-data/workflow-{0-7}.html` — Per-workflow animated galleries
-- `playwright-report/recordings/` — Demo videos
+Vercel's serverless functions do not support persistent TCP connections. For production:
+- Use **Upstash Redis** (HTTP-based) or **Vercel KV** for caching, sessions, rate limiting
+- Run BullMQ and Socket.IO on **Railway/Fly.io** as a separate long-running worker
+- Docker Redis remains for **local development**
 
 ## Available Commands
 ```bash
@@ -320,6 +442,9 @@ npm run script:db-diagnostic        # Database inspection, repair, slow query an
 # Database Operations
 npm run script:reset-db             # Drop + recreate + seed database
 npm run script:run-migrations       # Apply pending Prisma migrations
+
+# Verification
+npm run script:verify-deployment    # Run admin + backend + cross-service checks
 ```
 
 ## Diagnostic Workflows
@@ -341,6 +466,32 @@ npm run docker:local
 npm run backend:dev    # New terminal
 npm run admin:dev      # New terminal
 ```
+
+---
+
+## Documentation Index
+
+| Category | Doc | Purpose |
+|----------|-----|---------|
+| **Architecture** | `docs/architecture/overview.md` | System architecture, data flow, deployment topology |
+| **Architecture** | `docs/architecture/backend-architecture.md` | NestJS modules, queues, realtime, auth flow |
+| **Architecture** | `docs/architecture/mobile-architecture.md` | Component hierarchy, state, navigation, offline |
+| **Architecture** | `docs/architecture/data-models.md` | Entity relationships, schema documentation |
+| **Architecture** | `docs/architecture/event-flow.md` | Event-driven architecture, queue structure |
+| **Architecture** | `docs/architecture/sequence-diagrams.md` | 11 Mermaid sequence diagrams |
+| **Architecture** | `docs/architecture/gamification-flow.md` | Gamification system, contracts, mobile UI, EAS publishing |
+| **Architecture** | `docs/architecture/flow-payloads.md` | Sample API request/response payloads |
+| **API** | `docs/api/README.md` | Complete API reference (24 modules, 80+ endpoints) |
+| **Deployment** | `docs/deployment/production-deployment.md` | Production deployment guide (571 lines) |
+| **Deployment** | `docs/deployment/deployment-guide.md` | Docker/K8s focused (legacy) |
+| **Deployment** | `docs/deployment/ci-cd.md` | Older CI/CD doc |
+| **Security** | `docs/security/security-plan.md` | JWT, RBAC, encryption, anti-cheat, OWASP |
+| **Security** | `docs/security/encryption.md` | AES-256-GCM, libsodium, JWT, bcrypt specs |
+| **Support** | `docs/support/faq.md` | Common Q&A |
+| **Support** | `docs/support/troubleshooting.md` | Common issues and solutions |
+| **Improvements** | `docs/improvements/lessons-learned.md` | Session-by-session lessons learned |
+| **Legal** | `docs/legal/compliance.md` | GDPR, data privacy, moderation |
+| **Legal** | `docs/legal/disclaimers.md` | AI, weather, marketplace, IoT disclaimers |
 
 ## .opencode Configuration
 
@@ -399,20 +550,15 @@ Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
 - `docs/support/troubleshooting.md` — Solutions for Node/PowerShell, Docker, Prisma, Backend, Mobile, E2E issues
 
 ## MCP Configuration Reference
-For tools like Docker, Playwright, and PostgreSQL CLI, configure MCP in `.opencode/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "docker": {
-      "command": "docker"
-    },
+    "docker": { "command": "docker" },
     "playwright": {
       "command": "npx",
       "args": ["@anthropic-ai/mcp-playwright"]
     },
-    "github": {
-      "command": "gh"
-    },
+    "github": { "command": "gh" },
     "postgres": {
       "command": "npx",
       "args": ["-y", "@anthropic-ai/mcp-postgres"],

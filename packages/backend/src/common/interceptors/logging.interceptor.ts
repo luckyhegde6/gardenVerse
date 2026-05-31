@@ -12,7 +12,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
-    const { method, url, ip, headers } = request;
+    const { method, url, ip } = request;
     const now = Date.now();
     const traceId = request.traceId || uuid();
     const user = request.user;

@@ -1,28 +1,90 @@
+# Dependencies
 node_modules/
+
+# Build outputs
 dist/
 build/
 .next/
 .expo/
+*.tsbuildinfo
+
+# Environment files
 .env
 .env.local
 .env.*.local
-*.log
+.env.development
+.env.production
+
+# IDE
+.vscode/
+.idea/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Coverage
 coverage/
 .turbo/
-*.tsbuildinfo
+
+# Python
 *.pyc
 __pycache__/
 .pytest_cache/
-.vscode/
+.venv*
+.venv-*
+venv/
+.venv/
+
+# SSL / Keys
 *.pem
 *.key
+*.crt
+
+# Docker overrides
 docker-compose.override.yml
 
+# Vercel
 .vercel
+
+# Playwright
 playwright-report/
 test-results/
+.playwright/
+.playwright-mcp/
 
-# Hardhat build artifacts (regenerated via npx hardhat compile)
+# E2E generated artifacts
+e2e/screenshots/
+e2e/workflows-data/
+e2e/logs/
+e2e/screenshots-analysis/
+
+# Upload directories
+uploads/
+packages/backend/uploads/
+
+# Hardhat build artifacts
 contracts/artifacts/
 contracts/cache/
+
+# Sentry
+.sentryclirc
+
+# Husky generated hooks
+.husky/_/
+
+# Claude agent config (user-specific)
+.claude/
+
+# Generated test screenshots at root
+admin-dashboard-logged-in.png
+admin-gamification-page.png
+expo-web-verify.png
+gamification-final-verify.png
+login-page-snapshot.yml
+
+.vercel

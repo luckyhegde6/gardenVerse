@@ -1,23 +1,23 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React from "react";
+import { View, Text } from "react-native";
 
 interface PriceBadgeProps {
   price: number;
   currency?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   className?: string;
 }
 
 export function PriceBadge({
   price,
-  currency = 'GVC',
-  size = 'md',
-  className = '',
+  currency = "GVC",
+  size = "md",
+  className = "",
 }: PriceBadgeProps) {
   const sizeStyles = {
-    sm: { container: 'px-2 py-0.5', text: 'text-xs' },
-    md: { container: 'px-3 py-1', text: 'text-sm' },
-    lg: { container: 'px-4 py-2', text: 'text-lg' },
+    sm: { container: "px-2 py-0.5", text: "text-xs" },
+    md: { container: "px-3 py-1", text: "text-sm" },
+    lg: { container: "px-4 py-2", text: "text-lg" },
   };
 
   const s = sizeStyles[size];

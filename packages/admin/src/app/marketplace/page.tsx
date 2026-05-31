@@ -1,58 +1,170 @@
 'use client'
 
-import { useState } from 'react'
-import { Store, Flag, Scale, Tags, Receipt, AlertTriangle } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Store, Flag, Scale, Tags, Receipt, AlertTriangle, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/Button'
-import { Badge, type BadgeVariant } from '@/components/Badge'
+import { Badge } from '@/components/Badge'
 import { DataTable } from '@/components/DataTable'
 import { Modal, ModalFooter } from '@/components/Modal'
 import { Input } from '@/components/Input'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/Tabs'
 import { StatCard } from '@/components/StatCard'
+import api from '@/lib/api'
 
-const mockListings = [
-  { id: 'l1', title: 'Golden Rose Seeds (Rare)', sellerName: 'rare_plant_lover', price: 2500, category: 'Seeds', status: 'active', createdAt: '2026-05-20', reports: 0, views: 342 },
-  { id: 'l2', title: 'Fertilizer Bundle x10', sellerName: 'green_thumb', price: 500, category: 'Items', status: 'active', createdAt: '2026-05-19', reports: 0, views: 156 },
-  { id: 'l3', title: 'Diamond Watering Can', sellerName: 'terra_master', price: 15000, category: 'Tools', status: 'active', createdAt: '2026-05-18', reports: 1, views: 890 },
-  { id: 'l4', title: '"Rare" Blue Lotus Seeds', sellerName: 'fake_seed_seller', price: 8000, category: 'Seeds', status: 'flagged', createdAt: '2026-05-17', reports: 5, views: 1200 },
-  { id: 'l5', title: 'Mystery Seed Pack', sellerName: 'mystery_box_scam', price: 3000, category: 'Seeds', status: 'flagged', createdAt: '2026-05-16', reports: 3, views: 2500 },
-  { id: 'l6', title: 'Ancient Compost Recipe', sellerName: 'compost_master', price: 12000, category: 'Blueprints', status: 'sold', createdAt: '2026-05-15', reports: 0, views: 450 },
-  { id: 'l7', title: 'Garden Expansion Plot', sellerName: 'plot_dealer', price: 50000, category: 'Land', status: 'active', createdAt: '2026-05-14', reports: 0, views: 678 },
-  { id: 'l8', title: 'Rainwater Collector v2', sellerName: 'eco_engineer', price: 7500, category: 'Tools', status: 'active', createdAt: '2026-05-13', reports: 0, views: 234 },
-  { id: 'l9', title: 'Glowberry Bush (Bugged?)', sellerName: 'confused_user', price: 100, category: 'Plants', status: 'flagged', createdAt: '2026-05-12', reports: 2, views: 89 },
-  { id: 'l10', title: 'XP Boost Potion', sellerName: 'alchemist_joe', price: 3500, category: 'Items', status: 'removed', createdAt: '2026-05-11', reports: 8, views: 2100 },
-]
+// ── Types ──────────────────────────────────────────────────
 
-const categories = [
-  { name: 'Seeds', count: 2450, active: 2100 },
-  { name: 'Plants', count: 1800, active: 1500 },
-  { name: 'Tools', count: 920, active: 780 },
-  { name: 'Items', count: 1500, active: 1200 },
-  { name: 'Blueprints', count: 340, active: 290 },
-  { name: 'Land', count: 120, active: 95 },
-]
+interface MarketplaceListing {
+  id: string
+  title: string
+  sellerName: string
+  price: number
+  category: string
+  status: 'active' | 'flagged' | 'sold' | 'removed'
+  createdAt: string
+  reports: number
+  views: number
+}
 
-const transactions = [
-  { id: 'tx1', type: 'Listing', item: 'Golden Rose Seeds', seller: 'rare_plant_lover', buyer: 'collector_mike', amount: 2500, fee: 125, date: '2026-05-27 14:32' },
-  { id: 'tx2', type: 'Listing', item: 'Fertilizer Bundle', seller: 'green_thumb', buyer: 'new_farmer', amount: 500, fee: 25, date: '2026-05-27 12:15' },
-  { id: 'tx3', type: 'Auction', item: 'Ancient Compost Recipe', seller: 'compost_master', buyer: 'whale_buyer', amount: 12000, fee: 600, date: '2026-05-26 20:00' },
-  { id: 'tx4', type: 'Listing', item: 'Garden Expansion Plot', seller: 'plot_dealer', buyer: 'land_baron', amount: 50000, fee: 2500, date: '2026-05-26 18:45' },
-  { id: 'tx5', type: 'Trade', item: 'Rare Cactus x3', seller: 'desert_rose', buyer: 'cactus_collector', amount: 0, fee: 0, date: '2026-05-26 16:30' },
-]
+interface Transaction {
+  id: string
+  type: string
+  item: string
+  seller: string
+  buyer: string
+  amount: number
+  fee: number
+  date: string
+}
+
+interface MarketStats {
+  totalListings: number
+  flaggedItems: number
+  openDisputes: number
+  volume7d: number
+}
+
+// ── Page Component ────────────────────────────────────────
 
 export default function MarketplacePage() {
+  const [listings, setListings] = useState<MarketplaceListing[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [marketStats, setMarketStats] = useState<MarketStats>({
+    totalListings: 0,
+    flaggedItems: 0,
+    openDisputes: 0,
+    volume7d: 0,
+  })
   const [tab, setTab] = useState('all')
-  const [selectedListing, setSelectedListing] = useState<typeof mockListings[0] | null>(null)
+  const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const filtered = tab === 'all' ? mockListings : mockListings.filter(l => l.status === tab)
+  const fetchAll = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const [listingsRes, txRes, dashRes] = await Promise.all([
+        api.get('/marketplace/listings', { params: { limit: 50 } }),
+        api.get('/admin/transactions', { params: { limit: 20 } }),
+        api.get('/admin/dashboard'),
+      ])
+
+      // Parse listings
+      const listingsBody = listingsRes.data as Record<string, unknown>
+      const rawListings = (listingsBody.data as unknown[]) ||
+        (listingsBody.listings as unknown[]) ||
+        (Array.isArray(listingsBody) ? listingsBody : [])
+
+      if (Array.isArray(rawListings) && rawListings.length > 0) {
+        setListings(rawListings.map(l => {
+          const entry = l as Record<string, unknown>
+          return {
+            id: String(entry.id ?? ''),
+            title: String(entry.title ?? 'Unknown Listing'),
+            sellerName: String(entry.sellerName ?? entry.seller_name ?? 'unknown'),
+            price: typeof entry.price === 'number' ? entry.price : Number(entry.price ?? 0),
+            category: String(entry.category ?? 'General'),
+            status: String(entry.status ?? 'active') as MarketplaceListing['status'],
+            createdAt: String(entry.createdAt ?? entry.created_at ?? new Date().toISOString().slice(0, 10)),
+            reports: typeof entry.reports === 'number' ? entry.reports : Number(entry.reports ?? 0),
+            views: typeof entry.views === 'number' ? entry.views : Number(entry.views ?? 0),
+          }
+        }))
+      }
+
+      // Parse transactions
+      const txBody = txRes.data as Record<string, unknown>
+      const rawTxs = (txBody.data as unknown[]) ||
+        (txBody.transactions as unknown[]) ||
+        (Array.isArray(txBody) ? txBody : [])
+
+      if (Array.isArray(rawTxs) && rawTxs.length > 0) {
+        setTransactions(rawTxs.map(t => {
+          const entry = t as Record<string, unknown>
+          return {
+            id: String(entry.id ?? ''),
+            type: String(entry.type ?? 'Listing'),
+            item: String(entry.item ?? 'Unknown'),
+            seller: String(entry.seller ?? entry.sellerName ?? 'unknown'),
+            buyer: String(entry.buyer ?? entry.buyerName ?? 'unknown'),
+            amount: typeof entry.amount === 'number' ? entry.amount : Number(entry.amount ?? 0),
+            fee: typeof entry.fee === 'number' ? entry.fee : Number(entry.fee ?? 0),
+            date: String(entry.date ?? entry.createdAt ?? entry.created_at ?? new Date().toISOString()),
+          }
+        }))
+      }
+
+      // Parse dashboard stats
+      if (dashRes.data) {
+        const d = dashRes.data as Record<string, unknown>
+        setMarketStats({
+          totalListings: typeof d.totalListings === 'number' ? d.totalListings : 0,
+          flaggedItems: typeof d.flaggedItems === 'number' ? d.flaggedItems : typeof d.pendingReports === 'number' ? d.pendingReports : 0,
+          openDisputes: typeof d.openDisputes === 'number' ? d.openDisputes : 0,
+          volume7d: typeof d.marketplaceVolume === 'number' ? d.marketplaceVolume : typeof d.totalRevenue === 'number' ? d.totalRevenue : 0,
+        })
+      }
+    } catch {
+      setError('Could not load marketplace data from server.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchAll() }, [fetchAll])
+
+  const filtered = tab === 'all' ? listings : listings.filter(l => l.status === tab)
+  const flaggedCount = listings.filter(l => l.status === 'flagged').length
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-admin-400 animate-spin" />
+          <p className="text-slate-400 text-sm">Loading marketplace...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-400/10 border border-amber-400/20">
+          <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm text-amber-300">{error}</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={fetchAll}>Retry</Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Total Listings" value={8450} change={5.2} trend="up" icon={<Store className="w-6 h-6" />} changeLabel="this week" />
-        <StatCard title="Flagged Items" value={23} change={-12} trend="down" icon={<Flag className="w-6 h-6" />} changeLabel="vs last week" />
-        <StatCard title="Open Disputes" value={8} change={2} trend="up" icon={<Scale className="w-6 h-6" />} changeLabel="new today" />
-        <StatCard title="Volume (7d)" value={284500} change={18.3} trend="up" icon={<Receipt className="w-6 h-6" />} changeLabel="vs last week" />
+        <StatCard title="Total Listings" value={marketStats.totalListings} change={5.2} trend="up" icon={<Store className="w-6 h-6" />} changeLabel="this week" />
+        <StatCard title="Flagged Items" value={marketStats.flaggedItems} change={-12} trend="down" icon={<Flag className="w-6 h-6" />} changeLabel="vs last week" />
+        <StatCard title="Open Disputes" value={marketStats.openDisputes} change={2} trend="up" icon={<Scale className="w-6 h-6" />} changeLabel="new today" />
+        <StatCard title="Volume (7d)" value={marketStats.volume7d} change={18.3} trend="up" icon={<Receipt className="w-6 h-6" />} changeLabel="vs last week" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
@@ -66,7 +178,7 @@ export default function MarketplacePage() {
                 <TabsTrigger value="flagged">
                   Flagged
                   <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-red-400/20 text-red-400 text-xs">
-                    {mockListings.filter(l => l.status === 'flagged').length}
+                    {flaggedCount}
                   </span>
                 </TabsTrigger>
                 <TabsTrigger value="sold">Sold</TabsTrigger>
@@ -99,7 +211,7 @@ export default function MarketplacePage() {
                 keyExtractor={item => String(item.id)}
                 searchable
                 searchPlaceholder="Search listings..."
-                onRowClick={r => setSelectedListing(r as typeof mockListings[0])}
+                onRowClick={r => setSelectedListing(r as unknown as MarketplaceListing)}
                 pageSize={8}
               />
             </TabsContent>
@@ -107,21 +219,33 @@ export default function MarketplacePage() {
         </div>
 
         <div className="card">
-          <h3 className="card-title mb-4">Categories</h3>
-          <div className="space-y-3">
-            {categories.map(cat => (
-              <div key={cat.name} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-800/30 transition-colors">
-                <div className="flex items-center gap-2.5">
-                  <Tags className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm text-slate-300">{cat.name}</span>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-slate-200">{cat.count.toLocaleString()}</p>
-                  <p className="text-xs text-slate-500">{cat.active} active</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <h3 className="card-title mb-4">
+            <div className="flex items-center gap-2">
+              <Tags className="w-4 h-4" />
+              Categories
+            </div>
+          </h3>
+          {listings.length > 0 ? (
+            <div className="space-y-3">
+              {Array.from(new Set(listings.map(l => l.category))).map(cat => {
+                const count = listings.filter(l => l.category === cat).length
+                const active = listings.filter(l => l.category === cat && l.status === 'active').length
+                return (
+                  <div key={cat} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-800/30 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-sm text-slate-300">{cat}</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-slate-200">{count.toLocaleString()}</p>
+                      <p className="text-xs text-slate-500">{active} active</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500 p-2">No category data available.</p>
+          )}
         </div>
       </div>
 
@@ -164,7 +288,7 @@ export default function MarketplacePage() {
               </div>
               <div>
                 <p className="text-xs text-slate-500">Status</p>
-                <Badge variant={selectedListing.status as BadgeVariant}>
+                <Badge variant={selectedListing.status === 'active' ? 'success' : selectedListing.status === 'flagged' ? 'error' : selectedListing.status === 'sold' ? 'info' : 'default'}>
                   {selectedListing.status}
                 </Badge>
               </div>

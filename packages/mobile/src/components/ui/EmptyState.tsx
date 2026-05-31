@@ -1,44 +1,78 @@
-import React from 'react';
-import { View, Text } from 'react-native';
-import { Button } from './Button';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { colors, spacing, typography, borderRadius } from "../../styles/theme";
+import { Button } from "./Button";
 
 interface EmptyStateProps {
+  icon?: string;
   title: string;
   description?: string;
-  icon?: React.ReactNode;
   actionLabel?: string;
   onAction?: () => void;
+  /** @deprecated Use StyleSheet instead of className */
   className?: string;
 }
 
 export function EmptyState({
+  icon = "🪴",
   title,
   description,
-  icon,
   actionLabel,
   onAction,
-  className = '',
+  className: _className,
 }: EmptyStateProps) {
   return (
-    <View className={`flex-1 items-center justify-center px-8 py-12 ${className}`}>
-      {icon ? (
-        <View className="mb-4">{icon}</View>
-      ) : (
-        <View className="w-20 h-20 rounded-full bg-gray-100 items-center justify-center mb-4">
-          <Text className="text-3xl text-gray-400">🪴</Text>
+    <View style={styles.container}>
+      <View style={styles.iconContainer}>
+        <Text style={styles.icon}>{icon}</Text>
+      </View>
+      <Text style={styles.title}>{title}</Text>
+      {description ? (
+        <Text style={styles.description}>{description}</Text>
+      ) : null}
+      {actionLabel && onAction ? (
+        <View style={styles.actionContainer}>
+          <Button title={actionLabel} onPress={onAction} variant="primary" />
         </View>
-      )}
-      <Text className="text-lg font-semibold text-gray-900 text-center mb-1">
-        {title}
-      </Text>
-      {description && (
-        <Text className="text-sm text-gray-500 text-center mb-6 leading-5">
-          {description}
-        </Text>
-      )}
-      {actionLabel && onAction && (
-        <Button title={actionLabel} onPress={onAction} variant="primary" />
-      )}
+      ) : null}
     </View>
   );
 }
+
+export default EmptyState;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.surfaceSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+  },
+  icon: {
+    fontSize: 36,
+  },
+  title: {
+    ...typography.h3,
+    textAlign: "center",
+    marginBottom: spacing.xs,
+  },
+  description: {
+    ...typography.bodySmall,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: spacing.lg,
+  },
+  actionContainer: {
+    minWidth: 160,
+  },
+});

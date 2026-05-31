@@ -18,8 +18,15 @@ export class GardensController {
     return this.gardensService.create(userId, dto);
   }
 
+  @Get()
+  @ApiOperation({ summary: 'Get all my gardens' })
+  async getMyGardens(@CurrentUser('id') userId: string) {
+    const garden = await this.gardensService.findByUserId(userId);
+    return [garden];
+  }
+
   @Get('mine')
-  @ApiOperation({ summary: 'Get my garden' })
+  @ApiOperation({ summary: 'Get my garden (alias)' })
   async getMine(@CurrentUser('id') userId: string) {
     return this.gardensService.findByUserId(userId);
   }

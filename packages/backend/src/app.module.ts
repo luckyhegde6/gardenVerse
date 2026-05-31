@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -29,7 +29,9 @@ import { AdminModule } from './modules/admin/admin.module';
 import { HealthModule } from './modules/health/health.module';
 import { PlantsModule } from './modules/plants/plants.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { GamificationModule } from './modules/gamification/gamification.module';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { ThrottleGuard } from './common/guards/throttle.guard';
 import { RedisModule } from './redis/redis.module';
 import { AgentModule } from './agents/agent.module';
 
@@ -56,7 +58,7 @@ import { AgentModule } from './agents/agent.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         redis: {
-          host: config.get('REDIS_HOST', 'localhost'),
+          host: config.get('REDIS_HOST', '127.0.0.1'),
           port: config.get('REDIS_PORT', 6379),
           password: config.get('REDIS_PASSWORD', undefined),
         },
@@ -89,12 +91,13 @@ import { AgentModule } from './agents/agent.module';
     HealthModule,
     PlantsModule,
     UploadModule,
+    GamificationModule,
     AgentModule,
   ],
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: ThrottleGuard,
     },
     {
       provide: APP_INTERCEPTOR,

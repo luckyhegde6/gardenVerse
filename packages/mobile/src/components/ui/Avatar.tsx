@@ -1,20 +1,20 @@
-import React from 'react';
-import { View, Image, Text } from 'react-native';
+import React from "react";
+import { View, Image, Text } from "react-native";
 
 interface AvatarProps {
   uri?: string;
   name?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: "sm" | "md" | "lg" | "xl";
   showOnline?: boolean;
   isOnline?: boolean;
   className?: string;
 }
 
 const sizeMap = {
-  sm: { container: 32, font: 'text-xs' },
-  md: { container: 40, font: 'text-sm' },
-  lg: { container: 56, font: 'text-lg' },
-  xl: { container: 80, font: 'text-2xl' },
+  sm: { container: 32, font: "text-xs" },
+  md: { container: 40, font: "text-sm" },
+  lg: { container: 56, font: "text-lg" },
+  xl: { container: 80, font: "text-2xl" },
 };
 
 const onlineDotSize = {
@@ -25,18 +25,24 @@ const onlineDotSize = {
 };
 
 function getInitials(name?: string): string {
-  if (!name) return '?';
+  if (!name) return "?";
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
 function getColorFromName(name?: string): string {
-  if (!name) return '#9ca3af';
+  if (!name) return "#9ca3af";
   const colors = [
-    '#16a34a', '#15803d', '#166534', '#14532d',
-    '#ca8a04', '#a16207', '#854d0e',
-    '#06b6d4', '#14b8a6',
+    "#16a34a",
+    "#15803d",
+    "#166534",
+    "#14532d",
+    "#ca8a04",
+    "#a16207",
+    "#854d0e",
+    "#06b6d4",
+    "#14b8a6",
   ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
@@ -48,10 +54,10 @@ function getColorFromName(name?: string): string {
 export function Avatar({
   uri,
   name,
-  size = 'md',
+  size = "md",
   showOnline = false,
   isOnline = false,
-  className = '',
+  className = "",
 }: AvatarProps) {
   const dim = sizeMap[size];
   const dotSize = onlineDotSize[size];
@@ -84,7 +90,7 @@ export function Avatar({
           style={{
             width: dotSize,
             height: dotSize,
-            backgroundColor: isOnline ? '#22c55e' : '#9ca3af',
+            backgroundColor: isOnline ? "#22c55e" : "#9ca3af",
           }}
         />
       )}

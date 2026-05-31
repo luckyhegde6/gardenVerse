@@ -2,18 +2,18 @@ import axios, {
   AxiosError,
   AxiosResponse,
   InternalAxiosRequestConfig,
-} from 'axios';
-import { getItem, setItem, removeItem, StorageKeys } from '../utils/storage';
+} from "axios";
+import { getItem, setItem, removeItem, StorageKeys } from "../utils/storage";
 
 const BASE_URL = __DEV__
-  ? 'http://localhost:3000/api'
-  : 'https://api.gardenverse.app';
+  ? "http://localhost:3001/api/v1"
+  : "https://api.gardenverse.app/api/v1";
 
 export const api = axios.create({
   baseURL: BASE_URL,
   timeout: 30000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -47,7 +47,7 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error: AxiosError) => Promise.reject(error)
+  (error: AxiosError) => Promise.reject(error),
 );
 
 api.interceptors.response.use(
@@ -80,7 +80,7 @@ api.interceptors.response.use(
       try {
         const refreshToken = await getItem(StorageKeys.REFRESH_TOKEN);
         if (!refreshToken) {
-          throw new Error('No refresh token available');
+          throw new Error("No refresh token available");
         }
 
         const response = await axios.post(`${BASE_URL}/auth/refresh`, {
@@ -111,12 +111,12 @@ api.interceptors.response.use(
     if (__DEV__) {
       console.error(
         `[API] Error ${error.response?.status} ${error.config?.url}:`,
-        error.response?.data
+        error.response?.data,
       );
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

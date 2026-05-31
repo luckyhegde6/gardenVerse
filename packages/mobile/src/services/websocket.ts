@@ -1,51 +1,48 @@
-import { io, Socket } from 'socket.io-client';
-import { getItem, StorageKeys } from '../utils/storage';
+import { io, Socket } from "socket.io-client";
+import { getItem, StorageKeys } from "../utils/storage";
 import {
   Crop,
   Notification,
   Message,
   WeatherData,
   GovernmentAdvisory,
-} from '../types';
+} from "../types";
 
-const WS_URL = __DEV__
-  ? 'http://localhost:3001'
-  : 'wss://ws.gardenverse.app';
+const WS_URL = __DEV__ ? "http://localhost:3001" : "wss://ws.gardenverse.app";
 
 export interface ServerToClientEvents {
-  'garden:update': (data: { gardenId: string; crops: Crop[] }) => void;
-  'crop:growth': (data: { cropId: string; growthStage: number }) => void;
-  'notification:new': (notification: Notification) => void;
-  'weather:alert': (alert: { type: string; message: string }) => void;
-  'weather:update': (data: WeatherData) => void;
-  'chat:message': (message: Message) => void;
-  'chat:typing': (data: { userId: string; groupId: string }) => void;
-  'advisory:new': (advisory: GovernmentAdvisory) => void;
-  'user:online': (data: { userId: string }) => void;
-  'user:offline': (data: { userId: string }) => void;
+  "garden:update": (data: { gardenId: string; crops: Crop[] }) => void;
+  "crop:growth": (data: { cropId: string; growthStage: number }) => void;
+  "notification:new": (notification: Notification) => void;
+  "weather:alert": (alert: { type: string; message: string }) => void;
+  "weather:update": (data: WeatherData) => void;
+  "chat:message": (message: Message) => void;
+  "chat:typing": (data: { userId: string; groupId: string }) => void;
+  "advisory:new": (advisory: GovernmentAdvisory) => void;
+  "user:online": (data: { userId: string }) => void;
+  "user:offline": (data: { userId: string }) => void;
 }
 
 export interface ClientToServerEvents {
-  'chat:send': (data: {
+  "chat:send": (data: {
     content: string;
     groupId?: string;
     receiverId?: string;
   }) => void;
-  'chat:typing': (data: { groupId: string; isTyping: boolean }) => void;
-  'chat:join': (data: { groupId: string }) => void;
-  'chat:leave': (data: { groupId: string }) => void;
-  'garden:water': (data: { cropId: string }) => void;
-  'garden:fertilize': (data: { cropId: string }) => void;
-  'garden:harvest': (data: { cropId: string }) => void;
-  'garden:join': (data: { gardenId: string }) => void;
-  'garden:leave': (data: { gardenId: string }) => void;
+  "chat:typing": (data: { groupId: string; isTyping: boolean }) => void;
+  "chat:join": (data: { groupId: string }) => void;
+  "chat:leave": (data: { groupId: string }) => void;
+  "garden:water": (data: { cropId: string }) => void;
+  "garden:fertilize": (data: { cropId: string }) => void;
+  "garden:harvest": (data: { cropId: string }) => void;
+  "garden:join": (data: { gardenId: string }) => void;
+  "garden:leave": (data: { gardenId: string }) => void;
 }
 
 class SocketService {
   private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null =
     null;
-  private listeners: Map<string, Set<(...args: any[]) => void>> =
-    new Map();
+  private listeners: Map<string, Set<(...args: any[]) => void>> = new Map();
 
   get isConnected(): boolean {
     return this.socket?.connected ?? false;
@@ -59,7 +56,7 @@ class SocketService {
 
     this.socket = io(WS_URL, {
       auth: { token },
-      transports: ['websocket'],
+      transports: ["websocket"],
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
@@ -67,20 +64,20 @@ class SocketService {
       timeout: 20000,
     });
 
-    this.socket.on('connect', () => {
-      if (__DEV__) console.log('[WS] Connected');
+    this.socket.on("connect", () => {
+      if (__DEV__) console.log("[WS] Connected");
     });
 
-    this.socket.on('disconnect', (reason) => {
-      if (__DEV__) console.log('[WS] Disconnected:', reason);
+    this.socket.on("disconnect", (reason) => {
+      if (__DEV__) console.log("[WS] Disconnected:", reason);
     });
 
-    this.socket.on('connect_error', (error) => {
-      if (__DEV__) console.error('[WS] Connection error:', error.message);
+    this.socket.on("connect_error", (error) => {
+      if (__DEV__) console.error("[WS] Connection error:", error.message);
     });
 
-    this.socket.io.on('reconnect', (attempt: number) => {
-      if (__DEV__) console.log('[WS] Reconnected after', attempt, 'attempts');
+    this.socket.io.on("reconnect", (attempt: number) => {
+      if (__DEV__) console.log("[WS] Reconnected after", attempt, "attempts");
     });
   }
 
@@ -91,23 +88,21 @@ class SocketService {
 
   on<E extends keyof ServerToClientEvents>(
     event: E,
-    handler: ServerToClientEvents[E]
+    handler: ServerToClientEvents[E],
   ): void {
     this.socket?.on(event, handler as any);
-    if (!this.listeners.has(event as string)) {
-      this.listeners.set(event as string, new Set());
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
     }
-    this.listeners
-      .get(event as string)!
-      .add(handler as (...args: any[]) => void);
+    this.listeners.get(event)!.add(handler as (...args: any[]) => void);
   }
 
   off<E extends keyof ServerToClientEvents>(
     event: E,
-    handler: ServerToClientEvents[E]
+    handler: ServerToClientEvents[E],
   ): void {
     this.socket?.off(event, handler as any);
-    this.listeners.get(event as string)?.delete(handler as (...args: any[]) => void);
+    this.listeners.get(event)?.delete(handler as (...args: any[]) => void);
   }
 
   emit<E extends keyof ClientToServerEvents>(
@@ -118,19 +113,19 @@ class SocketService {
   }
 
   joinGarden(gardenId: string): void {
-    this.socket?.emit('garden:join', { gardenId });
+    this.socket?.emit("garden:join", { gardenId });
   }
 
   leaveGarden(gardenId: string): void {
-    this.socket?.emit('garden:leave', { gardenId });
+    this.socket?.emit("garden:leave", { gardenId });
   }
 
   joinChat(groupId: string): void {
-    this.socket?.emit('chat:join', { groupId });
+    this.socket?.emit("chat:join", { groupId });
   }
 
   leaveChat(groupId: string): void {
-    this.socket?.emit('chat:leave', { groupId });
+    this.socket?.emit("chat:leave", { groupId });
   }
 }
 

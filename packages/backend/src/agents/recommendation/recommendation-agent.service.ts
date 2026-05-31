@@ -98,7 +98,7 @@ export class RecommendationAgent extends BaseAgent {
       const nutrientDeficit = 50 - crop.nutrientLevel;
       const shouldFertilize = nutrientDeficit > 15;
       const growthStage = crop.status;
-      const fertilizerType = this.getFertilizerType(growthStage, crop.name);
+      const fertilizerType = this.getFertilizerType(growthStage);
       const amount = Math.max(1, Math.round(Math.abs(nutrientDeficit) / 10));
 
       return {
@@ -267,7 +267,7 @@ export class RecommendationAgent extends BaseAgent {
     return `${crop?.name || 'Crop'} moisture levels are adequate`;
   }
 
-  private getFertilizerType(stage: string, cropName: string): string {
+  private getFertilizerType(stage: string): string {
     if (stage === 'SEED' || stage === 'SPROUTING') return 'Balanced NPK (10-10-10)';
     if (stage === 'GROWING') return 'High-Nitrogen Fertilizer (20-10-10)';
     if (stage === 'MATURE') return 'High-Phosphorus Fertilizer (10-20-10)';

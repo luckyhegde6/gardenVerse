@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateReportDto, ActionReportDto } from './dto/moderation.dto';
 import { SafetyAgent } from '@/agents/safety/safety-agent.service';

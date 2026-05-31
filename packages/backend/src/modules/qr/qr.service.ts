@@ -40,7 +40,7 @@ export class QrService {
     };
   }
 
-  async validateSession(sessionId: string, signature: string) {
+  async validateSession(sessionId: string, _signature: string) {
     const session = await this.prisma.qrSession.findUnique({
       where: { id: sessionId },
     });
@@ -63,7 +63,7 @@ export class QrService {
     return { valid: true, type: session.type, payload: session.payload };
   }
 
-  async useSession(sessionId: string, userId: string, dto: UseQrDto) {
+  async useSession(sessionId: string, userId: string, _dto: UseQrDto) {
     const session = await this.prisma.qrSession.findUnique({
       where: { id: sessionId },
     });
@@ -81,7 +81,7 @@ export class QrService {
 
     this.replayCache.add(sessionId);
 
-    // Clean old cache entries
+    // Prune old cache entries when exceeding limit
     if (this.replayCache.size > 10000) {
       this.replayCache.clear();
     }

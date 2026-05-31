@@ -1,5 +1,5 @@
-import { IsString, IsOptional, IsEnum, IsNumber, Min, Max, IsArray } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsEnum, IsNumber, Min, Max } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { GardenType } from '@prisma/client';
 
 export class CreateGardenDto {

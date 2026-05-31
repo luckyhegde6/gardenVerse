@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
-import { IotDevice, SensorReading } from '../types';
+import { useState, useEffect, useCallback } from "react";
+import api from "../services/api";
+import { IotDevice, SensorReading } from "../types";
 
 interface UseIotReturn {
   devices: IotDevice[];
@@ -8,7 +8,10 @@ interface UseIotReturn {
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  getDeviceReadings: (deviceId: string, sensorType: string) => Promise<SensorReading[]>;
+  getDeviceReadings: (
+    deviceId: string,
+    sensorType: string,
+  ) => Promise<SensorReading[]>;
 }
 
 export function useIot(): UseIotReturn {
@@ -23,13 +26,13 @@ export function useIot(): UseIotReturn {
 
     try {
       const [devicesRes, readingsRes] = await Promise.all([
-        api.get<IotDevice[]>('/iot/devices'),
-        api.get<SensorReading[]>('/iot/readings/latest'),
+        api.get<IotDevice[]>("/iot/devices"),
+        api.get<SensorReading[]>("/iot/readings/latest"),
       ]);
       setDevices(devicesRes.data);
       setReadings(readingsRes.data);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch IoT data');
+      setError(err.response?.data?.message || "Failed to fetch IoT data");
     } finally {
       setIsLoading(false);
     }
@@ -43,11 +46,11 @@ export function useIot(): UseIotReturn {
     async (deviceId: string, sensorType: string) => {
       const response = await api.get<SensorReading[]>(
         `/iot/devices/${deviceId}/readings`,
-        { params: { sensorType, limit: 50 } }
+        { params: { sensorType, limit: 50 } },
       );
       return response.data;
     },
-    []
+    [],
   );
 
   return {

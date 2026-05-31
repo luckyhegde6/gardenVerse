@@ -7,25 +7,99 @@ import * as cookieParser from 'cookie-parser';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
-async function bootstrap() {
-  const logger = new Logger('Bootstrap');
+const logger = new Logger('Bootstrap');
 
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error({ message: 'Unhandled Rejection', reason: reason instanceof Error ? reason.message : reason, promise: String(promise) });
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error({ message: 'Uncaught Exception', error: error.message, stack: error.stack });
+  process.exit(1);
+});
+
+async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
 
-  app.setGlobalPrefix(configService.get('API_PREFIX', 'api/v1'));
+  const apiPrefix = configService.get('API_PREFIX', 'api/v1');
+
+  app.setGlobalPrefix(apiPrefix);
+
+  app.getHttpAdapter().get('/', (_req, res) => {
+    res.json({
+      service: 'GardenVerse API',
+      status: 'running',
+      version: '1.0.0',
+      docs: `/${apiPrefix}/docs`,
+      health: `/${apiPrefix}/health`,
+    });
+  });
+
+  const nodeEnv = configService.get('NODE_ENV', 'development');
+  const corsOrigin = configService.get('CORS_ORIGIN', 'http://localhost:3000');
+  const corsOrigins = corsOrigin.split(',').map((o: string) => o.trim());
+
+  const allowedOrigins = nodeEnv === 'production'
+    ? [
+        'https://gardenverse.vercel.app',
+        ...corsOrigins.filter((o: string) => o.startsWith('https://')),
+      ]
+    : [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:8081',
+        'http://127.0.0.1:3000',
+        ...corsOrigins,
+      ];
 
   app.enableCors({
-    origin: configService.get('CORS_ORIGIN', 'http://localhost:3000'),
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        logger.warn(`CORS blocked request from origin: ${origin}`);
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With', 'X-Trace-Id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+      'Cookie',
+      'X-Trace-Id',
+    ],
+    maxAge: 86400,
   });
 
   app.use(helmet.default({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https://*.gardenverse.vercel.app'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    frameguard: { action: 'deny' },
+    noSniff: true,
+    strictTransportSecurity: {
+      maxAge: 63072000,
+      includeSubDomains: true,
+      preload: true,
+    },
   }));
   app.use(compression());
   app.use(cookieParser());
@@ -96,7 +170,7 @@ GardenVerse API - Admin & Super Admin Management
     );
   }
 
-  const port = configService.get('PORT', 3000);
+  const port = parseInt(configService.get('PORT', '3001'), 10);
   await app.listen(port);
 
   logger.log(`Application running on: http://localhost:${port}`);
@@ -104,4 +178,7 @@ GardenVerse API - Admin & Super Admin Management
   logger.log(`Environment: ${configService.get('NODE_ENV', 'development')}`);
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  logger.error({ message: 'Failed to start application', error: err.message, stack: err.stack });
+  process.exit(1);
+});

@@ -1,14 +1,14 @@
-import React from 'react';
-import { ScrollView } from 'react-native';
-import { Chip } from '../ui/Chip';
+import React from "react";
+import { ScrollView } from "react-native";
+import { Chip } from "../ui/Chip";
 
 const CATEGORIES = [
-  { id: 'all', label: 'All' },
-  { id: 'seeds', label: 'Seeds' },
-  { id: 'fertilizers', label: 'Fertilizers' },
-  { id: 'tools', label: 'Tools' },
-  { id: 'services', label: 'Services' },
-  { id: 'harvest', label: 'Harvest' },
+  { id: "all", label: "All" },
+  { id: "seeds", label: "Seeds" },
+  { id: "fertilizers", label: "Fertilizers" },
+  { id: "tools", label: "Tools" },
+  { id: "services", label: "Services" },
+  { id: "harvest", label: "Harvest" },
 ];
 
 interface CategoryFilterProps {

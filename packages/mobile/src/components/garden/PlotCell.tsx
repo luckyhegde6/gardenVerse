@@ -1,7 +1,7 @@
-import React from 'react';
-import { TouchableOpacity, View } from 'react-native';
-import { Crop } from '../../types';
-import { CropSprite } from './CropSprite';
+import React from "react";
+import { TouchableOpacity, View } from "react-native";
+import { Crop } from "../../types";
+import { CropSprite } from "./CropSprite";
 
 interface PlotCellProps {
   crop?: Crop | null;
@@ -21,16 +21,16 @@ export function PlotCell({
   size = 80,
 }: PlotCellProps) {
   const borderColor = isSelected
-    ? 'border-primary-500'
+    ? "border-primary-500"
     : isEmpty
-    ? 'border-dashed border-gray-300'
-    : 'border-gray-200';
+      ? "border-dashed border-gray-300"
+      : "border-gray-200";
 
   const bgColor = isEmpty
-    ? 'bg-gray-50'
-    : crop?.status === 'WILTED' || crop?.status === 'DISEASED'
-    ? 'bg-red-50'
-    : 'bg-white';
+    ? "bg-gray-50"
+    : crop?.status === "WILTED" || crop?.status === "DISEASED"
+      ? "bg-red-50"
+      : "bg-white";
 
   return (
     <TouchableOpacity

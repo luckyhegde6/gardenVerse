@@ -129,7 +129,7 @@ npm run docker:local
 
 **Problem**: Admin login fails with "Invalid credentials"
 **Solution**: Use the seeded test credentials:
-- Admin: `admin@gardenverse.io` / `Admin@123456`
+- Admin: `admin@gardenverse.vercel.app` / `Admin@123456`
 - If those don't work, re-seed: `npm run prisma:seed`
 
 ---

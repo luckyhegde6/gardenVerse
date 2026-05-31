@@ -1,56 +1,134 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { Chip } from '../../components/ui/Chip';
+import React, { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { Card } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/Badge";
+import { Chip } from "../../components/ui/Chip";
 
-const TABS = ['Seeds', 'Fertilizers', 'Tools', 'Cosmetics'] as const;
+const TABS = ["Seeds", "Fertilizers", "Tools", "Cosmetics"] as const;
 type TabType = (typeof TABS)[number];
 
 interface InventoryItem {
   id: string;
   name: string;
   quantity: number;
-  rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
+  rarity: "common" | "uncommon" | "rare" | "legendary";
   icon: string;
   description?: string;
 }
 
 const ITEMS: Record<TabType, InventoryItem[]> = {
   Seeds: [
-    { id: 's1', name: 'Tomato Seeds', quantity: 10, rarity: 'common', icon: '🍅' },
-    { id: 's2', name: 'Carrot Seeds', quantity: 8, rarity: 'common', icon: '🥕' },
-    { id: 's3', name: 'Sunflower Seeds', quantity: 5, rarity: 'uncommon', icon: '🌻' },
-    { id: 's4', name: 'Wheat Seeds', quantity: 15, rarity: 'common', icon: '🌾' },
-    { id: 's5', name: 'Blue Rose Seeds', quantity: 2, rarity: 'legendary', icon: '🌹' },
-    { id: 's6', name: 'Golden Corn Seeds', quantity: 3, rarity: 'rare', icon: '🌽' },
+    {
+      id: "s1",
+      name: "Tomato Seeds",
+      quantity: 10,
+      rarity: "common",
+      icon: "🍅",
+    },
+    {
+      id: "s2",
+      name: "Carrot Seeds",
+      quantity: 8,
+      rarity: "common",
+      icon: "🥕",
+    },
+    {
+      id: "s3",
+      name: "Sunflower Seeds",
+      quantity: 5,
+      rarity: "uncommon",
+      icon: "🌻",
+    },
+    {
+      id: "s4",
+      name: "Wheat Seeds",
+      quantity: 15,
+      rarity: "common",
+      icon: "🌾",
+    },
+    {
+      id: "s5",
+      name: "Blue Rose Seeds",
+      quantity: 2,
+      rarity: "legendary",
+      icon: "🌹",
+    },
+    {
+      id: "s6",
+      name: "Golden Corn Seeds",
+      quantity: 3,
+      rarity: "rare",
+      icon: "🌽",
+    },
   ],
   Fertilizers: [
-    { id: 'f1', name: 'Organic Compost', quantity: 5, rarity: 'common', icon: '🌿' },
-    { id: 'f2', name: 'Growth Booster', quantity: 3, rarity: 'uncommon', icon: '⚡' },
-    { id: 'f3', name: 'Super Bloom', quantity: 1, rarity: 'rare', icon: '🌸' },
+    {
+      id: "f1",
+      name: "Organic Compost",
+      quantity: 5,
+      rarity: "common",
+      icon: "🌿",
+    },
+    {
+      id: "f2",
+      name: "Growth Booster",
+      quantity: 3,
+      rarity: "uncommon",
+      icon: "⚡",
+    },
+    { id: "f3", name: "Super Bloom", quantity: 1, rarity: "rare", icon: "🌸" },
   ],
   Tools: [
-    { id: 't1', name: 'Watering Can', quantity: 1, rarity: 'common', icon: '🚿' },
-    { id: 't2', name: 'Golden Trowel', quantity: 1, rarity: 'legendary', icon: '🔧' },
-    { id: 't3', name: 'Pruning Shears', quantity: 1, rarity: 'uncommon', icon: '✂️' },
+    {
+      id: "t1",
+      name: "Watering Can",
+      quantity: 1,
+      rarity: "common",
+      icon: "🚿",
+    },
+    {
+      id: "t2",
+      name: "Golden Trowel",
+      quantity: 1,
+      rarity: "legendary",
+      icon: "🔧",
+    },
+    {
+      id: "t3",
+      name: "Pruning Shears",
+      quantity: 1,
+      rarity: "uncommon",
+      icon: "✂️",
+    },
   ],
   Cosmetics: [
-    { id: 'c1', name: 'Garden Gnome', quantity: 1, rarity: 'rare', icon: '🧙' },
-    { id: 'c2', name: 'Rainbow Planter', quantity: 1, rarity: 'legendary', icon: '🌈' },
-    { id: 'c3', name: 'Wooden Sign', quantity: 3, rarity: 'common', icon: '🪧' },
+    { id: "c1", name: "Garden Gnome", quantity: 1, rarity: "rare", icon: "🧙" },
+    {
+      id: "c2",
+      name: "Rainbow Planter",
+      quantity: 1,
+      rarity: "legendary",
+      icon: "🌈",
+    },
+    {
+      id: "c3",
+      name: "Wooden Sign",
+      quantity: 3,
+      rarity: "common",
+      icon: "🪧",
+    },
   ],
 };
 
 const rarityColors: Record<string, string> = {
-  common: 'bg-gray-100',
-  uncommon: 'bg-green-100',
-  rare: 'bg-blue-100',
-  legendary: 'bg-amber-100',
+  common: "bg-gray-100",
+  uncommon: "bg-green-100",
+  rare: "bg-blue-100",
+  legendary: "bg-amber-100",
 };
 
 export function InventoryScreen() {
-  const [activeTab, setActiveTab] = useState<TabType>('Seeds');
+  const [activeTab, setActiveTab] = useState<TabType>("Seeds");
 
   const items = ITEMS[activeTab];
 
@@ -63,12 +141,12 @@ export function InventoryScreen() {
             key={tab}
             onPress={() => setActiveTab(tab)}
             className={`mr-4 pb-2 ${
-              activeTab === tab ? 'border-b-2 border-primary-600' : ''
+              activeTab === tab ? "border-b-2 border-primary-600" : ""
             }`}
           >
             <Text
               className={`text-sm font-medium ${
-                activeTab === tab ? 'text-primary-600' : 'text-gray-500'
+                activeTab === tab ? "text-primary-600" : "text-gray-500"
               }`}
             >
               {tab}
@@ -107,7 +185,9 @@ export function InventoryScreen() {
                 </Text>
                 <View className="flex-row items-center justify-between mt-1">
                   <Badge label={item.rarity} variant="primary" size="sm" />
-                  <Text className="text-xs text-gray-500">×{item.quantity}</Text>
+                  <Text className="text-xs text-gray-500">
+                    ×{item.quantity}
+                  </Text>
                 </View>
               </TouchableOpacity>
             ))}

@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshStrategy } from './strategies/refresh.strategy';
+import { GamificationModule } from '@/modules/gamification/gamification.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RefreshStrategy } from './strategies/refresh.strategy';
         },
       }),
     }),
+    GamificationModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshStrategy],

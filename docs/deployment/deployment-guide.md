@@ -3,7 +3,7 @@
 ## Prerequisites
 
 ### Required Software
-- **Node.js** >= 18.0.0
+- **Node.js** >= 22.0.0 (LTS)
 - **Docker** >= 24.0.0
 - **Docker Compose** >= 2.20.0
 - **PostgreSQL** 16 (for local dev without Docker)
@@ -146,9 +146,321 @@ docker push gardenverse/admin:latest
 
 ---
 
+## Queue Architecture (BullMQ)
+
+BullMQ powers all background job processing in GardenVerse. It uses Redis as the backing store and provides reliable job scheduling, retries, and concurrency control.
+
+### Queues
+
+| Queue Name | Concurrency | Retries | Purpose |
+|------------|-------------|---------|---------|
+| `growth-queue` | 5 | 3 (60s backoff) | Crop growth tick, water evaporation |
+| `ai-scan-queue` | 3 | 2 (30s timeout) | Plant scan processing, disease detection |
+| `email-queue` | 10 | 3 (30s backoff) | Welcome emails, password resets, notifications |
+| `notify-queue` | 10 | 3 (30s backoff) | Push notifications, in-app alerts |
+| `iot-ingest-queue` | 20 | 1 | Sensor data ingestion and verification |
+| `weather-queue` | 2 | 3 (120s backoff) | Weather data refresh, forecast fetch |
+| `blockchain-queue` | 1 (sequential) | 5 (60s backoff) | Smart contract submissions |
+
+### Job Lifecycle
+```
+Job Added → Wait Queue → Active (processing) → Completed
+                                               → Failed → Retry (with backoff)
+                                                       → Dead Letter Queue (exhausted retries)
+```
+
+### Monitoring
+- **Bull Board**: Accessible at `/admin/queues` when running in development mode
+- **Admin Dashboard**: Queue metrics displayed in the admin panel (depth, processing time, failure rate)
+- **Alerts**: Slack notifications when queue depth exceeds 10,000 or failure rate > 5%
+
+### Graceful Degradation
+- If Redis is unavailable, BullMQ falls back to in-process execution (limited concurrency)
+- Dead letter queues are monitored by ops and can be replayed via admin panel
+- Critical jobs (crop growth ticks) have priority queuing
+
+### Code Example
+```typescript
+// Processing a queue job
+@Processor('ai-scan-queue')
+export class AiScanProcessor {
+  @Process('ai.scan.process')
+  async handleScan(job: Job<{ scanId: string }>) {
+    const { scanId } = job.data;
+    try {
+      const result = await this.aiService.processScan(scanId);
+      await this.notificationService.notifyScanComplete(scanId);
+      return result;
+    } catch (error) {
+      this.logger.error(`Scan ${scanId} failed: ${error.message}`);
+      throw error; // BullMQ handles retry
+    }
+  }
+}
+```
+
+---
+
+## Sidecar Pattern for Logs and IoT
+
+Sidecar containers/processes run alongside the main application to handle specific cross-cutting concerns. This pattern keeps the main application focused on business logic while delegating infrastructure tasks to dedicated workers.
+
+### Architecture
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                    APPLICATION NODE                          │
+│                                                             │
+│  ┌──────────────────┐    ┌──────────────────────────────┐  │
+│  │  Main Container   │    │  Sidecar: Log Aggregator     │  │
+│  │  (NestJS Backend) │    │  - Reads stdout/stderr       │  │
+│  │                   │    │  - Formats as JSON           │  │
+│  │  - REST API       │    │  - Batches & ships to        │  │
+│  │  - BullMQ Jobs    │    │    CloudWatch / Logtail      │  │
+│  │  - WebSocket      │    │                              │  │
+│  └──────────────────┘    └──────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────┐    ┌──────────────────────────────┐  │
+│  │  Sidecar: IoT      │    │  Sidecar: Notifications     │  │
+│  │  Event Processor   │    │  Streamer                   │  │
+│  │  - MQTT consumer   │    │  - WebSocket server         │  │
+│  │  - Sensor validate │    │  - SSE push                 │  │
+│  │  - Data enrichment │    │  - Connection manager       │  │
+│  │  - Forward to API  │    │  - Broadcast to rooms       │  │
+│  └──────────────────┘    └──────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  Shared Volume: /var/log/gardenverse                  │  │
+│  │  (used by main + sidecar for log shipping)            │  │
+│  └──────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 1. Log Aggregation Sidecar
+- **Function**: Collects structured JSON logs from the main application
+- **Communication**: Reads from a shared volume (`/var/log/gardenverse`) or from stdout
+- **Output**: Batches logs and transmits to CloudWatch Logs / Logtail / Elasticsearch
+- **Buffer**: In-memory buffer with disk spillover if the remote endpoint is unreachable
+- **Configuration**: Environment variables determine the log destination
+
+### 2. IoT Event Processing Sidecar
+- **Function**: Dedicated worker for high-volume sensor data
+- **Communication**: Subscribes to MQTT topics and publishes processed events to the main API
+- **Why sidecar?**: IoT data arrives at high frequency (potentially 1000s of readings/sec). Isolating this processing prevents main API contention.
+- **Flow**:
+  ```
+  MQTT → IoT Sidecar → Validate → Enrich → Batch → POST /api/v1/iot/readings
+  ```
+- **Scaling**: Deploy 1 IoT sidecar per MQTT partition. Use Redis for deduplication.
+
+### 3. Notification Streaming Sidecar
+- **Function**: Manages persistent WebSocket connections for real-time push
+- **Communication**: Main app sends notifications via a Redis pub/sub channel; the sidecar receives and broadcasts to connected clients
+- **Scaling**: Each sidecar handles up to 10,000 concurrent WebSocket connections. Use Redis pub/sub to broadcast across sidecar instances.
+
+### Docker Compose Example
+```yaml
+services:
+  backend:
+    image: gardenverse/backend:latest
+    volumes:
+      - shared-logs:/var/log/gardenverse
+    depends_on: [redis, postgres]
+
+  log-sidecar:
+    image: gardenverse/log-sidecar:latest
+    volumes:
+      - shared-logs:/var/log/gardenverse
+    environment:
+      LOG_DESTINATION: cloudwatch
+      CLOUDWATCH_LOG_GROUP: gardenverse-backend
+    depends_on: [backend]
+
+  iot-sidecar:
+    image: gardenverse/iot-sidecar:latest
+    depends_on: [redis, backend]
+    environment:
+      MQTT_BROKER: mqtt://mosquitto:1883
+      API_URL: http://backend:3001/api/v1
+```
+
+### Scaling Considerations
+- Sidecars scale 1:1 with main application instances in production
+- IoT sidecar can be independently scaled if sensor volume is high
+- Log sidecar is lightweight (~50MB RAM) and adds minimal overhead
+- Notification sidecar uses Redis for state, making it horizontally scalable
+
+---
+
+## Logger Strategy
+
+### Structured Logging
+All services use structured JSON logging for machine-parsable output.
+
+**Log Format:**
+```json
+{
+  "timestamp": "2026-05-27T12:00:00.123Z",
+  "level": "info",
+  "context": "GardensService",
+  "message": "Garden created successfully",
+  "metadata": {
+    "userId": "usr_abc123",
+    "gardenId": "gdn_xyz789",
+    "duration": 45
+  }
+}
+```
+
+### Log Levels
+
+| Level | Usage | Example |
+|-------|-------|---------|
+| `debug` | Development diagnostics | Query parameters, raw data |
+| `info` | Normal operations | User created, crop planted |
+| `warn` | Unexpected but handled | API fallback used, degraded mode |
+| `error` | Operation failure | External API timeout, DB error |
+
+### NestJS Logger Implementation
+```typescript
+import { Logger } from '@nestjs/common';
+
+export class GardensService {
+  private readonly logger = new Logger(GardensService.name);
+
+  async createGarden(userId: string, dto: CreateGardenDto) {
+    this.logger.log({ message: 'Creating garden', userId });
+    try {
+      const garden = await this.prisma.garden.create({ data: { ...dto, userId } });
+      this.logger.log({ message: 'Garden created', gardenId: garden.id, duration: Date.now() - start });
+      return garden;
+    } catch (error) {
+      this.logger.error({ message: 'Failed to create garden', userId, error: error.message });
+      throw error;
+    }
+  }
+}
+```
+
+### Log Aggregation
+
+| Environment | Destination | Retention | Method |
+|-------------|-------------|-----------|--------|
+| **Development** | File system (`logs/`) | 7 days | Winston file transport |
+| **Staging** | CloudWatch / Logtail | 30 days | Sidecar log shipper |
+| **Production** | CloudWatch / Logtail + Sentry | 90 days | Sidecar log shipper + Sentry SDK |
+| **Error tracking** | Sentry | 90 days | `@sentry/node` SDK |
+
+### Best Practices
+- **Never log secrets**: Passwords, tokens, and API keys are filtered before logging
+- **Always log context**: Include userId, requestId, and correlationId
+- **Structured fields**: Use objects, not string concatenation
+- **Error logging**: Always include error stack trace and relevant context
+- **Performance**: Async logging to avoid blocking the event loop
+- **Sampling**: Debug logs are sampled (1/1000) in production to reduce volume
+
+---
+
+## Supabase Integration
+
+Supabase provides a managed backend-as-a-service alternative to self-hosted infrastructure.
+
+### Auth (Supabase Auth)
+- **Type**: Alternative to JWT-based authentication
+- **Features**: Email/password, OAuth (Google, GitHub), magic links
+- **Integration**: NestJS can use Supabase Auth with the `@supabase/supabase-js` client
+- **Migration path**: Existing JWT users can be migrated to Supabase Auth
+- **Configuration**: `SUPABASE_URL` + `SUPABASE_ANON_KEY` in environment variables
+
+### Storage (Supabase Storage)
+- **Use cases**: Plant photos, user avatars, scan images
+- **Integration**: UploadModule can be configured to use Supabase Storage instead of S3
+- **Access control**: Row Level Security (RLS) policies on storage buckets
+- **Configuration**:
+  ```
+  UPLOAD_PROVIDER=supabase        # or 's3'
+  SUPABASE_STORAGE_BUCKET=gardenverse-uploads
+  ```
+- **File limits**: 10MB max file size, image/png and image/jpeg only
+
+### Database (Managed PostgreSQL)
+- **Type**: Supabase provides managed PostgreSQL 15+ with pgvector support
+- **Connection**: Prisma connects via standard `DATABASE_URL`
+- **Extensions**: Supports `postgis` (geospatial), `pgvector` (AI embeddings), `pgcrypto`
+- **Connection pooling**: Use `supavisor` connection pooler for serverless environments
+- **Configuration**:
+  ```
+  DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[REF].supabase.co:6543/postgres?pgbouncer=true
+  DIRECT_URL=postgresql://postgres:[PASSWORD]@db.[REF].supabase.co:5432/postgres
+  ```
+
+### Realtime (Supabase Realtime)
+- **Use cases**: Live garden updates, chat messages, notification streaming
+- **Integration**: Can replace or complement Socket.IO
+- **Broadcast**: Server broadcasts changes via Supabase Realtime channels
+- **Client**: Mobile apps subscribe directly to Realtime channels
+- **Note**: For high-throughput scenarios, Socket.IO remains the preferred solution
+
+### Configuration Variables
+```
+# Supabase (Optional - alternative to local Postgres)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_PROJECT_REF=your-project-ref
+SUPABASE_STORAGE_BUCKET=gardenverse-uploads
+
+# Database (when using Supabase as managed Postgres)
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[REF].supabase.co:6543/postgres?pgbouncer=true
+DIRECT_URL=postgresql://postgres:[PASSWORD]@db.[REF].supabase.co:5432/postgres
+```
+
+---
+
 ## Vercel Deployment Considerations
 
 > **Key Limitation:** Vercel's serverless functions do not support persistent TCP connections, which means direct Redis connections via `ioredis` will **not** work in a Vercel deployment.
+
+### Deploying the Admin Dashboard
+
+The admin dashboard (Next.js app in `packages/admin`) can be deployed directly to Vercel.
+
+#### Steps
+```bash
+# 1. Install Vercel CLI
+npm i -g vercel
+
+# 2. Login
+vercel login
+
+# 3. Link project (first time only)
+vercel link --project gardenverse-admin
+
+# 4. Set environment variables
+vercel env add NEXT_PUBLIC_API_URL
+vercel env add NEXTAUTH_SECRET
+# ... add all required vars
+
+# 5. Deploy
+vercel --prod
+```
+
+#### Required Environment Variables
+```
+NEXT_PUBLIC_API_URL=https://gardenverse-api.vercel.app/api/v1
+NEXTAUTH_URL=https://gardenverse-admin.vercel.app
+NEXTAUTH_SECRET=your-nextauth-secret
+```
+
+#### Build Configuration (`vercel.json`)
+```json
+{
+  "buildCommand": "npm run build -w packages/admin",
+  "outputDirectory": "packages/admin/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs"
+}
+```
 
 ### Current Redis Usage in GardenVerse
 
@@ -180,7 +492,7 @@ docker push gardenverse/admin:latest
 #### 3. Hybrid Architecture
 ```
 ┌────────────────────────────────────────────────────────────┐
-│              VERCELL DEPLOYMENT ARCHITECTURE                │
+│              VERCEL DEPLOYMENT ARCHITECTURE                 │
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  Vercel Serverless Functions (NestJS API)             │  │
@@ -204,7 +516,20 @@ docker push gardenverse/admin:latest
 └────────────────────────────────────────────────────────────┘
 ```
 
-#### 4. Migration Path by Component
+### Serverless Function Limitations
+
+When deploying to Vercel, be aware of these limits:
+
+| Limitation | Impact | Mitigation |
+|------------|--------|------------|
+| **Execution timeout** | 60s (Hobby), 300s (Pro), 900s (Enterprise) | Migrate long-running tasks to worker service |
+| **Memory** | 1024MB (Hobby/Pro) | Keep API endpoints lightweight |
+| **No persistent connections** | Redis, DB connections | Use connection poolers (Supavisor, PgBouncer) |
+| **Cold starts** | 1-5s initial latency | Use Vercel Edge Functions for critical paths |
+| **WebSocket** | Limited support (Vercel Edge only) | Run Socket.IO on separate worker service |
+| **File system writes** | Read-only (except /tmp) | Use S3/Supabase Storage for uploads |
+
+### Migration Path by Component
 
 | Component | Current (Docker) | Vercel Production | Effort |
 |-----------|-----------------|-------------------|--------|

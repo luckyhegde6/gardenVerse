@@ -23,6 +23,9 @@ export class MarketplaceController {
   @Get('listings')
   @ApiOperation({ summary: 'Get all listings' })
   async getListings(@Query() query: ListingsQueryDto) {
+    if (query.page && !query.offset) {
+      query.offset = (query.page - 1) * (query.limit || 20);
+    }
     return this.marketplaceService.getListings(query);
   }
 
