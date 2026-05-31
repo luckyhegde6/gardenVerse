@@ -91,7 +91,7 @@ async function getDashboardStats() {
     })
 
     const avgApiLatency = responseTimeLogs.length > 0
-      ? responseTimeLogs.reduce((sum, log) => {
+      ? responseTimeLogs.reduce((sum: number, log) => {
           const metadata = log.metadata as Record<string, unknown> | null
           return sum + ((metadata?.duration as number) || 0)
         }, 0) / responseTimeLogs.length

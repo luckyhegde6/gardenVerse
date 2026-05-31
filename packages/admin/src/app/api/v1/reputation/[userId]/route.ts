@@ -41,7 +41,7 @@ export async function GET(
       marketplaceBonus: Math.round((user.marketplaceReliability - 50) * 0.3),
       communityBonus: Math.round((user.communityStanding - 50) * 0.3),
       sustainabilityBonus: Math.round(user.sustainabilityScore * 0.2),
-      recentActivity: logs.slice(0, 10).reduce((sum, log) => sum + log.scoreChange, 0),
+      recentActivity: logs.slice(0, 10).reduce((sum: number, log) => sum + log.scoreChange, 0),
     }
 
     return success({

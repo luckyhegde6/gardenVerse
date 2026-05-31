@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireAuth, success, badRequest, serverError, paginated } from '@/lib/middleware/auth'
+import type { Prisma, ListingStatus } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -15,10 +16,10 @@ export async function GET(request: NextRequest) {
   const offset = (page - 1) * limit
 
   try {
-    const where: Record<string, unknown> = {}
+    const where: Prisma.MarketplaceListingWhereInput = {}
 
     if (status && status !== 'ALL') {
-      where.status = status
+      where.status = status as ListingStatus
     }
 
     if (category) {
