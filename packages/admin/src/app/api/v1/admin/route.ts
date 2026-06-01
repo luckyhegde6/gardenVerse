@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireRole, success, badRequest, serverError, notFound } from '@/lib/middleware/auth'
-import type { AppLog } from '@prisma/client'
+
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['ADMIN', 'SUPER_ADMIN'])
@@ -92,7 +92,7 @@ async function getDashboardStats() {
     })
 
     const avgApiLatency = responseTimeLogs.length > 0
-      ? responseTimeLogs.reduce((sum: number, log: AppLog) => {
+      ? responseTimeLogs.reduce((sum: number, log: typeof responseTimeLogs[number]) => {
           const metadata = log.metadata as Record<string, unknown> | null
           return sum + ((metadata?.duration as number) || 0)
         }, 0) / responseTimeLogs.length
