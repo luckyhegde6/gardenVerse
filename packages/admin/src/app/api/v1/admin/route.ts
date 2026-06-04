@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireRole, success, badRequest, serverError, notFound } from '@/lib/middleware/auth'
+import type { FeatureFlag } from '@prisma/client'
 
 
 export async function GET(request: NextRequest) {
@@ -145,7 +146,7 @@ async function getSettings() {
       apiRateLimit: 100,
       sessionTimeoutMinutes: 15,
       refreshTokenDays: 7,
-      featureFlags: featureFlags.map(f => ({
+      featureFlags: featureFlags.map((f: FeatureFlag) => ({
         name: f.name,
         enabled: f.enabled,
         description: f.description,
