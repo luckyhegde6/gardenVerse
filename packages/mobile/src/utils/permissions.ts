@@ -11,20 +11,44 @@ export interface PermissionResult {
   canAskAgain: boolean;
 }
 
-async function requestCameraPermission(): Promise<PermissionResult> {
-  const { status, canAskAgain } = await Camera.requestCameraPermissionsAsync();
-  return { granted: status === "granted", canAskAgain };
+export async function requestCameraPermission(): Promise<boolean> {
+  try {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    return status === "granted";
+  } catch {
+    return false;
+  }
 }
 
-async function requestLocationPermission(): Promise<PermissionResult> {
-  const { status, canAskAgain } =
-    await Location.requestForegroundPermissionsAsync();
-  return { granted: status === "granted", canAskAgain };
+export async function requestLocationPermission(): Promise<boolean> {
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    return status === "granted";
+  } catch {
+    return false;
+  }
 }
 
-async function requestNotificationPermission(): Promise<PermissionResult> {
-  const { status } = await Notifications.requestPermissionsAsync();
-  return { granted: status === "granted", canAskAgain: true };
+export async function requestNotificationPermission(): Promise<boolean> {
+  try {
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === "granted";
+  } catch {
+    return false;
+  }
+}
+
+export async function requestAllPermissions(): Promise<{
+  camera: boolean;
+  location: boolean;
+  notifications: boolean;
+}> {
+  const [camera, location, notifications] = await Promise.all([
+    requestCameraPermission(),
+    requestLocationPermission(),
+    requestNotificationPermission(),
+  ]);
+  return { camera, location, notifications };
 }
 
 async function requestGalleryPermission(): Promise<PermissionResult> {
@@ -37,12 +61,18 @@ export async function requestPermission(
   type: PermissionType,
 ): Promise<PermissionResult> {
   switch (type) {
-    case "camera":
-      return requestCameraPermission();
-    case "location":
-      return requestLocationPermission();
-    case "notification":
-      return requestNotificationPermission();
+    case "camera": {
+      const granted = await requestCameraPermission();
+      return { granted, canAskAgain: false };
+    }
+    case "location": {
+      const granted = await requestLocationPermission();
+      return { granted, canAskAgain: false };
+    }
+    case "notification": {
+      const granted = await requestNotificationPermission();
+      return { granted, canAskAgain: false };
+    }
     case "gallery":
       return requestGalleryPermission();
     default:

@@ -1,7 +1,7 @@
 param(
   [string]$AdminUrl = "https://gardenverse.vercel.app",
-  [string]$ApiUrl = "https://gardenverse-backend.railway.app/api/v1",
-  [string]$AiUrl = "https://gardenverse-ai.railway.app"
+  [string]$ApiUrl = "https://gardenverse.vercel.app/api/v1",
+  [string]$AiUrl = "http://localhost:8000"
 )
 
 $fail = 0
@@ -12,7 +12,7 @@ function Check($name, $condition) {
   else { Write-Host "  [FAIL] $name" -ForegroundColor Red; $script:fail = 1 }
 }
 
-Section "Admin Dashboard"
+Section "Admin Dashboard & API (Unified Next.js App)"
 $code = (Invoke-WebRequest -Uri $AdminUrl -UseBasicParsing -TimeoutSec 10).StatusCode
 Check "Homepage returns 200/307 (got $code)" ($code -eq 200 -or $code -eq 307)
 
@@ -26,24 +26,14 @@ foreach ($path in $routes) {
   }
 }
 
-Section "Backend API"
+Section "API Routes"
 try {
   $health = Invoke-RestMethod -Uri "$ApiUrl/health" -TimeoutSec 10
   Check "Health endpoint returns ok" ($health.status -eq "ok")
   Check "Database is connected" ($health.database -eq "connected")
-  Check "Redis is connected" ($health.redis -eq "connected")
 } catch {
   Check "Health endpoint reachable" $false
   Check "Database is connected" $false
-  Check "Redis is connected" $false
-}
-
-Section "Cross-Service Integration"
-try {
-  $aiCheck = Invoke-RestMethod -Uri "$ApiUrl/intelligence/health" -TimeoutSec 5 -ErrorAction Stop
-  Check "Backend-AI integration" $true
-} catch {
-  Check "Backend-AI integration" $false
 }
 
 try {

@@ -35,6 +35,26 @@ You are a mobile developer specializing in React Native and Expo for the GardenV
 - Use SafeAreaView for notched devices
 - Support dark mode via theme context
 
+## Storage Patterns (Critical for Auth)
+- **Expo web storage**: Use `window.localStorage` for web platform — NEVER use in-memory maps
+- **Native storage**: Use `expo-secure-store` for iOS/Android (tokens, user data)
+- **Auth persistence**: Always test: login → browser refresh → verify still authenticated
+- **Defensive loadStoredAuth**: On profile fetch failure, fall back to cached userData — never clear auth on 404
+- **Store stale-while-revalidate**: Show cached profile immediately, refresh in background
+
+## API Client Patterns
+- Verify API routes exist before coding client calls — use `find .../api/v1 -name "route.ts"`
+- Next.js App Router dynamic segments (`[id]`) match ALL unmatched paths — beware of unintended routing
+- Response format: paginated APIs return `{ data, total, page, limit }` via `paginated()` helper
+- Always wrap store actions that call APIs with try/catch and error handling
+
+## Zustand Store Design
+- Support BOTH individual mutation methods AND bulk sync methods:
+  - Individual: `updateCropGrowth(id, field)` — for user-driven actions
+  - Bulk: `syncCrops(array)` — for simulation/engine updates (atomic array replacement)
+- Use `getState()` from zustand to access store actions outside React components
+- For engines/effects, design stores from the perspective of ALL update patterns
+
 ## Naming Conventions
 - Files: `PascalCase.tsx` for components/screens
 - Functions/Methods: `camelCase`

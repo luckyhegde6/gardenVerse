@@ -18,10 +18,9 @@ git clone <repo-url> gardenverse
 cd gardenverse
 npm install
 npm run docker:local           # Start Postgres + Redis
-npm run prisma:migrate -- --name init   # Run database migrations
+npm run prisma:migrate         # Run database migrations
 npm run prisma:seed            # Seed demo data
-npm run backend:dev            # Start backend (port 3001)
-npm run admin:dev              # Start admin dashboard (port 3000)
+npm run admin:dev              # Start unified app (API + UI on port 3000)
 ```
 
 ### Q: What's the default test credentials?
@@ -119,9 +118,8 @@ npm run e2e:all
 # Prerequisites: Docker infra must be running
 npm run docker:local           # Start Postgres + Redis containers
 
-# In separate terminals, start the apps:
-npm run backend:dev            # Start backend on port 3001
-npm run admin:dev              # Start admin dashboard on port 3000
+# Start the unified app (API + UI):
+npm run admin:dev              # Start Next.js on port 3000
 
 # Then run the Playwright E2E suite:
 npm run test:e2e               # Headless (no visible browser)
@@ -285,7 +283,7 @@ node node_modules/prisma/build/index.js migrate dev --name init --schema=package
 ```
 Or use `cmd.exe /c "npx ..."` as a workaround.
 
-### Q: Port 3000/3001 already in use?
+### Q: Port 3000 already in use?
 ```bash
 # Find what's using the port
 netstat -ano | findstr :3000

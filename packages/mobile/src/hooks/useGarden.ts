@@ -27,9 +27,9 @@ export function useGarden() {
   const selectedGarden = gardens.find((g) => g.id === selectedGardenId);
 
   const handlePlantCrop = useCallback(
-    async (seedId: string, plotX: number, plotY: number) => {
+    async (name: string, species: string, plotX: number, plotY: number) => {
       if (!selectedGardenId) return null;
-      return plantCrop(selectedGardenId, seedId, plotX, plotY);
+      return plantCrop(selectedGardenId, name, species, plotX, plotY);
     },
     [selectedGardenId, plantCrop],
   );

@@ -7,19 +7,21 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Chip } from "../../components/ui/Chip";
+import { useMarketplace } from "../../hooks/useMarketplace";
 import { validatePrice } from "../../utils/validation";
 
 const CATEGORIES = ["seeds", "fertilizers", "tools", "services", "harvest"];
 
-const CURRENCIES = ["GVC", "USD", "EUR"];
+const CURRENCIES = ["GREEN_CREDITS", "USD", "EUR"];
 
 export function CreateListingScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -42,13 +44,25 @@ export function CreateListingScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const { createListing } = useMarketplace();
+
   const handleSubmit = async () => {
     if (!validate()) return;
     setIsLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000));
-      navigation.goBack();
-    } catch {
+      await createListing({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        category,
+        price: parseFloat(price),
+        currency,
+        quantity: parseInt(quantity),
+      });
+      Alert.alert("Success", "Your listing has been created.");
+      router.back();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "Failed to create listing";
+      Alert.alert("Error", msg);
     } finally {
       setIsLoading(false);
     }

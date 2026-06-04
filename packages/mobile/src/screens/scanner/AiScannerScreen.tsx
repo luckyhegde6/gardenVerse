@@ -1,6 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { requestCameraPermission } from "../../utils/permissions";
 import { Button } from "../../components/ui/Button";
 import { CameraOverlay } from "../../components/scanner/CameraOverlay";
 import { ScanResult } from "../../components/scanner/ScanResult";
@@ -11,6 +12,13 @@ import { AiScanResult } from "../../types";
 
 export function AiScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
+
+  // ─── Request camera permission on mount ────────────────────────────────
+  useEffect(() => {
+    if (!permission?.granted) {
+      requestCameraPermission();
+    }
+  }, []);
   const [mode, setMode] = useState<"camera" | "result" | "history">("camera");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const {

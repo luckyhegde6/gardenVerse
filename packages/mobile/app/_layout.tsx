@@ -9,7 +9,10 @@ import { useAuthStore } from "../src/stores/authStore";
 import { ErrorBoundary } from "../src/components/ui/ErrorBoundary";
 import { DebugOverlay } from "../src/components/ui/DebugOverlay";
 import { useWebSocket } from "../src/hooks/useWebSocket";
+import { initLogger } from "../src/services/logger";
 import { colors, typography } from "../src/styles/theme";
+
+initLogger();
 
 LogBox.ignoreLogs(["Reanimated", "ViewPropTypes"]);
 
@@ -63,7 +66,15 @@ function RootContent() {
     <>
       <Stack screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="plant-crop" options={{ headerShown: false, presentation: 'modal' }} />
+            <Stack.Screen name="crop-detail/[cropId]" options={{ headerShown: false, presentation: 'modal' }} />
+            <Stack.Screen name="create-listing" options={{ headerShown: false, presentation: 'modal' }} />
+            <Stack.Screen name="listing-detail/[listingId]" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="group-detail/[groupId]" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="chat" options={{ headerShown: false, presentation: 'card' }} />
+          </>
         ) : (
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         )}

@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1',
+  baseURL: '/api/v1',
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 })
@@ -159,6 +159,10 @@ export interface ShopItem {
   levelRequired: number
   isLimited: boolean
   stock: number | null
+  itemType?: string
+  isOnSale?: boolean
+  discountPrice?: number | null
+  saleEndsAt?: string | null
 }
 
 export interface UserEnergy {

@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Activity,
   Trees,
+  MapPin,
   CloudSun,
   MessageCircle,
   Scan,
@@ -24,6 +25,8 @@ import {
   TicketCheck,
   Gamepad2,
   BookOpen,
+  Bug,
+  BrainCircuit,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -39,10 +42,14 @@ const navItems: NavItem[] = [
   { href: '/users', label: 'Users', icon: Users },
   { href: '/monitoring', label: 'Monitoring', icon: Activity },
   { href: '/garden', label: 'Gardens', icon: Trees },
+  { href: '/plants', label: 'Plants', icon: Sprout },
+  { href: '/locations', label: 'Locations', icon: MapPin },
   { href: '/gamification', label: 'Gamification', icon: Gamepad2 },
   { href: '/weather', label: 'Weather', icon: CloudSun },
   { href: '/community', label: 'Community', icon: MessageCircle },
   { href: '/ai-scanner', label: 'AI Scanner', icon: Scan },
+  { href: '/ai-dashboard', label: 'AI Dashboard', icon: BrainCircuit },
+  { href: '/diseases', label: 'Diseases', icon: Bug },
   { href: '/moderation', label: 'Moderation', icon: Shield },
   { href: '/marketplace', label: 'Marketplace', icon: Store },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
@@ -52,6 +59,7 @@ const navItems: NavItem[] = [
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/super-admin/dashboard', label: 'Super Admin', icon: Activity },
+  { href: '/api-docs', label: 'API Routes', icon: BookOpen },
 ]
 
 interface SidebarProps {
@@ -116,10 +124,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       <div className="border-t border-slate-800/60">
         <div className="px-2 pt-3 pb-1">
-          <a
-            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/docs`}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/api-docs"
             className={cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
               collapsed ? 'justify-center' : '',
@@ -129,7 +135,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           >
             <BookOpen className="w-5 h-5 shrink-0" />
             {!collapsed && <span>API Docs</span>}
-          </a>
+          </Link>
         </div>
         <div className="p-3 pt-1">
           <button

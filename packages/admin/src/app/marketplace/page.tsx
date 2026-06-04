@@ -65,9 +65,9 @@ export default function MarketplacePage() {
 
     try {
       const [listingsRes, txRes, dashRes] = await Promise.all([
-        api.get('/marketplace/listings', { params: { limit: 50 } }),
-        api.get('/admin/transactions', { params: { limit: 20 } }),
-        api.get('/admin/dashboard'),
+        api.get('/marketplace', { params: { limit: 50 } }),
+        api.get('/marketplace/transactions', { params: { limit: 20 } }).catch(() => ({ data: [] })),
+        api.get('/admin'),
       ])
 
       // Parse listings
@@ -119,10 +119,10 @@ export default function MarketplacePage() {
       if (dashRes.data) {
         const d = dashRes.data as Record<string, unknown>
         setMarketStats({
-          totalListings: typeof d.totalListings === 'number' ? d.totalListings : 0,
-          flaggedItems: typeof d.flaggedItems === 'number' ? d.flaggedItems : typeof d.pendingReports === 'number' ? d.pendingReports : 0,
-          openDisputes: typeof d.openDisputes === 'number' ? d.openDisputes : 0,
-          volume7d: typeof d.marketplaceVolume === 'number' ? d.marketplaceVolume : typeof d.totalRevenue === 'number' ? d.totalRevenue : 0,
+          totalListings: typeof d.marketplaceVolume === 'number' ? d.marketplaceVolume : 0,
+          flaggedItems: typeof d.pendingReports === 'number' ? d.pendingReports : 0,
+          openDisputes: 0,
+          volume7d: typeof d.revenue === 'number' ? d.revenue : 0,
         })
       }
     } catch {

@@ -39,8 +39,8 @@ export function Header() {
   useEffect(() => {
     const fetchOpenCount = async () => {
       try {
-        const res = await api.get('/admin/tickets/open-count')
-        setOpenTickets(res.data || 0)
+        const res = await api.get('/support/tickets', { params: { status: 'OPEN', limit: 1 } })
+        setOpenTickets((res.data as Record<string, unknown>)?.total as number || 0)
       } catch {}
     }
     fetchOpenCount()

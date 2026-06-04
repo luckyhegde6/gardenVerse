@@ -76,18 +76,25 @@ export default function AiScannerPage() {
     setError(null)
 
     try {
-      const scansRes = await api.get('/ai/scans', { params: { limit: 50 } })
+      const scansRes = await api.get('/ai', { params: { limit: 50 } })
 
       // Parse scans
-      const scansBody = scansRes.data as { data?: AiScan[] } | AiScan[]
-      let parsedScans: AiScan[] | null = null
-      if (Array.isArray(scansBody)) {
-        parsedScans = scansBody
-      } else if (scansBody.data && Array.isArray(scansBody.data)) {
-        parsedScans = scansBody.data
-      }
+      const scansBody = scansRes.data as Record<string, unknown>
+      const rawScans = ((scansBody.data as unknown[]) ?? (Array.isArray(scansBody) ? scansBody : [])) as Record<string, unknown>[]
 
-      if (parsedScans && parsedScans.length > 0) {
+      if (rawScans.length > 0) {
+        const parsedScans: AiScan[] = rawScans.map(s => {
+          const diseases = s.diseases ? (Array.isArray(s.diseases) ? s.diseases : [s.diseases]) : []
+          const diseaseName = diseases.length > 0 ? String(diseases[0]?.name ?? diseases[0] ?? '') : ''
+          return {
+            id: String(s.id ?? ''),
+            plantName: String(s.plantName ?? s.plant_name ?? 'Unknown'),
+            disease: diseaseName,
+            confidence: Number(s.healthScore ?? 0),
+            date: String(s.createdAt ?? s.date ?? '').slice(0, 10),
+            user: String((s.user as { username?: string })?.username ?? s.userName ?? ''),
+          }
+        })
         setRecentScans(parsedScans)
 
         // Derive stats from scan data
@@ -97,7 +104,10 @@ export default function AiScannerPage() {
         setDiseasesDetected(diseased)
         setHealthyPlants(healthy)
         if (parsedScans.length > 0) {
-          const avgConfidence = parsedScans.reduce((sum, s) => sum + s.confidence, 0) / parsedScans.length
+          const validScores = parsedScans.filter(s => s.confidence > 0).map(s => s.confidence)
+          const avgConfidence = validScores.length > 0
+            ? validScores.reduce((sum, c) => sum + c, 0) / validScores.length
+            : 0
           setAccuracyRate(Math.round(avgConfidence * 10) / 10)
         }
       }

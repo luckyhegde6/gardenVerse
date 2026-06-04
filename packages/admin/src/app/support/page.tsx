@@ -40,7 +40,7 @@ export default function AdminSupportPage() {
     try {
       const params: Record<string, string> = {}
       if (tab !== 'all') params.status = tab === 'open' ? 'OPEN' : tab === 'in_progress' ? 'IN_PROGRESS' : tab === 'resolved' ? 'RESOLVED' : 'CLOSED'
-      const res = await api.get('/admin/support/tickets', { params })
+      const res = await api.get('/support/tickets', { params })
       setTickets(res.data.tickets || [])
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load support tickets')
@@ -62,7 +62,7 @@ export default function AdminSupportPage() {
     if (!selectedTicket) return
     setActionLoading(true)
     try {
-      await api.put(`/admin/support/tickets/${selectedTicket.id}/status`, {
+      await api.put(`/support/tickets/${selectedTicket.id}/status`, {
         status: newStatus,
         adminNotes: adminNotes || undefined,
       })

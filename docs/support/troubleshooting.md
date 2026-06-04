@@ -87,24 +87,23 @@ node node_modules/prisma/build/index.js migrate dev
 
 ### Backend
 
-**Problem**: Backend compiles but `/api/docs` returns 404
-**Solution**: Check Swagger is enabled in `.env`:
+**Problem**: API routes return 404 (e.g., `/api/v1/health`)
+**Solution**: The API is served by the Next.js app. Run:
+```powershell
+npm run admin:dev      # Starts Next.js on port 3000 (serves UI + API)
 ```
-SWAGGER_ENABLED=true
-SWAGGER_PATH=api/docs
-```
-Check the backend started on the right port (default 3001).
+Check that the admin dev server is running at `http://localhost:3000`.
 
-**Problem**: `HttpService` errors for weather/geo APIs
-**Solution**: The backend uses `@nestjs/axios` for API calls. If API keys are missing:
+**Problem**: Weather/geo API errors
+**Solution**: If API keys are missing:
 - Weather falls back to simulation
 - Geo falls back to geohash
 - These are NOT errors — they're expected graceful degradation
 
-**Problem**: Backend won't start — port 3001 in use
+**Problem**: Port 3000 already in use
 **Solution**:
 ```powershell
-netstat -ano | findstr :3001
+netstat -ano | findstr :3000
 taskkill /PID <PID> /F
 ```
 
@@ -123,9 +122,8 @@ npm run docker:local
 **Problem**: Admin shows "Not Found" or blank page
 **Solution**:
 1. Check network tab in DevTools (F12) for API errors
-2. Ensure backend is running on port 3001
-3. Check CORS config in backend `.env` — admin runs on port 3000
-4. Clear Next.js cache: `rm -rf packages/admin/.next`
+2. Ensure admin dev server is running: `npm run admin:dev`
+3. Clear Next.js cache: `Remove-Item -Recurse -Force packages/admin/.next`
 
 **Problem**: Admin login fails with "Invalid credentials"
 **Solution**: Use the seeded test credentials:

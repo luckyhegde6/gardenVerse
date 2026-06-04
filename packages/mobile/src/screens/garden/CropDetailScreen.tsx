@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useGarden } from "../../hooks/useGarden";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 import { Card } from "../../components/ui/Card";
@@ -16,9 +16,7 @@ import {
   formatRelativeTime,
   formatGrowthStage,
 } from "../../utils/formatting";
-import { GardenStackParamList, CropStatus } from "../../types";
-
-type CropDetailRouteProp = RouteProp<GardenStackParamList, "CropDetail">;
+import { CropStatus } from "../../types";
 
 function getHealthTip(health: number): string {
   if (health >= 80) return "⭐ Excellent condition! Keep up the good work.";
@@ -36,9 +34,8 @@ function getStreakLabel(streak: number): { label: string; emoji: string; color: 
 }
 
 export function CropDetailScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<CropDetailRouteProp>();
-  const { cropId } = route.params;
+  const router = useRouter();
+  const { cropId } = useLocalSearchParams<{ cropId: string }>();
   const { getCropById, waterCrop, fertilizeCrop, harvestCrop, isLoading, gardens } = useGarden();
 
   const crop = getCropById(cropId);
@@ -55,7 +52,7 @@ export function CropDetailScreen() {
         title="Crop not found"
         description="This crop may have been removed"
         actionLabel="Go Back"
-        onAction={() => navigation.goBack()}
+        onAction={() => router.back()}
       />
     );
   }

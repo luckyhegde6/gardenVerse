@@ -25,7 +25,7 @@
               │                                │
               ▼                                ▼
 ┌──────────────────────────────────────────────────────────────────────┐
-│                    BACKEND (NestJS / Railway)                         │
+│                    BACKEND (Next.js API Routes)                       │
 │                                                                      │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────┐                 │
 │  │Gamification │  │ Garden       │  │ Marketplace │                 │

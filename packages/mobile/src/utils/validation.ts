@@ -44,10 +44,6 @@ export function validateEmail(email: string): string | undefined {
 export function validatePassword(password: string): string | undefined {
   if (!password) return "Password is required";
   if (password.length < 8) return "Password must be at least 8 characters";
-  if (!/[A-Z]/.test(password))
-    return "Password must contain an uppercase letter";
-  if (!/[a-z]/.test(password))
-    return "Password must contain a lowercase letter";
   if (!/[0-9]/.test(password)) return "Password must contain a number";
   return undefined;
 }
@@ -88,5 +84,5 @@ export function validateInviteCode(code: string): string | undefined {
 
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
-export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+export const PASSWORD_REGEX = /^(?=.*\d).{8,}$/;
 export const PHONE_REGEX = /^\+?[\d\s-]{10,15}$/;

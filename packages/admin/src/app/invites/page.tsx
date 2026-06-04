@@ -36,7 +36,7 @@ export default function InvitesPage() {
     setError(null)
 
     try {
-      const res = await api.get('/admin/invites')
+      const res = await api.get('/invites')
       const body = res.data as Record<string, unknown>
       const rawData = (body.data as unknown[]) || (body.invites as unknown[]) || (Array.isArray(body) ? body : [])
 
@@ -46,7 +46,9 @@ export default function InvitesPage() {
           return {
             id: String(entry.id ?? ''),
             code: String(entry.code ?? ''),
-            createdBy: String(entry.createdBy ?? entry.created_by ?? 'unknown'),
+            createdBy: (entry.createdBy && typeof entry.createdBy === 'object') 
+              ? String((entry.createdBy as Record<string, unknown>).username ?? 'unknown')
+              : String(entry.createdBy ?? entry.created_by ?? 'unknown'),
             maxUses: typeof entry.maxUses === 'number' ? entry.maxUses : typeof entry.max_uses === 'number' ? entry.max_uses : Number(entry.maxUses ?? entry.max_uses ?? 0),
             used: typeof entry.used === 'number' ? entry.used : Number(entry.used ?? 0),
             status: String(entry.status ?? 'active'),

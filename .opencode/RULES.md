@@ -61,6 +61,26 @@
 - All API endpoints must have validated DTOs (class-validator)
 - Run `npm run typecheck` before any commit
 
+## Expo Web Storage Rules
+
+- Web platform: ALWAYS use `window.localStorage` for persistence (NOT in-memory Map)
+- Native: Use `expo-secure-store` for sensitive data (tokens, user data)
+- Auth `loadStoredAuth()` must be DEFENSIVE: on profile fetch failure, fall back to cached userData — never clear auth entirely on 404
+- Always test: login → browser refresh → verify still authenticated (especially on web)
+- Store stale-while-revalidate pattern: show cached immediately, refresh in background
+
+## API Route Rules (Next.js App Router)
+
+- Every route must have a corresponding file — NO implicit sub-resource nesting
+  - ❌ `/marketplace/listings` matching `[id]` param
+  - ✅ Create separate route files for each distinct path
+- Profile/lookup endpoints are standard: always create `GET /auth/profile`
+- Paginated response format: ALWAYS `{ data, total, page, limit, totalPages }` via `paginated()` helper
+- UI must use `body.data` for paginated responses, NOT `body.users` or `body.items`
+- Always include `_count: { select: { ... } }` in Prisma queries when UI needs counts
+- Use null-safe access: `u._count?.crops ?? 0` (NOT `u._count.crops`)
+- Seed data passwords must match documentation exactly (`password123`, not `Password123`)
+
 ## Architecture Rules
 
 ### Module Independence
@@ -74,6 +94,13 @@
 - All queries must use Prisma transactions for atomicity
 - Always define indexes for frequently queried fields
 - Pagination required for all list endpoints
+
+### State Management (Zustand)
+- Support BOTH individual mutation methods AND bulk sync methods
+  - Individual: `updateCropGrowth(id, field)` — for user-driven actions
+  - Bulk: `syncCrops(array)` — for simulation/engine updates (atomic replacement)
+- Use `getState()` to access store actions outside React components
+- Design stores from the perspective of ALL update patterns, not just UI actions
 
 ### Security
 - All passwords hashed with bcrypt (12 rounds minimum)

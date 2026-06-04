@@ -42,11 +42,11 @@ export function useMarketplace(options: UseMarketplaceOptions = {}) {
           ...(options.local && { local: true }),
         };
 
-        const response = await api.get("/marketplace/listings", { params });
+        const response = await api.get("/marketplace", { params });
         const data = response.data;
 
         setListings((prev) =>
-          page === 1 ? data.listings : [...prev, ...data.listings],
+          page === 1 ? data.data : [...prev, ...data.data],
         );
         setPagination({
           page: data.page,
@@ -85,19 +85,19 @@ export function useMarketplace(options: UseMarketplaceOptions = {}) {
       quantity: number;
       images?: string[];
     }) => {
-      const response = await api.post("/marketplace/listings", data);
+      const response = await api.post("/marketplace", data);
       return response.data as MarketplaceListing;
     },
     [],
   );
 
   const deleteListing = useCallback(async (listingId: string) => {
-    await api.delete(`/marketplace/listings/${listingId}`);
+    await api.delete(`/marketplace/${listingId}`);
     setListings((prev) => prev.filter((l) => l.id !== listingId));
   }, []);
 
   const getListingById = useCallback(async (listingId: string) => {
-    const response = await api.get(`/marketplace/listings/${listingId}`);
+    const response = await api.get(`/marketplace/${listingId}`);
     return response.data as MarketplaceListing;
   }, []);
 

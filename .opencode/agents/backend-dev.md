@@ -37,6 +37,22 @@ You are a backend developer specializing in NestJS and TypeScript for the Garden
 - JWT: 15m access token, 7d refresh token
 - Geolocation: store geohash only, never exact coordinates
 
+## API Route Patterns (Next.js App Router)
+- Every client-facing route must have a corresponding file — no implicit sub-resource nesting
+  - `/marketplace/listings` ≠ `/marketplace` + implicit `/listings` — must create separate route file
+- List available routes: `find packages/admin/src/app/api/v1 -name "route.ts"`
+- Profile/lookup endpoints (`GET /auth/profile`) are standard — always create them
+- Paginated responses use the `paginated()` helper: returns `{ data, total, page, limit, totalPages }`
+- Always include `_count: { select: { ... } }` in Prisma queries when UI needs counts
+- Use null-safe access: `u._count?.crops ?? 0` (not `u._count.crops`)
+- Response body: always use `body.data` for paginated responses, NOT `body.users` or `body.items`
+
+## Seed Data Best Practices
+- Passwords must match README documentation (`password123` lowercase `p`)
+- Demo accounts should have at least one garden with active crops
+- Use `VIRTUAL` garden type for demo accounts (no real address required)
+- Set realistic but predictable values for demo crop positions (0,0), (1,0), (2,0)
+
 ## Module Structure
 ```
 module-name/

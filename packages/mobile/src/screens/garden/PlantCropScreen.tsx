@@ -5,17 +5,15 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Dimensions,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { useRouter } from "expo-router";
-import axios from "axios";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { useGarden } from "../../hooks/useGarden";
 import { PlantSpecies } from "../../types";
+import api from "../../services/api";
 import debounce from "../../utils/debounce";
 
 const CATEGORIES = [
@@ -75,11 +73,13 @@ function getCategoryIcon(name: string): string {
 }
 
 export function PlantCropScreen() {
-  const navigation = useNavigation();
   const router = useRouter();
-  const { plantCrop, isLoading, selectedGarden } = useGarden();
+  const { plotX, plotY } = useLocalSearchParams<{ plotX?: string; plotY?: string }>();
+  const { crops, plantCrop, isLoading, selectedGarden } = useGarden();
   const [selectedSeed, setSelectedSeed] = useState<PlantSpecies | null>(null);
-  const [selectedPlot, setSelectedPlot] = useState<{ x: number; y: number } | null>(null);
+  const [selectedPlot, setSelectedPlot] = useState<{ x: number; y: number } | null>(
+    plotX && plotY ? { x: parseInt(plotX, 10), y: parseInt(plotY, 10) } : null,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [plants, setPlants] = useState<PlantSpecies[]>([]);
   const [loadingPlants, setLoadingPlants] = useState(true);
@@ -99,21 +99,14 @@ export function PlantCropScreen() {
   const fetchPlants = useCallback(async (seasonFilter: string, query = "") => {
     setLoadingPlants(true);
     try {
-      const baseUrl = "http://localhost:3001/api/v1";
-      const params: any = {};
-      let url: string;
-
+      let endpoint: string;
       if (query) {
-        url = `${baseUrl}/plants/search`;
-        params.q = query;
-        params.limit = 50;
+        endpoint = `/plants?q=${encodeURIComponent(query)}&limit=50`;
       } else {
-        url = `${baseUrl}/plants/by-season`;
-        params.season = seasonFilter;
+        endpoint = `/plants?season=${encodeURIComponent(seasonFilter)}`;
       }
-
-      const { data } = await axios.get(url, { params });
-      const plantsList = data.data || data || [];
+      const resp = await api.get(endpoint);
+      const plantsList = resp.data?.data || resp.data || [];
       setPlants(Array.isArray(plantsList) ? plantsList : []);
     } catch {
       setPlants([]);
@@ -140,11 +133,11 @@ export function PlantCropScreen() {
   const handlePlant = async () => {
     if (!selectedSeed || !selectedPlot) return;
     try {
-      await plantCrop(selectedSeed.id, selectedPlot.x, selectedPlot.y);
+      await plantCrop(selectedSeed.commonName, selectedSeed.scientificName, selectedPlot.x, selectedPlot.y);
       setShowCoinsAnimation(true);
       setTimeout(() => {
         setShowCoinsAnimation(false);
-        navigation.goBack();
+        router.back();
       }, 1200);
     } catch {}
   };
@@ -161,31 +154,55 @@ export function PlantCropScreen() {
           </View>
         )}
 
-        {/* Plot Selection */}
+        {/* Plot Selection - 6×6 Grid */}
         <Card className="mb-4">
-          <Text className="text-base font-semibold text-gray-900 mb-3">
-            Select Plot Position
-          </Text>
-          <View className="gap-2">
-            {Array.from({ length: 4 }, (_, row) => (
-              <View key={row} className="flex-row gap-2">
-                {Array.from({ length: 4 }, (_, col) => {
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-base font-semibold text-gray-900">
+              Select Plot Position
+            </Text>
+            {selectedPlot && (
+              <Text className="text-xs text-primary-600 font-medium">
+                Plot ({selectedPlot.x + 1}, {selectedPlot.y + 1})
+              </Text>
+            )}
+          </View>
+          <View className="gap-1.5">
+            {Array.from({ length: 6 }, (_, row) => (
+              <View key={row} className="flex-row gap-1.5">
+                {Array.from({ length: 6 }, (_, col) => {
                   const isSelected = selectedPlot?.x === col && selectedPlot?.y === row;
+                  const existingCrop = crops.find(c => c.plotX === col && c.plotY === row);
                   return (
                     <TouchableOpacity
                       key={`${row}-${col}`}
-                      onPress={() => setSelectedPlot({ x: col, y: row })}
-                      className={`flex-1 aspect-square rounded-xl items-center justify-center border-2 ${
-                        isSelected ? "bg-primary-100 border-primary-500" : "bg-gray-50 border-gray-200"
+                      onPress={() => !existingCrop && setSelectedPlot({ x: col, y: row })}
+                      disabled={!!existingCrop}
+                      className={`flex-1 aspect-square rounded-lg items-center justify-center border-2 ${
+                        isSelected
+                          ? "bg-primary-100 border-primary-500"
+                          : existingCrop
+                            ? "bg-gray-100 border-gray-200 opacity-50"
+                            : "bg-amber-50 border-amber-200"
                       }`}
                     >
-                      {isSelected && <Text className="text-primary-600 text-sm font-bold">Selected</Text>}
+                      {existingCrop ? (
+                        <Text className="text-lg">{getPlantEmoji(existingCrop.name)}</Text>
+                      ) : isSelected ? (
+                        <Text className="text-primary-600 text-xs font-bold">✓</Text>
+                      ) : (
+                        <View className="w-3 h-3 rounded-full bg-amber-200" />
+                      )}
                     </TouchableOpacity>
                   );
                 })}
               </View>
             ))}
           </View>
+          <Text className="text-xs text-gray-400 mt-2 text-center">
+            {selectedPlot
+              ? `Ready to plant at plot (${selectedPlot.x + 1}, ${selectedPlot.y + 1})`
+              : "Tap an empty plot to select it"}
+          </Text>
         </Card>
 
         {/* Season + Garden Type */}

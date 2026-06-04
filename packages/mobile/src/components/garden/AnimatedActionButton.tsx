@@ -1,12 +1,11 @@
-import React, { useCallback } from 'react'
-import { Text, ActivityIndicator } from 'react-native'
+import React from 'react'
+import { Text, ActivityIndicator, Pressable } from 'react-native'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withSequence,
 } from 'react-native-reanimated'
-import { GestureDetector, Gesture } from 'react-native-gesture-handler'
 
 interface AnimatedActionButtonProps {
   onPress: () => void
@@ -29,27 +28,26 @@ export function AnimatedActionButton({
 }: AnimatedActionButtonProps) {
   const scale = useSharedValue(1)
 
-  const tapGesture = Gesture.Tap()
-    .onBegin(() => {
-      scale.value = withSpring(0.92, { damping: 12, stiffness: 300 })
-    })
-    .onEnd(() => {
-      scale.value = withSequence(
-        withSpring(0.95, { damping: 8, stiffness: 200 }),
-        withSpring(1, { damping: 10, stiffness: 250 }),
-      )
-      if (!disabled && !isLoading) {
-        onPress()
-      }
-    })
-    .enabled(!disabled && !isLoading)
-
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }))
 
   return (
-    <GestureDetector gesture={tapGesture}>
+    <Pressable
+      onPressIn={() => {
+        scale.value = withSpring(0.92, { damping: 12, stiffness: 300 })
+      }}
+      onPressOut={() => {
+        scale.value = withSequence(
+          withSpring(0.95, { damping: 8, stiffness: 200 }),
+          withSpring(1, { damping: 10, stiffness: 250 }),
+        )
+      }}
+      onPress={() => {
+        if (!disabled && !isLoading) onPress()
+      }}
+      disabled={disabled || isLoading}
+    >
       <Animated.View
         className={`flex-row items-center justify-center px-4 py-2.5 rounded-xl ${disabled || isLoading ? 'opacity-50' : ''} ${className}`}
         style={[{ backgroundColor: bgColor }, animatedStyle]}
@@ -63,6 +61,6 @@ export function AnimatedActionButton({
           </>
         )}
       </Animated.View>
-    </GestureDetector>
+    </Pressable>
   )
 }

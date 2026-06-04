@@ -4,10 +4,11 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { getItem, setItem, removeItem, StorageKeys } from "../utils/storage";
+import { logger } from "./logger";
 
 const BASE_URL = __DEV__
-  ? "http://localhost:3001/api/v1"
-  : "https://api.gardenverse.app/api/v1";
+  ? "http://localhost:3000/api/v1"
+  : "https://gardenverse.vercel.app/api/v1";
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -37,7 +38,13 @@ function processQueue(error: unknown, token: string | null = null) {
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     if (__DEV__) {
-      console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`);
+      const url = config.url || '';
+      const method = (config.method?.toUpperCase() || 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+      logger.info('[API] ' + method + ' ' + url, { source: 'api', context: 'request' });
+      const logs = ((globalThis as any).__DEBUG_API_LOGS || []) as { url: string; method: string; status: number; timestamp: string }[];
+      logs.push({ url, method, status: 0, timestamp: new Date().toLocaleTimeString() });
+      if (logs.length > 100) logs.shift();
+      (globalThis as any).__DEBUG_API_LOGS = logs;
     }
 
     const token = await getItem(StorageKeys.ACCESS_TOKEN);
@@ -47,13 +54,25 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error: AxiosError) => Promise.reject(error),
+  (error: AxiosError) => {
+    if (__DEV__) {
+      logger.error('[API] Request error: ' + (error.message || 'unknown'), { source: 'api', context: 'request', metadata: { url: error.config?.url } });
+    }
+    return Promise.reject(error);
+  },
 );
 
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     if (__DEV__) {
-      console.log(`[API] ${response.status} ${response.config.url}`);
+      const url = response.config.url || '';
+      const method = (response.config.method?.toUpperCase() || 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+      const status = response.status;
+      logger.info('[API] ' + status + ' ' + method + ' ' + url, { source: 'api', context: 'response' });
+      const logs = ((globalThis as any).__DEBUG_API_LOGS || []) as { url: string; method: string; status: number; timestamp: string }[];
+      logs.push({ url, method, status, timestamp: new Date().toLocaleTimeString() });
+      if (logs.length > 100) logs.shift();
+      (globalThis as any).__DEBUG_API_LOGS = logs;
     }
     return response;
   },
@@ -62,7 +81,8 @@ api.interceptors.response.use(
       _retry?: boolean;
     };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isAuthEndpoint = originalRequest.url?.startsWith('/auth/')
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -109,10 +129,14 @@ api.interceptors.response.use(
     }
 
     if (__DEV__) {
-      console.error(
-        `[API] Error ${error.response?.status} ${error.config?.url}:`,
-        error.response?.data,
-      );
+      const status = error.response?.status || 0;
+      const url = error.config?.url || '';
+      const method = (error.config?.method?.toUpperCase() || 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+      logger.error('[API] Error ' + status + ' ' + method + ' ' + url, { source: 'api', context: 'error', metadata: { data: error.response?.data as Record<string, unknown> | undefined } });
+      const logs = ((globalThis as any).__DEBUG_API_LOGS || []) as { url: string; method: string; status: number; timestamp: string }[];
+      logs.push({ url, method, status, timestamp: new Date().toLocaleTimeString() });
+      if (logs.length > 100) logs.shift();
+      (globalThis as any).__DEBUG_API_LOGS = logs;
     }
 
     return Promise.reject(error);
