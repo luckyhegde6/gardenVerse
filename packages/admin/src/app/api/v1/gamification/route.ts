@@ -3,11 +3,64 @@ import { prisma } from '@/lib/prisma/client'
 import { requireRole, requireAuth, success, badRequest, serverError, notFound } from '@/lib/middleware/auth'
 
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['ADMIN', 'SUPER_ADMIN'])
-  if ('error' in auth) return auth.error
-
   const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type') || 'achievements'
+  const type = searchParams.get('type')
+
+  // If no type specified, return user gamification stats (mobile app endpoint)
+  if (!type) {
+    const auth = requireAuth(request)
+    if ('error' in auth) return auth.error
+
+    try {
+      const [user, collections, masteries, totalSpecies] = await Promise.all([
+        prisma.user.findUnique({
+          where: { id: auth.payload.userId },
+          select: { level: true, experience: true, greenCredits: true, ecoPoints: true },
+        }),
+        prisma.plantCollection.findMany({
+          where: { userId: auth.payload.userId },
+          include: { species: true },
+        }),
+        prisma.speciesMastery.findMany({
+          where: { userId: auth.payload.userId },
+          include: { species: true },
+        }),
+        prisma.plantSpecies.count(),
+      ])
+
+      if (!user) return notFound('User not found')
+
+      return success({
+        level: user.level,
+        experience: user.experience,
+        xpForNextLevel: user.level * 100,
+        greenCredits: user.greenCredits,
+        ecoPoints: user.ecoPoints,
+        collections: {
+          totalSpecies,
+          discovered: collections.length,
+          mastered: masteries.filter(m => m.perfectedAt).length,
+          completionRate: totalSpecies > 0 ? Math.round((collections.length / totalSpecies) * 100) : 0,
+        },
+        masteries: masteries.map(m => ({
+          id: m.id,
+          speciesId: m.speciesId,
+          speciesName: m.species.commonName,
+          level: m.level,
+          experience: m.experience,
+          plantCount: m.plantCount,
+          harvestCount: m.harvestCount,
+          totalForNextLevel: m.level * 100,
+          perfectedAt: m.perfectedAt,
+        })),
+      })
+    } catch (error) {
+      return serverError(error)
+    }
+  }
+
+  const adminAuth = requireRole(request, ['ADMIN', 'SUPER_ADMIN'])
+  if ('error' in adminAuth) return adminAuth.error
 
   switch (type) {
     case 'achievements':
@@ -36,6 +89,29 @@ export async function POST(request: NextRequest) {
         return createShopItem(body)
       case 'buy':
         return buyShopItem(request, body)
+      default:
+        return badRequest('Invalid type')
+    }
+  } catch {
+    return badRequest('Invalid JSON body')
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const auth = requireRole(request, ['ADMIN', 'SUPER_ADMIN'])
+  if ('error' in auth) return auth.error
+
+  const { searchParams } = new URL(request.url)
+  const type = searchParams.get('type') || 'shop'
+
+  try {
+    const body = await request.json()
+
+    switch (type) {
+      case 'shop':
+        return updateShopItem(body)
+      case 'achievements':
+        return updateAchievement(body)
       default:
         return badRequest('Invalid type')
     }
@@ -141,10 +217,89 @@ async function createShopItem(body: Record<string, unknown>) {
         isLimited: body.isLimited ? Boolean(body.isLimited) : false,
         stock: body.stock ? Number(body.stock) : null,
         levelRequired: body.levelRequired ? Number(body.levelRequired) : 1,
+        itemType: body.itemType ? String(body.itemType) : 'CONSUMABLE',
+        effect: body.effect || undefined,
+        isOnSale: body.isOnSale ? Boolean(body.isOnSale) : false,
+        discountPrice: body.discountPrice ? Number(body.discountPrice) : null,
+        saleEndsAt: body.saleEndsAt ? new Date(String(body.saleEndsAt)) : null,
       },
     })
 
     return success(item, 201)
+  } catch (error) {
+    return serverError(error)
+  }
+}
+
+async function updateShopItem(body: Record<string, unknown>) {
+  try {
+    const { id, ...data } = body
+
+    if (!id) {
+      return badRequest('id is required for update')
+    }
+
+    const existing = await prisma.shopItem.findUnique({ where: { id: String(id) } })
+    if (!existing) {
+      return notFound('Shop item not found')
+    }
+
+    const updateData: Record<string, unknown> = {}
+    if (data.name !== undefined) updateData.name = String(data.name)
+    if (data.description !== undefined) updateData.description = String(data.description)
+    if (data.category !== undefined) updateData.category = String(data.category)
+    if (data.price !== undefined) updateData.price = Number(data.price)
+    if (data.currency !== undefined) updateData.currency = String(data.currency)
+    if (data.icon !== undefined) updateData.icon = String(data.icon)
+    if (data.isLimited !== undefined) updateData.isLimited = Boolean(data.isLimited)
+    if (data.stock !== undefined) updateData.stock = Number(data.stock)
+    if (data.levelRequired !== undefined) updateData.levelRequired = Number(data.levelRequired)
+    if (data.itemType !== undefined) updateData.itemType = String(data.itemType)
+    if (data.effect !== undefined) updateData.effect = data.effect
+    if (data.isOnSale !== undefined) updateData.isOnSale = Boolean(data.isOnSale)
+    if (data.discountPrice !== undefined) updateData.discountPrice = Number(data.discountPrice)
+    if (data.saleEndsAt !== undefined) updateData.saleEndsAt = data.saleEndsAt ? new Date(String(data.saleEndsAt)) : null
+
+    const updated = await prisma.shopItem.update({
+      where: { id: String(id) },
+      data: updateData,
+    })
+
+    return success(updated)
+  } catch (error) {
+    return serverError(error)
+  }
+}
+
+async function updateAchievement(body: Record<string, unknown>) {
+  try {
+    const { id, ...data } = body
+
+    if (!id) {
+      return badRequest('id is required for update')
+    }
+
+    const existing = await prisma.achievement.findUnique({ where: { id: String(id) } })
+    if (!existing) {
+      return notFound('Achievement not found')
+    }
+
+    const updateData: Record<string, unknown> = {}
+    if (data.key !== undefined) updateData.key = String(data.key)
+    if (data.name !== undefined) updateData.name = String(data.name)
+    if (data.description !== undefined) updateData.description = String(data.description)
+    if (data.icon !== undefined) updateData.icon = String(data.icon)
+    if (data.category !== undefined) updateData.category = String(data.category)
+    if (data.maxProgress !== undefined) updateData.maxProgress = Number(data.maxProgress)
+    if (data.xpReward !== undefined) updateData.xpReward = Number(data.xpReward)
+    if (data.tokenReward !== undefined) updateData.tokenReward = Number(data.tokenReward)
+
+    const updated = await prisma.achievement.update({
+      where: { id: String(id) },
+      data: updateData,
+    })
+
+    return success(updated)
   } catch (error) {
     return serverError(error)
   }

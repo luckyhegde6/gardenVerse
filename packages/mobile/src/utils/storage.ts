@@ -3,10 +3,22 @@ import { Platform } from "react-native";
 
 const isWeb = Platform.OS === "web";
 
-const memoryStore = new Map<string, string>();
+function getWebStorage(): Storage | null {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      return window.localStorage;
+    }
+  } catch {
+    // localStorage unavailable
+  }
+  return null;
+}
 
 export async function getItem(key: string): Promise<string | null> {
-  if (isWeb) return memoryStore.get(key) ?? null;
+  if (isWeb) {
+    const ls = getWebStorage();
+    return ls ? ls.getItem(key) : null;
+  }
   try {
     return await SecureStore.getItemAsync(key);
   } catch {
@@ -16,25 +28,27 @@ export async function getItem(key: string): Promise<string | null> {
 
 export async function setItem(key: string, value: string): Promise<void> {
   if (isWeb) {
-    memoryStore.set(key, value);
+    const ls = getWebStorage();
+    if (ls) ls.setItem(key, value);
     return;
   }
   try {
     await SecureStore.setItemAsync(key, value);
   } catch {
-    memoryStore.set(key, value);
+    // fallback: silently ignore
   }
 }
 
 export async function removeItem(key: string): Promise<void> {
   if (isWeb) {
-    memoryStore.delete(key);
+    const ls = getWebStorage();
+    if (ls) ls.removeItem(key);
     return;
   }
   try {
     await SecureStore.deleteItemAsync(key);
   } catch {
-    memoryStore.delete(key);
+    // fallback: silently ignore
   }
 }
 

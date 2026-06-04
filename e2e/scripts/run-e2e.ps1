@@ -38,9 +38,6 @@ function Cleanup {
     Write-Log "Stopping Docker containers..." -Color Yellow
     docker compose -f "$E2E_DIR/docker/docker-compose.test.yml" down --remove-orphans -v 2>&1 | Out-Null
 
-    Write-Log "Stopping backend process..." -Color Yellow
-    Get-Process -Name "node" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "backend|nest" } | Stop-Process -Force -ErrorAction SilentlyContinue
-
     Write-Log "Stopping admin process..." -Color Yellow
     Get-Process -Name "node" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "next" } | Stop-Process -Force -ErrorAction SilentlyContinue
   }
@@ -55,11 +52,11 @@ trap {
 
 # --- Start Infrastructure ---
 if (-not $NoDocker) {
-  Write-Log "Starting Docker infrastructure (Postgres:5433, Redis:6380)..." -Color Cyan
+  Write-Log "Starting Docker infrastructure (Postgres:5433)..." -Color Cyan
   $composeDir = "$E2E_DIR/docker"
   $env:COMPOSE_FILE = "$composeDir/docker-compose.test.yml"
 
-  docker compose -f "$composeDir/docker-compose.test.yml" up -d 2>&1 | ForEach-Object { Write-Log $_ }
+  docker compose -f "$composeDir/docker-compose.test.yml" up -d postgres-test 2>&1 | ForEach-Object { Write-Log $_ }
 
   Write-Log "Waiting for Postgres to be healthy..." -Color Cyan
   $retries = 30
@@ -71,17 +68,6 @@ if (-not $NoDocker) {
   }
   if (-not $healthy) { throw "Postgres failed to become healthy" }
   Write-Log "Postgres is healthy!" -Color Green
-
-  Write-Log "Waiting for Redis to be healthy..." -Color Cyan
-  $retries = 15
-  $healthy = $false
-  while ($retries -gt 0 -and -not $healthy) {
-    $status = docker inspect --format='{{.State.Health.Status}}' gardenverse-redis-test 2>$null
-    if ($status -eq "healthy") { $healthy = $true }
-    else { Start-Sleep -Seconds 2; $retries-- }
-  }
-  if (-not $healthy) { throw "Redis failed to become healthy" }
-  Write-Log "Redis is healthy!" -Color Green
 } else {
   Write-Log "Skipping Docker infrastructure startup" -Color Yellow
 }
@@ -98,48 +84,16 @@ try {
   Pop-Location
 }
 
-# --- Start Backend ---
-Write-Log "Starting backend on port 3001..." -Color Cyan
-$backendEnv = @{
-  "NODE_ENV" = "test"
-  "PORT" = "3001"
-  "DATABASE_URL" = "postgresql://gardenverse:gardenverse123@localhost:5433/gardenverse_test"
-  "REDIS_HOST" = "localhost"
-  "REDIS_PORT" = "6380"
-  "JWT_SECRET" = "test-jwt-secret-do-not-use-in-prod"
-  "JWT_REFRESH_SECRET" = "test-refresh-secret-do-not-use-in-prod"
-  "SUPER_ADMIN_REGISTRATION_CODE" = "test-admin-code-123"
-  "SWAGGER_ENABLED" = "false"
-}
-
-$backendJob = Start-Job -ScriptBlock {
-  param($dir, $envVars)
-  Set-Location $dir
-  foreach ($key in $envVars.Keys) { Set-Item -Path "env:$key" -Value $envVars[$key] }
-  npm run start:prod 2>&1
-} -ArgumentList $BACKEND_DIR, $backendEnv
-
-Write-Log "Waiting for backend to be ready..." -Color Cyan
-Start-Sleep -Seconds 10
-$backendRetries = 30
-$backendReady = $false
-while ($backendRetries -gt 0 -and -not $backendReady) {
-  try {
-    $response = Invoke-WebRequest -Uri "http://localhost:3001/api/v1/health" -TimeoutSec 5 -ErrorAction Stop
-    if ($response.StatusCode -eq 200) { $backendReady = $true }
-  } catch {}
-  if (-not $backendReady) { Start-Sleep -Seconds 2; $backendRetries-- }
-}
-if (-not $backendReady) { throw "Backend failed to start on port 3001" }
-Write-Log "Backend is ready!" -Color Green
-
-# --- Start Admin ---
-Write-Log "Starting admin dashboard on port 3000..." -Color Cyan
+# --- Start Admin (API + UI, unified Next.js app) ---
+Write-Log "Starting admin (Next.js with unified API) on port 3000..." -Color Cyan
 $adminEnv = @{
   "NODE_ENV" = "test"
-  "NEXT_PUBLIC_API_URL" = "http://localhost:3001/api/v1"
+  "DATABASE_URL" = "postgresql://gardenverse:gardenverse123@localhost:5433/gardenverse_test"
+  "JWT_SECRET" = "test-jwt-secret-do-not-use-in-prod"
+  "JWT_REFRESH_SECRET" = "test-refresh-secret-do-not-use-in-prod"
   "NEXTAUTH_SECRET" = "test-nextauth-secret"
   "NEXTAUTH_URL" = "http://localhost:3000"
+  "NEXT_PUBLIC_API_URL" = "http://localhost:3000/api/v1"
 }
 
 $adminJob = Start-Job -ScriptBlock {
@@ -170,7 +124,7 @@ if ($Headed) { $testArgs += "--headed" }
 if ($TestFilter) { $testArgs += "--grep=$TestFilter" }
 
 $env:BASE_URL = "http://localhost:3000"
-$env:API_URL = "http://localhost:3001/api/v1"
+$env:API_URL = "http://localhost:3000/api/v1"
 
 Push-Location $E2E_DIR
 try {

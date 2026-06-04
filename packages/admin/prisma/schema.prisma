@@ -118,6 +118,8 @@ model User {
   garden                  Garden?
   crops                   Crop[]
   inventory               Inventory[]
+  userPurchases           UserPurchase[]
+  inventoryItems          UserInventory[]
   listings                MarketplaceListing[]
   purchases               MarketplaceTransaction[]   @relation("BuyerTransactions")
   sales                   MarketplaceTransaction[]   @relation("SellerTransactions")
@@ -147,7 +149,6 @@ model User {
 
   plantHybridsCreated     PlantHybrid[]                @relation("HybridDiscoverer")
   userAchievements        UserAchievement[]
-  userPurchases           UserPurchase[]
   sessions                Session[]
   tokenTransactions       TokenTransaction[]
   appLogs                 AppLog[]
@@ -287,6 +288,12 @@ model Garden {
   irrigationLevel  Float      @default(50.0)
   sunlightExposure Float      @default(50.0)
 
+  gridWidth        Int        @default(6)
+  gridHeight       Int        @default(6)
+  irrigationType   String     @default("DRIP")
+  wateringMode     String     @default("MANUAL")
+  hasMotorPump     Boolean    @default(false)
+
   latitude         Float?
   longitude        Float?
   address          String?
@@ -301,6 +308,7 @@ model Garden {
   user             User       @relation(fields: [userId], references: [id])
 
   crops            Crop[]
+  inventoryItems   UserInventory[]
 
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
@@ -909,24 +917,32 @@ model UserAchievement {
 }
 
 model ShopItem {
-  id              String   @id @default(uuid()) @db.Uuid
+  id              String     @id @default(uuid()) @db.Uuid
   name            String
   description     String?
-  category        String   @default("SEED")
+  category        String     @default("SEED")
   price           Float
-  currency        String   @default("GREEN_CREDITS")
+  currency        String     @default("GREEN_CREDITS")
   icon            String?
-  isLimited       Boolean  @default(false)
+  isLimited       Boolean    @default(false)
   stock           Int?
-  levelRequired   Int      @default(1)
+  levelRequired   Int        @default(1)
+
+  itemType        String     @default("CONSUMABLE")
+  effect          Json?
+  isOnSale        Boolean    @default(false)
+  discountPrice   Float?
+  saleEndsAt      DateTime?
 
   purchases       UserPurchase[]
+  inventoryItems  UserInventory[]
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   @@index([category])
   @@index([levelRequired])
+  @@index([isOnSale])
 }
 
 model UserPurchase {
@@ -943,6 +959,26 @@ model UserPurchase {
 
   @@index([userId])
   @@index([itemId])
+}
+
+model UserInventory {
+  id          String   @id @default(uuid()) @db.Uuid
+  isActive    Boolean  @default(true)
+  purchasedAt DateTime @default(now())
+  expiresAt   DateTime?
+
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id])
+
+  itemId      String   @db.Uuid
+  item        ShopItem @relation(fields: [itemId], references: [id])
+
+  gardenId    String?  @db.Uuid
+  garden      Garden?  @relation(fields: [gardenId], references: [id])
+
+  @@index([userId])
+  @@index([itemId])
+  @@index([gardenId])
 }
 
 model AuditLog {
@@ -982,4 +1018,39 @@ model Session {
   @@index([token])
   @@index([userId])
   @@index([expiresAt])
+}
+
+model Campaign {
+  id            String           @id @default(uuid()) @db.Uuid
+  name          String
+  type          String
+  status        String           @default("draft")
+  startDate     DateTime
+  endDate       DateTime
+  participants  Int              @default(0)
+  rewards       String?
+  schedule      String           @default("one-time")
+  description   String?
+
+  rewardsConfig CampaignReward[]
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([status])
+  @@index([type])
+}
+
+model CampaignReward {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  type       String   @default("item")
+  value      String
+  rarity     String   @default("common")
+  cost       Float    @default(0)
+
+  campaignId String   @db.Uuid
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+
+  @@index([campaignId])
 }

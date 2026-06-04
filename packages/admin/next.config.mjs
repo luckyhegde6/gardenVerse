@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@gardenverse/backend'],
+  transpilePackages: [],
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts'],
   },

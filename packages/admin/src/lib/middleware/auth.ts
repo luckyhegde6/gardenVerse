@@ -78,7 +78,7 @@ export function requireAuth(request: NextRequest): { payload: JwtPayload } | { e
 export function requireRole(request: NextRequest, roles: string[]) {
   const result = requireAuth(request)
   if ('error' in result) return result
-  if (!roles.includes(result.payload.role)) {
+  if (!roles.some(r => r.toUpperCase() === result.payload.role.toUpperCase())) {
     return { error: forbidden(`Requires one of roles: ${roles.join(', ')}`) }
   }
   return result

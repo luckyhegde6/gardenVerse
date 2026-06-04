@@ -89,21 +89,52 @@ export default function DashboardPage() {
     setError(null)
 
     try {
-      const [statsRes, perfRes, healthRes, usersRes] = await Promise.all([
-        api.get('/admin/dashboard'),
-        api.get('/admin/performance'),
-        api.get('/admin/health'),
-        api.get('/admin/users', { params: { limit: 5 } }),
+      const [adminRes, healthRes, usersRes] = await Promise.all([
+        api.get('/admin'),
+        api.get('/health/detailed'),
+        api.get('/users', { params: { limit: 5 } }),
       ])
 
-      setStats(statsRes.data)
-      setPerf(perfRes.data)
-      setHealth(healthRes.data)
+      setError(null) // ensure error is cleared on successful fetch
 
-      const body = usersRes.data as { users: BackendUser[] }
-      if (body.users?.length) {
+      const adminData = adminRes.data as Record<string, unknown>
+      setStats({
+        totalUsers: (adminData.totalUsers as number) ?? 0,
+        verifiedUsers: (adminData.verifiedUsers as number) ?? 0,
+        verificationRate: (adminData.verificationRate as string) ?? '0%',
+        totalGardens: (adminData.activeGardens as number) ?? 0,
+        totalCrops: (adminData.totalCrops as number) ?? 0,
+        activeListings: (adminData.marketplaceVolume as number) ?? 0,
+        completedTransactions: (adminData.marketplaceTransactions as number) ?? 0,
+        totalRevenue: (adminData.revenue as number) ?? 0,
+        reportsPending: (adminData.pendingReports as number) ?? 0,
+        activeSessions: (adminData.activeSessions as number) ?? 0,
+      } as DashboardStats)
+      setPerf({
+        uptime: (adminData.systemUptime as number) ?? 0,
+        activeSessions: (adminData.activeSessions as number) ?? 0,
+        dau: (adminData.dau as number) ?? 0,
+        mau: (adminData.mau as number) ?? 0,
+        errorsLastHour: (adminData.errorsLastHour as number) ?? 0,
+        warningsLastHour: 0,
+        avgResponseTimeMs: (adminData.apiLatency as number) ?? 0,
+      } as PerformanceMetrics)
+      setHealth({
+        status: (healthRes.data as Record<string, unknown>).status as string ?? 'unknown',
+        database: ((healthRes.data as Record<string, unknown>).services as Record<string, string>)?.database ?? 'unknown',
+        timestamp: (healthRes.data as Record<string, unknown>).timestamp as string ?? new Date().toISOString(),
+        metrics: {
+          totalUsers: (adminData.totalUsers as number) ?? 0,
+          activeSessions: (adminData.activeSessions as number) ?? 0,
+          errorsLastHour: (adminData.errorsLastHour as number) ?? 0,
+        },
+      } as HealthStatus)
+
+      const usersResData = usersRes.data as Record<string, unknown>
+      const userList = (usersResData.data ?? usersResData.users ?? []) as BackendUser[]
+      if (userList.length > 0) {
         setRecentUsers(
-          body.users.map((u: BackendUser) => ({
+          userList.map((u: BackendUser) => ({
             id: u.id,
             username: u.username,
             email: u.email,

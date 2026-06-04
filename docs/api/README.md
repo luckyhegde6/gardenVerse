@@ -1,8 +1,8 @@
 # GardenVerse API Reference
 
 ## Base URL
-- **Development:** `http://localhost:3001/api/v1`
-- **Production:** `https://gardenverse-backend.railway.app/api/v1`
+- **Development:** `http://localhost:3000/api/v1`
+- **Production:** `https://gardenverse.vercel.app/api/v1`
 
 ## Authentication
 Most endpoints require a **JWT token** in the `Authorization` header:
@@ -31,7 +31,7 @@ Admin endpoints additionally set **httpOnly cookies** (`access_token`, `refresh_
 - `POST /admin/register`, `POST /admin/login`
 
 ## API Documentation (Swagger)
-When running locally: **http://localhost:3001/api/docs**
+When running locally: **http://localhost:3000/api-docs**
 
 The Swagger UI provides interactive API exploration with request/response schemas for all 24 modules.
 

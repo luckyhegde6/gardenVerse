@@ -100,6 +100,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
           const user = JSON.parse(userData) as User;
           const freshProfile = await AuthService.getProfile();
+          await setItem(StorageKeys.USER_DATA, JSON.stringify(freshProfile));
           set({
             user: freshProfile,
             accessToken,
@@ -108,11 +109,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             isLoading: false,
           });
         } catch {
+          const user = JSON.parse(userData) as User;
           set({
-            user: null,
-            accessToken: null,
-            refreshToken: null,
-            isAuthenticated: false,
+            user,
+            accessToken,
+            refreshToken,
+            isAuthenticated: true,
             isLoading: false,
           });
         }

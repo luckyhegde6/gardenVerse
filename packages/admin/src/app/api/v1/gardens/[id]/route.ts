@@ -38,7 +38,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const body = await request.json()
-    const { name, type, description, size, soilQuality, irrigationLevel, sunlightExposure, latitude, longitude, address, timezone, theme } = body
+    const { name, type, description, size, soilQuality, irrigationLevel, sunlightExposure, latitude, longitude, address, timezone, theme, gridWidth, gridHeight, irrigationType, wateringMode, hasMotorPump } = body
 
     const updated = await prisma.garden.update({
       where: { id: params.id },
@@ -55,6 +55,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         ...(address !== undefined && { address }),
         ...(timezone !== undefined && { timezone }),
         ...(theme !== undefined && { theme }),
+        ...(gridWidth !== undefined && { gridWidth }),
+        ...(gridHeight !== undefined && { gridHeight }),
+        ...(irrigationType !== undefined && { irrigationType }),
+        ...(wateringMode !== undefined && { wateringMode }),
+        ...(hasMotorPump !== undefined && { hasMotorPump }),
       },
       include: { crops: true },
     })

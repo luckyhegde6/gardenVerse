@@ -1,23 +1,14 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { MemberListItem } from "../../components/community/MemberListItem";
-import { CommunityStackParamList } from "../../types";
-
-type GroupDetailRouteProp = RouteProp<CommunityStackParamList, "GroupDetail">;
-type GroupDetailNavProp = NativeStackNavigationProp<
-  CommunityStackParamList,
-  "GroupDetail"
->;
 
 export function GroupDetailScreen() {
-  const navigation = useNavigation<GroupDetailNavProp>();
-  const route = useRoute<GroupDetailRouteProp>();
-  const { groupId } = route.params;
+  const router = useRouter();
+  const { groupId } = useLocalSearchParams<{ groupId: string }>();
 
   const mockMembers = [
     {
@@ -85,7 +76,7 @@ export function GroupDetailScreen() {
         <View className="flex-row gap-3 mb-4">
           <Button
             title="💬 Chat"
-            onPress={() => navigation.navigate("ChatScreen", { groupId })}
+            onPress={() => router.push({ pathname: "/chat", params: { groupId } })}
             className="flex-1"
           />
           <Button

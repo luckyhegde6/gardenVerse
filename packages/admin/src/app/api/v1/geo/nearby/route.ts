@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
 
     if (!geohash) {
-      return badRequest('geohash query parameter is required')
+      return success({ count: 0, gardeners: [] })
     }
 
     const precision = radius <= 1 ? 9 : radius <= 5 ? 7 : radius <= 20 ? 6 : 5

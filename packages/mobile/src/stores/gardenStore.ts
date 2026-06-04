@@ -13,7 +13,8 @@ interface GardenState {
   selectGarden: (gardenId: string) => void;
   plantCrop: (
     gardenId: string,
-    seedId: string,
+    name: string,
+    species: string,
     plotX: number,
     plotY: number,
   ) => Promise<Crop>;
@@ -21,6 +22,7 @@ interface GardenState {
   fertilizeCrop: (cropId: string) => Promise<void>;
   harvestCrop: (cropId: string) => Promise<void>;
   updateCropGrowth: (cropId: string, growthStage: number) => void;
+  syncCrops: (crops: Crop[]) => void;
   clearError: () => void;
 }
 
@@ -34,8 +36,8 @@ export const useGardenStore = create<GardenState>((set, get) => ({
   fetchGardens: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.get<Garden[]>("/gardens");
-      const gardens = response.data;
+      const response = await api.get("/gardens");
+      const gardens = response.data.data ?? [];
       const selectedGardenId = gardens[0]?.id ?? null;
       set({
         gardens,
@@ -61,16 +63,19 @@ export const useGardenStore = create<GardenState>((set, get) => ({
 
   plantCrop: async (
     gardenId: string,
-    seedId: string,
+    name: string,
+    species: string,
     plotX: number,
     plotY: number,
   ) => {
     set({ isLoading: true });
     try {
-      const response = await api.post<Crop>(`/gardens/${gardenId}/crops`, {
-        seedId,
+      const response = await api.post<Crop>(`/crops`, {
+        name,
+        species,
         plotX,
         plotY,
+        gardenId,
       });
       const newCrop = response.data;
       set((state) => ({
@@ -89,7 +94,7 @@ export const useGardenStore = create<GardenState>((set, get) => ({
 
   waterCrop: async (cropId: string) => {
     try {
-      await api.post(`/crops/${cropId}/water`);
+      await api.patch(`/crops/${cropId}`, { action: "water" });
       set((state) => ({
         crops: state.crops.map((c) =>
           c.id === cropId
@@ -106,7 +111,7 @@ export const useGardenStore = create<GardenState>((set, get) => ({
 
   fertilizeCrop: async (cropId: string) => {
     try {
-      await api.post(`/crops/${cropId}/fertilize`);
+      await api.patch(`/crops/${cropId}`, { action: "fertilize" });
       set((state) => ({
         crops: state.crops.map((c) =>
           c.id === cropId
@@ -123,7 +128,7 @@ export const useGardenStore = create<GardenState>((set, get) => ({
 
   harvestCrop: async (cropId: string) => {
     try {
-      await api.post(`/crops/${cropId}/harvest`);
+      await api.patch(`/crops/${cropId}`, { action: "harvest" });
       set((state) => ({
         crops: state.crops.map((c) =>
           c.id === cropId ? { ...c, status: CropStatus.HARVESTED } : c,
@@ -142,6 +147,10 @@ export const useGardenStore = create<GardenState>((set, get) => ({
         c.id === cropId ? { ...c, growthStage } : c,
       ),
     }));
+  },
+
+  syncCrops: (crops: Crop[]) => {
+    set({ crops });
   },
 
   clearError: () => set({ error: null }),

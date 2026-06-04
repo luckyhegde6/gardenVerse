@@ -8,8 +8,6 @@
     "services/*"
   ],
   "scripts": {
-    "backend:dev": "npm run dev -w packages/backend",
-    "backend:build": "npm run build -w packages/backend",
     "mobile:dev": "npm run dev -w packages/mobile",
     "mobile:build": "npm run build -w packages/mobile",
     "admin:dev": "npm run dev -w packages/admin",
@@ -17,12 +15,12 @@
     "ai:dev": "npm run dev -w services/ai",
     "docker:up": "docker compose -f docker-compose.local.yml up -d",
     "docker:down": "docker compose -f docker-compose.local.yml down",
-    "lint": "npm run lint -w packages/backend && npm run lint -w packages/mobile",
-    "typecheck": "npm run typecheck -w packages/backend && npm run typecheck -w packages/mobile && npm run typecheck -w packages/admin",
-    "typecheck:backend": "npm run typecheck -w packages/backend",
+    "lint": "npm run lint -w packages/mobile",
+    "typecheck": "npm run typecheck -w packages/mobile && npm run typecheck -w packages/admin",
     "typecheck:admin": "npm run typecheck -w packages/admin",
     "typecheck:mobile": "npm run typecheck -w packages/mobile",
-    "test": "npm run test -w packages/backend",
+    "test": "npm run test -w packages/admin",
+    "test:admin": "npm run test -w packages/admin",
     "test:e2e": "powershell -ExecutionPolicy Bypass -File e2e/scripts/run-e2e.ps1",
     "test:e2e:headed": "powershell -ExecutionPolicy Bypass -File e2e/scripts/run-e2e.ps1 -Headed",
     "test:e2e:docker-only": "docker compose -f e2e/docker/docker-compose.test.yml up -d",
@@ -56,9 +54,7 @@
     "script:reset-db": "powershell -ExecutionPolicy Bypass -File scripts/reset-db.ps1",
     "script:run-migrations": "powershell -ExecutionPolicy Bypass -File scripts/run-migrations.ps1",
     "script:stop-all": "powershell -ExecutionPolicy Bypass -File scripts/stop-all.ps1",
-    "script:docker-cleanup": "powershell -ExecutionPolicy Bypass -File scripts/docker-cleanup.ps1",
-    "script:start-backend": "powershell -ExecutionPolicy Bypass -File scripts/start-backend.ps1",
-    "backend:prod": "node packages/backend/dist/main"
+    "script:docker-cleanup": "powershell -ExecutionPolicy Bypass -File scripts/docker-cleanup.ps1"
   },
   "engines": {
     "node": ">=22.0.0"

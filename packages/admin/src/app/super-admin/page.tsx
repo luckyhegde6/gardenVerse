@@ -25,7 +25,7 @@ export default function SuperAdminPage() {
         ? { email: form.email, password: form.password }
         : { email: form.email, password: form.password, username: form.username, registrationCode: form.registrationCode }
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'}${endpoint}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

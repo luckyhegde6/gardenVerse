@@ -21,6 +21,11 @@ import {
   BookOpen,
   Combine,
   Swords,
+  ShoppingBag,
+  Plus,
+  Edit2,
+  Package,
+  Store,
 } from 'lucide-react'
 import { StatCard } from '@/components/StatCard'
 import { Badge } from '@/components/Badge'
@@ -28,10 +33,12 @@ import { DataTable } from '@/components/DataTable'
 import { Chart } from '@/components/Chart'
 import { Button } from '@/components/Button'
 import { Select } from '@/components/Select'
+import { Input } from '@/components/Input'
+import { Modal, ModalFooter } from '@/components/Modal'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/Tabs'
 import api from '@/lib/api'
 import { cn } from '@/lib/utils'
-import type { Achievement } from '@/lib/api'
+import type { Achievement, ShopItem } from '@/lib/api'
 
 /* ------------------------------------------------------------------ */
 /*  Mock Data                                                         */
@@ -195,6 +202,41 @@ interface GamificationStats {
   averageLevel: number
 }
 
+interface ShopItemWithPurchases extends ShopItem {
+  purchases?: number
+}
+
+interface AchievementWithCompletions extends Achievement {
+  completedBy?: number
+}
+
+interface ShopFormState {
+  name: string
+  description: string
+  category: string
+  price: number
+  currency: string
+  icon: string
+  isLimited: boolean
+  stock: number
+  levelRequired: number
+  itemType: string
+  isOnSale: boolean
+  discountPrice: number
+  saleEndsAt: string
+}
+
+interface AchievementFormState {
+  key: string
+  name: string
+  description: string
+  icon: string
+  category: string
+  maxProgress: number
+  xpReward: number
+  tokenReward: number
+}
+
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                           */
 /* ------------------------------------------------------------------ */
@@ -262,6 +304,34 @@ export default function GamificationPage() {
 
   // Catalog tab
   const [catalogTab, setCatalogTab] = useState('all')
+
+  // Shop Items state
+  const [shopItems, setShopItems] = useState<ShopItemWithPurchases[]>([])
+  const [shopLoading, setShopLoading] = useState(false)
+  const [shopError, setShopError] = useState<string | null>(null)
+  const [shopModalOpen, setShopModalOpen] = useState(false)
+  const [editingShopItem, setEditingShopItem] = useState<ShopItemWithPurchases | null>(null)
+  const [shopForm, setShopForm] = useState<ShopFormState>({
+    name: '', description: '', category: 'SEED', price: 0,
+    currency: 'GREEN_CREDITS', icon: '', isLimited: false, stock: 0, levelRequired: 1,
+    itemType: 'CONSUMABLE', isOnSale: false, discountPrice: 0, saleEndsAt: '',
+  })
+  const [shopFormSubmitting, setShopFormSubmitting] = useState(false)
+
+  // Achievements Management state
+  const [manageableAchievements, setManageableAchievements] = useState<AchievementWithCompletions[]>([])
+  const [achManagementLoading, setAchManagementLoading] = useState(false)
+  const [achManagementError, setAchManagementError] = useState<string | null>(null)
+  const [achModalOpen, setAchModalOpen] = useState(false)
+  const [editingAchievement, setEditingAchievement] = useState<AchievementWithCompletions | null>(null)
+  const [achForm, setAchForm] = useState<AchievementFormState>({
+    key: '', name: '', description: '', icon: '', category: 'GENERAL',
+    maxProgress: 1, xpReward: 0, tokenReward: 0,
+  })
+  const [achFormSubmitting, setAchFormSubmitting] = useState(false)
+
+  // Management tabs
+  const [mgmtTab, setMgmtTab] = useState('shop')
 
   /* ---- Computed ---- */
   const discoveredCount = collections.length
@@ -384,6 +454,124 @@ export default function GamificationPage() {
   }, [stats?.activeToday])
 
   useEffect(() => { fetchAll() }, [fetchAll])
+
+  /* ---- Shop Items fetch ---- */
+  const fetchShopItems = useCallback(async () => {
+    setShopLoading(true)
+    setShopError(null)
+    try {
+      const res = await api.get('/gamification', { params: { type: 'shop' } })
+      const body = res.data as unknown
+      const items = Array.isArray(body) ? body : (body as Record<string, unknown>).data ?? []
+      setShopItems(items as ShopItemWithPurchases[])
+    } catch {
+      setShopError('Could not load shop items.')
+      setShopItems([])
+    } finally {
+      setShopLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchShopItems() }, [fetchShopItems])
+
+  /* ---- Achievements Management fetch ---- */
+  const fetchManageableAchievements = useCallback(async () => {
+    setAchManagementLoading(true)
+    setAchManagementError(null)
+    try {
+      const res = await api.get('/gamification', { params: { type: 'achievements' } })
+      const body = res.data as unknown
+      const items = Array.isArray(body) ? body : (body as Record<string, unknown>).data ?? []
+      setManageableAchievements(items as AchievementWithCompletions[])
+    } catch {
+      setAchManagementError('Could not load achievements.')
+      setManageableAchievements([])
+    } finally {
+      setAchManagementLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchManageableAchievements() }, [fetchManageableAchievements])
+
+  /* ---- Shop Item Submit ---- */
+  const handleShopSubmit = useCallback(async () => {
+    setShopFormSubmitting(true)
+    try {
+      const payload = {
+        name: shopForm.name,
+        description: shopForm.description,
+        category: shopForm.category,
+        price: shopForm.price,
+        currency: shopForm.currency,
+        icon: shopForm.icon,
+        isLimited: shopForm.isLimited,
+        stock: shopForm.isLimited ? shopForm.stock : null,
+        levelRequired: shopForm.levelRequired,
+        itemType: shopForm.itemType,
+        isOnSale: shopForm.isOnSale,
+        discountPrice: shopForm.isOnSale ? shopForm.discountPrice : null,
+        saleEndsAt: shopForm.isOnSale ? shopForm.saleEndsAt || null : null,
+      }
+      const method = editingShopItem ? api.patch : api.post
+      await method(`/gamification?type=shop`, payload)
+      setShopModalOpen(false)
+      setEditingShopItem(null)
+      setShopForm({ name: '', description: '', category: 'SEED', price: 0, currency: 'GREEN_CREDITS', icon: '', isLimited: false, stock: 0, levelRequired: 1, itemType: 'CONSUMABLE', isOnSale: false, discountPrice: 0, saleEndsAt: '' })
+      await fetchShopItems()
+    } catch {
+      setShopError('Failed to save shop item.')
+    } finally {
+      setShopFormSubmitting(false)
+    }
+  }, [shopForm, editingShopItem, fetchShopItems])
+
+  /* ---- Achievement Submit ---- */
+  const handleAchievementSubmit = useCallback(async () => {
+    setAchFormSubmitting(true)
+    try {
+      const payload = {
+        key: achForm.key,
+        name: achForm.name,
+        description: achForm.description,
+        icon: achForm.icon,
+        category: achForm.category,
+        maxProgress: achForm.maxProgress,
+        xpReward: achForm.xpReward,
+        tokenReward: achForm.tokenReward,
+      }
+      const method = editingAchievement ? api.patch : api.post
+      await method(`/gamification?type=achievements`, payload)
+      setAchModalOpen(false)
+      setEditingAchievement(null)
+      setAchForm({ key: '', name: '', description: '', icon: '', category: 'GENERAL', maxProgress: 1, xpReward: 0, tokenReward: 0 })
+      await fetchManageableAchievements()
+    } catch {
+      setAchManagementError('Failed to save achievement.')
+    } finally {
+      setAchFormSubmitting(false)
+    }
+  }, [achForm, editingAchievement, fetchManageableAchievements])
+
+  /* ---- Computed shop stats ---- */
+  const shopStats = useMemo(() => {
+    const categories = new Set(shopItems.map(i => i.category))
+    return {
+      totalItems: shopItems.length,
+      categoriesCount: categories.size,
+      limitedItems: shopItems.filter(i => i.isLimited).length,
+      totalStock: shopItems.reduce((sum, i) => sum + (i.stock ?? 0), 0),
+    }
+  }, [shopItems])
+
+  /* ---- Computed achievements stats ---- */
+  const achStats = useMemo(() => {
+    const categories = new Set(manageableAchievements.map(a => a.category))
+    return {
+      totalAchievements: manageableAchievements.length,
+      categoriesCount: categories.size,
+      totalCompletedBy: manageableAchievements.reduce((sum, a) => sum + (a.completedBy ?? 0), 0),
+    }
+  }, [manageableAchievements])
 
   /* ---- Loading State ---- */
   if (isLoading && !stats) {
@@ -935,6 +1123,261 @@ export default function GamificationPage() {
           </div>
         </div>
       </div>
+
+      {/* ============ SHOP & ACHIEVEMENTS MANAGEMENT ============ */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">Shop &amp; Achievements Management</h3>
+          <ShoppingBag className="w-4 h-4 text-emerald-400" />
+        </div>
+        <TabsRoot value={mgmtTab} onValueChange={setMgmtTab}>
+          <TabsList>
+            <TabsTrigger value="shop">Shop Items ({shopItems.length})</TabsTrigger>
+            <TabsTrigger value="achievements">Achievements ({manageableAchievements.length})</TabsTrigger>
+          </TabsList>
+
+          {/* ---- Shop Items Tab ---- */}
+          <TabsContent value="shop">
+            {shopError && (
+              <div className="flex items-center gap-3 p-3 mb-4 rounded-lg bg-amber-400/10 border border-amber-400/20">
+                <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+                <p className="text-sm text-amber-300 flex-1">{shopError}</p>
+                <Button variant="ghost" size="sm" onClick={fetchShopItems}>Retry</Button>
+              </div>
+            )}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <div className="rounded-lg bg-slate-800/30 border border-slate-800/60 p-3">
+                <p className="text-xs text-slate-500">Total Items</p>
+                <p className="text-lg font-bold text-slate-100">{shopStats.totalItems}</p>
+              </div>
+              <div className="rounded-lg bg-slate-800/30 border border-slate-800/60 p-3">
+                <p className="text-xs text-slate-500">Categories</p>
+                <p className="text-lg font-bold text-slate-100">{shopStats.categoriesCount}</p>
+              </div>
+              <div className="rounded-lg bg-slate-800/30 border border-slate-800/60 p-3">
+                <p className="text-xs text-slate-500">Limited Items</p>
+                <p className="text-lg font-bold text-amber-400">{shopStats.limitedItems}</p>
+              </div>
+              <div className="rounded-lg bg-slate-800/30 border border-slate-800/60 p-3">
+                <p className="text-xs text-slate-500">Total Stock</p>
+                <p className="text-lg font-bold text-slate-100">{shopStats.totalStock}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-slate-400">Manage in-game shop items players can purchase.</p>
+              <Button variant="primary" size="sm" onClick={() => {
+                setEditingShopItem(null)
+                setShopForm({ name: '', description: '', category: 'SEED', price: 0, currency: 'GREEN_CREDITS', icon: '', isLimited: false, stock: 0, levelRequired: 1, itemType: 'CONSUMABLE', isOnSale: false, discountPrice: 0, saleEndsAt: '' })
+                setShopModalOpen(true)
+              }}>
+                <Plus className="w-4 h-4" />
+                Add Item
+              </Button>
+            </div>
+            <DataTable
+              columns={[
+                { key: 'name', header: 'Name', sortable: true },
+                { key: 'category', header: 'Category', width: '120px', sortable: true, render: (r) => <Badge variant="info">{r.category as string}</Badge> },
+                { key: 'price', header: 'Price', width: '80px', sortable: true, render: (r) => <span className="text-emerald-400 font-mono">{r.price as number}</span> },
+                { key: 'currency', header: 'Currency', width: '120px', sortable: true, render: (r) => {
+                  const cur = r.currency as string
+                  return <Badge variant={cur === 'GREEN_CREDITS' ? 'success' : 'warning'}>{cur === 'GREEN_CREDITS' ? 'Credits' : 'Eco Points'}</Badge>
+                }},
+                { key: 'stock', header: 'Stock', width: '70px', render: (r) => {
+                  const s = r.stock as number | null
+                  return s != null ? <span className="text-slate-300 font-mono">{s}</span> : <span className="text-slate-600">∞</span>
+                }},
+                { key: 'levelRequired', header: 'Min Lv', width: '70px', sortable: true, render: (r) => <span className="text-sky-400 font-mono">{r.levelRequired as number}</span> },
+                { key: 'isLimited', header: 'Limited', width: '80px', render: (r) => r.isLimited ? <Badge variant="warning">Limited</Badge> : <Badge variant="default">Unlimited</Badge> },
+                { key: 'purchases', header: 'Purchases', width: '100px', sortable: true, render: (r) => {
+                  const p = r.purchases as number | undefined
+                  return p != null ? <span className="text-amber-400 font-mono">{p}</span> : <span className="text-slate-600">—</span>
+                }},
+                { key: 'isOnSale', header: 'Sale', width: '70px', render: (r) => r.isOnSale ? <Badge variant="warning">SALE</Badge> : <Badge variant="default">—</Badge> },
+              ]}
+              data={shopItems as unknown as Record<string, unknown>[]}
+              keyExtractor={(r) => String(r.id)}
+              onRowClick={(r) => {
+                const item = r as unknown as ShopItemWithPurchases
+                setEditingShopItem(item)
+                setShopForm({
+                  name: item.name, description: item.description, category: item.category,
+                  price: item.price, currency: item.currency, icon: item.icon,
+                  isLimited: item.isLimited, stock: item.stock ?? 0, levelRequired: item.levelRequired,
+                  itemType: item.itemType ?? 'CONSUMABLE', isOnSale: item.isOnSale ?? false,
+                  discountPrice: item.discountPrice ?? 0, saleEndsAt: item.saleEndsAt ?? '',
+                })
+                setShopModalOpen(true)
+              }}
+              searchable
+              pageSize={8}
+              loading={shopLoading}
+              emptyMessage="No shop items found."
+            />
+          </TabsContent>
+
+          {/* ---- Achievements Management Tab ---- */}
+          <TabsContent value="achievements">
+            {achManagementError && (
+              <div className="flex items-center gap-3 p-3 mb-4 rounded-lg bg-amber-400/10 border border-amber-400/20">
+                <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+                <p className="text-sm text-amber-300 flex-1">{achManagementError}</p>
+                <Button variant="ghost" size="sm" onClick={fetchManageableAchievements}>Retry</Button>
+              </div>
+            )}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+              <div className="rounded-lg bg-slate-800/30 border border-slate-800/60 p-3">
+                <p className="text-xs text-slate-500">Total Achievements</p>
+                <p className="text-lg font-bold text-slate-100">{achStats.totalAchievements}</p>
+              </div>
+              <div className="rounded-lg bg-slate-800/30 border border-slate-800/60 p-3">
+                <p className="text-xs text-slate-500">Categories</p>
+                <p className="text-lg font-bold text-slate-100">{achStats.categoriesCount}</p>
+              </div>
+              <div className="rounded-lg bg-slate-800/30 border border-slate-800/60 p-3">
+                <p className="text-xs text-slate-500">Total Completions</p>
+                <p className="text-lg font-bold text-emerald-400">{achStats.totalCompletedBy}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-slate-400">Create and manage achievements players can earn.</p>
+              <Button variant="primary" size="sm" onClick={() => {
+                setEditingAchievement(null)
+                setAchForm({ key: '', name: '', description: '', icon: '', category: 'GENERAL', maxProgress: 1, xpReward: 0, tokenReward: 0 })
+                setAchModalOpen(true)
+              }}>
+                <Plus className="w-4 h-4" />
+                Add Achievement
+              </Button>
+            </div>
+            <DataTable
+              columns={[
+                { key: 'key', header: 'Key', sortable: true, width: '130px' },
+                { key: 'name', header: 'Name', sortable: true },
+                { key: 'description', header: 'Description' },
+                { key: 'category', header: 'Category', width: '120px', sortable: true, render: (r) => {
+                  const colors: Record<string, string> = { GARDENING: 'text-emerald-400', SOCIAL: 'text-sky-400', MILESTONE: 'text-purple-400', GENERAL: 'text-slate-400' }
+                  return <Badge variant="info"><span className={colors[r.category as string] ?? 'text-slate-400'}>{r.category as string}</span></Badge>
+                }},
+                { key: 'maxProgress', header: 'Max Progress', width: '100px', sortable: true, render: (r) => <span className="text-slate-400 font-mono text-xs">{r.maxProgress as number}</span> },
+                { key: 'xpReward', header: 'XP Reward', width: '100px', sortable: true, render: (r) => <span className="text-emerald-400">+{r.xpReward as number}</span> },
+                { key: 'tokenReward', header: 'Token Rew.', width: '100px', sortable: true, render: (r) => {
+                  const tokens = r.tokenReward as number
+                  return tokens > 0 ? <span className="text-cyan-400">+{tokens} ¤</span> : <span className="text-slate-600">—</span>
+                }},
+                { key: 'completedBy', header: 'Completed By', width: '120px', sortable: true, render: (r) => {
+                  const count = r.completedBy as number | undefined
+                  return count != null ? <span className="text-amber-400 font-mono">{count} users</span> : <span className="text-slate-600">—</span>
+                }},
+              ]}
+              data={manageableAchievements as unknown as Record<string, unknown>[]}
+              keyExtractor={(r) => String(r.id)}
+              onRowClick={(r) => {
+                const item = r as unknown as AchievementWithCompletions
+                setEditingAchievement(item)
+                setAchForm({ key: item.key, name: item.name, description: item.description, icon: item.icon, category: item.category, maxProgress: item.maxProgress, xpReward: item.xpReward, tokenReward: item.tokenReward })
+                setAchModalOpen(true)
+              }}
+              searchable
+              pageSize={8}
+              loading={achManagementLoading}
+              emptyMessage="No achievements configured."
+            />
+          </TabsContent>
+        </TabsRoot>
+      </div>
+
+      {/* ============ SHOP ITEM MODAL ============ */}
+      <Modal
+        open={shopModalOpen}
+        onOpenChange={setShopModalOpen}
+        title={editingShopItem ? 'Edit Shop Item' : 'Add Shop Item'}
+        description={editingShopItem ? 'Edit the selected shop item' : 'Create a new item for the in-game store'}
+      >
+        <div className="space-y-4">
+          <Input id="shop-name" label="Name" value={shopForm.name} onChange={e => setShopForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Item name" />
+          <Input id="shop-description" label="Description" value={shopForm.description} onChange={e => setShopForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Item description" />
+          <Select id="shop-category" label="Category" options={[
+            { value: 'SEED', label: 'Seed' }, { value: 'TOOL', label: 'Tool' },
+            { value: 'FERTILIZER', label: 'Fertilizer' }, { value: 'DECORATION', label: 'Decoration' },
+            { value: 'BOOST', label: 'Boost' }, { value: 'COUPON', label: 'Coupon' },
+          ]} value={shopForm.category} onChange={e => setShopForm(prev => ({ ...prev, category: e.target.value }))} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input id="shop-price" label="Price" type="number" min={0} value={shopForm.price} onChange={e => setShopForm(prev => ({ ...prev, price: Number(e.target.value) }))} />
+            <Select id="shop-currency" label="Currency" options={[
+              { value: 'GREEN_CREDITS', label: 'Green Credits' }, { value: 'ECO_POINTS', label: 'Eco Points' },
+            ]} value={shopForm.currency} onChange={e => setShopForm(prev => ({ ...prev, currency: e.target.value }))} />
+          </div>
+          <Input id="shop-icon" label="Icon" value={shopForm.icon} onChange={e => setShopForm(prev => ({ ...prev, icon: e.target.value }))} placeholder="Emoji or icon URL" />
+          <div className="flex items-center gap-3">
+            <input type="checkbox" id="shop-isLimited" checked={shopForm.isLimited} onChange={e => setShopForm(prev => ({ ...prev, isLimited: e.target.checked }))} className="rounded border-slate-700 bg-slate-800 text-admin-500 focus:ring-admin-500" />
+            <label htmlFor="shop-isLimited" className="text-sm font-medium text-slate-300">Limited Stock</label>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input id="shop-stock" label="Stock" type="number" min={0} value={shopForm.stock} onChange={e => setShopForm(prev => ({ ...prev, stock: Number(e.target.value) }))} disabled={!shopForm.isLimited} />
+            <Input id="shop-levelRequired" label="Level Required" type="number" min={1} value={shopForm.levelRequired} onChange={e => setShopForm(prev => ({ ...prev, levelRequired: Number(e.target.value) }))} />
+          </div>
+
+          {/* Item Type */}
+          <Select id="shop-itemType" label="Item Type" options={[
+            { value: 'CONSUMABLE', label: 'Consumable' }, { value: 'TOOL', label: 'Tool' },
+            { value: 'EQUIPMENT', label: 'Equipment' }, { value: 'DECORATION', label: 'Decoration' },
+          ]} value={shopForm.itemType} onChange={e => setShopForm(prev => ({ ...prev, itemType: e.target.value }))} />
+
+          {/* Sale / Discount */}
+          <div className="flex items-center gap-3">
+            <input type="checkbox" id="shop-isOnSale" checked={shopForm.isOnSale} onChange={e => setShopForm(prev => ({ ...prev, isOnSale: e.target.checked }))} className="rounded border-slate-700 bg-slate-800 text-admin-500 focus:ring-admin-500" />
+            <label htmlFor="shop-isOnSale" className="text-sm font-medium text-slate-300">On Sale / Flash Sale</label>
+          </div>
+          {shopForm.isOnSale && (
+            <div className="grid grid-cols-2 gap-4 pl-6 border-l-2 border-amber-500/30">
+              <Input id="shop-discountPrice" label="Discount Price" type="number" min={0} value={shopForm.discountPrice} onChange={e => setShopForm(prev => ({ ...prev, discountPrice: Number(e.target.value) }))} />
+              <Input id="shop-saleEndsAt" label="Sale Ends At" type="datetime-local" value={shopForm.saleEndsAt} onChange={e => setShopForm(prev => ({ ...prev, saleEndsAt: e.target.value }))} />
+            </div>
+          )}
+        </div>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setShopModalOpen(false)}>Cancel</Button>
+          <Button variant="primary" loading={shopFormSubmitting} onClick={handleShopSubmit}>
+            {editingShopItem ? 'Update' : 'Create'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* ============ ACHIEVEMENT MODAL ============ */}
+      <Modal
+        open={achModalOpen}
+        onOpenChange={setAchModalOpen}
+        title={editingAchievement ? 'Edit Achievement' : 'Add Achievement'}
+        description={editingAchievement ? 'Edit the selected achievement' : 'Add a new achievement for players to earn'}
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input id="ach-key" label="Key" value={achForm.key} onChange={e => setAchForm(prev => ({ ...prev, key: e.target.value }))} placeholder="unique_key_name" />
+            <Input id="ach-name" label="Name" value={achForm.name} onChange={e => setAchForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Achievement name" />
+          </div>
+          <Input id="ach-description" label="Description" value={achForm.description} onChange={e => setAchForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Achievement description" />
+          <div className="grid grid-cols-2 gap-4">
+            <Input id="ach-icon" label="Icon" value={achForm.icon} onChange={e => setAchForm(prev => ({ ...prev, icon: e.target.value }))} placeholder="Emoji or icon URL" />
+            <Select id="ach-category" label="Category" options={[
+              { value: 'GENERAL', label: 'General' }, { value: 'GARDENING', label: 'Gardening' },
+              { value: 'SOCIAL', label: 'Social' }, { value: 'MILESTONE', label: 'Milestone' },
+            ]} value={achForm.category} onChange={e => setAchForm(prev => ({ ...prev, category: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <Input id="ach-maxProgress" label="Max Progress" type="number" min={1} value={achForm.maxProgress} onChange={e => setAchForm(prev => ({ ...prev, maxProgress: Number(e.target.value) }))} />
+            <Input id="ach-xpReward" label="XP Reward" type="number" min={0} value={achForm.xpReward} onChange={e => setAchForm(prev => ({ ...prev, xpReward: Number(e.target.value) }))} />
+            <Input id="ach-tokenReward" label="Token Reward" type="number" min={0} value={achForm.tokenReward} onChange={e => setAchForm(prev => ({ ...prev, tokenReward: Number(e.target.value) }))} />
+          </div>
+        </div>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setAchModalOpen(false)}>Cancel</Button>
+          <Button variant="primary" loading={achFormSubmitting} onClick={handleAchievementSubmit}>
+            {editingAchievement ? 'Update' : 'Create'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,26 +15,31 @@ import Animated, {
   interpolate,
   Easing,
 } from 'react-native-reanimated';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useRouter } from 'expo-router';
 import { useGarden } from '../../hooks/useGarden';
 import { useAuthStore } from '../../stores/authStore';
 import { IsometricGrid } from '../../components/garden/IsometricGrid';
 import { Garden3D } from '../../components/garden/Garden3D';
-import { Minimap } from '../../components/garden/Minimap';
+
+import { GardenAnalytics } from '../../components/garden/GardenAnalytics';
 import { WaterButton } from '../../components/garden/WaterButton';
 import { FertilizeButton } from '../../components/garden/FertilizeButton';
 import { HarvestButton } from '../../components/garden/HarvestButton';
 import { Badge } from '../../components/ui/Badge';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { GardenStackParamList, Crop, CollectionStats } from '../../types';
+import { GrowthOverlay } from '../../components/garden/GrowthOverlay';
+import { WeatherBar } from '../../components/garden/WeatherBar';
+import { WalkthroughOverlay, useWalkthrough } from '../../components/garden/WalkthroughOverlay';
+import { Crop, CollectionStats, GardenType, WeatherData } from '../../types';
 import GamificationService from '../../services/gamification';
-
-type GardenNavProp = NativeStackNavigationProp<GardenStackParamList, 'GardenHome'>;
+import { growthEngine, GrowthState } from '../../services/growthEngine';
+import { useGardenStore } from '../../stores/gardenStore';
+import api from '../../services/api';
+import { requestLocationPermission, requestNotificationPermission } from '../../utils/permissions';
 
 export function GardenScreen() {
-  const navigation = useNavigation<GardenNavProp>();
+  const router = useRouter();
   const {
     crops,
     selectedGarden,
@@ -50,8 +55,19 @@ export function GardenScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCropId, setSelectedCropId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [engineState, setEngineState] = useState<GrowthState | null>(null);
 
-  // ─── Plant-Centric State ───────────────────────────────────────────────────
+  const {
+    showWalkthrough,
+    checking: walkthroughChecking,
+    completeWalkthrough,
+    skipWalkthrough,
+  } = useWalkthrough();
+
+  const [locationPermission, setLocationPermission] = useState<boolean>(false);
+  const [notificationPermission, setNotificationPermission] = useState<boolean>(false);
 
   const [collectionStats, setCollectionStats] = useState<CollectionStats>({
     discovered: 0,
@@ -71,9 +87,22 @@ export function GardenScreen() {
       const stats = await GamificationService.getCollectionStats();
       setCollectionStats(stats);
     } catch {
-      // Silent fail — collections are non-critical
+      // Silent fail
     }
   }, []);
+
+  // ─── Fetch Weather ─────────────────────────────────────────────────────────
+
+  const fetchWeather = useCallback(async () => {
+    if (!selectedGarden?.timezone) return;
+    try {
+      const region = selectedGarden?.address?.split(',').pop()?.trim() || 'IN-KA';
+      const resp = await api.get(`/weather?region=${encodeURIComponent(region)}`);
+      setWeather(resp.data?.data || resp.data);
+    } catch {
+      // Silent fail — weather is non-critical
+    }
+  }, [selectedGarden]);
 
   useEffect(() => {
     if (user?.experience) {
@@ -84,17 +113,60 @@ export function GardenScreen() {
     }
   }, [user?.experience]);
 
-  // Fetch collection stats on mount
   useEffect(() => {
     fetchCollectionStats();
-  }, [fetchCollectionStats]);
+    fetchWeather();
+  }, [fetchCollectionStats, fetchWeather]);
+
+  // ─── Growth Engine Integration ──────────────────────────────────────────
+  const engineStarted = useRef(false)
+
+  useEffect(() => {
+    if (crops.length === 0 || !selectedGarden || engineStarted.current) return
+    engineStarted.current = true
+    const sync = useGardenStore.getState().syncCrops
+    growthEngine.start(
+      crops,
+      selectedGarden.type as GardenType,
+      selectedGarden.sunlightExposure,
+      (updated) => {
+        sync(updated)
+        setEngineState({ lastTickAt: Date.now(), ticksElapsed: growthEngine['timer'] ? 1 : 0 })
+      },
+    )
+    return () => { growthEngine.stop(); engineStarted.current = false }
+  }, [!!selectedGarden])
+
+  useEffect(() => {
+    if (engineStarted.current && crops.length > 0) {
+      growthEngine.updateCrops(crops)
+    }
+  }, [crops])
+
+  // ─── Engine state polling ───────────────────────────────────────────────
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (engineStarted.current) {
+        setEngineState({ lastTickAt: Date.now(), ticksElapsed: growthEngine['timer'] ? 1 : 0 })
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // ─── Permission Requests for REAL Gardens ─────────────────────────────
+  useEffect(() => {
+    if (selectedGarden?.type === 'REAL') {
+      requestLocationPermission().then(setLocationPermission);
+      requestNotificationPermission().then(setNotificationPermission);
+    }
+  }, [selectedGarden?.type])
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    Promise.all([refreshGardens(), fetchCollectionStats()])
+    Promise.all([refreshGardens(), fetchCollectionStats(), fetchWeather()])
       .then(() => setRefreshing(false))
       .catch(() => setRefreshing(false));
-  }, [refreshGardens, fetchCollectionStats]);
+  }, [refreshGardens, fetchCollectionStats, fetchWeather]);
 
   const switchView = useCallback((mode: '2d' | '3d') => {
     viewTransition.value = withSpring(0, { damping: 15 });
@@ -121,21 +193,20 @@ export function GardenScreen() {
     (col: number, row: number, crop?: Crop) => {
       if (crop) {
         if (selectedCropId === crop.id) {
-          navigation.navigate('CropDetail', { cropId: crop.id });
+          router.push({ pathname: '/crop-detail/[cropId]', params: { cropId: crop.id } });
         } else {
           setSelectedCropId(crop.id);
         }
       } else {
         setSelectedCropId(null);
-        navigation.navigate('PlantCrop', { plotX: col, plotY: row });
+        router.push({ pathname: '/plant-crop', params: { plotX: String(col), plotY: String(row) } });
       }
     },
-    [selectedCropId, navigation],
+    [selectedCropId, router],
   );
 
   // ─── Plant-Centric Computations ────────────────────────────────────────────
 
-  /** Top crops sorted by care streak (descending) for the care streaks section */
   const careStreakCrops = useMemo(() => {
     return [...crops]
       .filter((c: Crop) => c.careStreak > 0)
@@ -143,24 +214,51 @@ export function GardenScreen() {
       .slice(0, 5);
   }, [crops]);
 
-  /** Compute average mastery level from user level (proxy for now) */
   const masteryLevel = user?.level ?? 1;
   const masteredCount = collectionStats.total > 0
     ? Math.round((collectionStats.completion / 100) * collectionStats.total)
     : 0;
 
-  // ─── Simple Harvest Handler (no XP popup) ──────────────────────────────────
+  // ─── Action Handlers ─────────────────────────────────────────────────────
+
+  const handleWater = useCallback(
+    async (cropId: string) => {
+      try {
+        await waterCrop(cropId);
+        growthEngine.onCropAction(cropId, 'water');
+      } catch {
+        // Error handled upstream
+      }
+    },
+    [waterCrop],
+  );
+
+  const handleFertilize = useCallback(
+    async (cropId: string) => {
+      try {
+        await fertilizeCrop(cropId);
+        growthEngine.onCropAction(cropId, 'fertilize');
+      } catch {
+        // Error handled upstream
+      }
+    },
+    [fertilizeCrop],
+  );
 
   const handleHarvest = useCallback(
     async (cropId: string) => {
       try {
         await harvestCrop(cropId);
       } catch {
-        // Error handled by existing harvest flow
+        // Error handled upstream
       }
     },
     [harvestCrop],
   );
+
+  const selectedCropForOverlay = selectedCropId
+    ? crops.find((c: Crop) => c.id === selectedCropId) || null
+    : null;
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -192,6 +290,35 @@ export function GardenScreen() {
         </View>
       </View>
 
+      {/* Weather Bar */}
+      <WeatherBar weather={weather} timezone={selectedGarden?.timezone} />
+
+      {/* Permission Banner for REAL Gardens */}
+      {selectedGarden?.type === 'REAL' && !locationPermission && (
+        <View style={styles.permissionBanner}>
+          <Text style={styles.permissionBannerText}>📍 Enable location for REAL garden features</Text>
+          <TouchableOpacity
+            onPress={() => requestLocationPermission().then(setLocationPermission)}
+            style={styles.permissionBannerButton}
+          >
+            <Text style={styles.permissionBannerButtonText}>Enable</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Error Banner */}
+      {error && (
+        <View className="bg-red-50 border-b border-red-200 px-4 py-3 flex-row items-center">
+          <Text className="text-red-700 text-sm flex-1">{error}</Text>
+          <TouchableOpacity
+            onPress={onRefresh}
+            className="bg-red-100 px-3 py-1 rounded-lg"
+          >
+            <Text className="text-red-700 text-xs font-semibold">Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* ─── Main Scrollable Content ──────────────────────────────────────── */}
       <ScrollView
         refreshControl={
@@ -215,60 +342,72 @@ export function GardenScreen() {
           </View>
         )}
 
-        {/* Garden View Toggle */}
-        <View className="px-4 mt-3 mb-2 flex-row justify-between items-center">
-          <Text className="text-sm font-medium text-gray-600">Garden View</Text>
-          <View className="flex-row gap-2 bg-gray-200 rounded-full p-0.5">
-            <TouchableOpacity
-              onPress={() => switchView('2d')}
-              className={`px-4 py-1.5 rounded-full ${viewMode === '2d' ? 'bg-white shadow-sm' : ''}`}
-            >
-              <Animated.Text
-                className={`text-xs font-medium ${viewMode === '2d' ? 'text-primary-600' : 'text-gray-500'}`}
+        {/* Garden View Toggle Bar */}
+        <View className="px-4 mt-3 mb-2">
+          <View className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              <View className="bg-gray-100 rounded-xl p-1 flex-row">
+                <TouchableOpacity
+                  onPress={() => switchView('2d')}
+                  className={`px-3 py-1.5 rounded-lg flex-row items-center gap-1 ${viewMode === '2d' ? 'bg-white shadow-sm' : ''}`}
+                >
+                  <Text className={`text-xs ${viewMode === '2d' ? 'text-primary-600' : 'text-gray-400'}`}>
+                    {viewMode === '2d' ? '▦' : '▦'}
+                  </Text>
+                  <Text className={`text-xs font-semibold ${viewMode === '2d' ? 'text-primary-600' : 'text-gray-500'}`}>
+                    2D
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => switchView('3d')}
+                  className={`px-3 py-1.5 rounded-lg flex-row items-center gap-1 ${viewMode === '3d' ? 'bg-white shadow-sm' : ''}`}
+                >
+                  <Text className={`text-xs ${viewMode === '3d' ? 'text-primary-600' : 'text-gray-400'}`}>
+                    {viewMode === '3d' ? '◈' : '◈'}
+                  </Text>
+                  <Text className={`text-xs font-semibold ${viewMode === '3d' ? 'text-primary-600' : 'text-gray-500'}`}>
+                    3D
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowAnalytics(v => !v)}
+                className={`px-2.5 py-1.5 rounded-lg ${showAnalytics ? 'bg-primary-50' : 'bg-gray-50'}`}
               >
-                2D
-              </Animated.Text>
-            </TouchableOpacity>
+                <Text className={`text-xs font-medium ${showAnalytics ? 'text-primary-600' : 'text-gray-500'}`}>
+                  📊
+                </Text>
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity
-              onPress={() => switchView('3d')}
-              className={`px-4 py-1.5 rounded-full ${viewMode === '3d' ? 'bg-white shadow-sm' : ''}`}
+              onPress={() => router.push('/plant-crop')}
+              className="bg-primary-600 px-4 py-2 rounded-xl active:bg-primary-700 flex-row items-center gap-1"
             >
-              <Animated.Text
-                className={`text-xs font-medium ${viewMode === '3d' ? 'text-primary-600' : 'text-gray-500'}`}
-              >
-                3D
-              </Animated.Text>
+              <Text className="text-white text-sm font-bold">+</Text>
+              <Text className="text-white text-sm font-semibold">Plant</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Minimap */}
-        <View className="px-4 mb-2">
-          <Minimap />
-        </View>
+        {/* Analytics Panel */}
+        {showAnalytics && (
+          <View className="px-4 mb-3">
+            <GardenAnalytics
+              crops={crops}
+              gridWidth={6}
+              gridHeight={6}
+              soilQuality={soilQuality}
+              onClose={() => setShowAnalytics(false)}
+            />
+          </View>
+        )}
 
         {/* Garden Grid */}
         <View className="px-4 mb-4">
-          <View className="flex-row justify-between items-center mb-3">
-            <View className="flex-row items-center gap-2">
-              <Text className="text-lg font-bold text-gray-900">
-                {selectedGarden?.name || 'My Garden'}
-              </Text>
-              {isVirtual && (
-                <Text className="text-xs text-amber-600">⚡100x</Text>
-              )}
-            </View>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('PlantCrop', {})}
-              className="bg-primary-600 px-4 py-2 rounded-xl active:bg-primary-700"
-            >
-              <Text className="text-white text-sm font-semibold">+ Plant</Text>
-            </TouchableOpacity>
-          </View>
 
           <Animated.View
             style={viewToggleStyle}
-            className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100"
+            className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100"
           >
             {crops.length === 0 ? (
               <View className="items-center py-12">
@@ -277,7 +416,7 @@ export function GardenScreen() {
                   Your garden is empty
                 </Text>
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('PlantCrop', {})}
+                  onPress={() => router.push('/plant-crop')}
                   className="bg-primary-600 px-6 py-2.5 rounded-xl mt-2"
                 >
                   <Text className="text-white font-semibold">
@@ -288,15 +427,21 @@ export function GardenScreen() {
             ) : viewMode === '2d' ? (
               <IsometricGrid
                 crops={crops}
-                gridWidth={4}
-                gridHeight={4}
+                gridWidth={6}
+                gridHeight={6}
                 selectedCropId={selectedCropId}
                 onTilePress={handleTilePress}
+                onWaterCrop={(cid) => handleWater(cid)}
+                onFertilizeCrop={(cid) => handleFertilize(cid)}
                 soilQuality={soilQuality}
                 irrigationLevel={irrigationLevel}
               />
             ) : (
-              <Garden3D />
+              <Garden3D
+                selectedCropId={selectedCropId}
+                onTilePress={handleTilePress}
+                onPlantPress={(col, row) => router.push({ pathname: '/plant-crop', params: { plotX: String(col), plotY: String(row) } })}
+              />
             )}
           </Animated.View>
         </View>
@@ -310,11 +455,11 @@ export function GardenScreen() {
               </Text>
               <View className="flex-row justify-between gap-2">
                 <WaterButton
-                  onPress={() => waterCrop(selectedCrop.id)}
+                  onPress={() => handleWater(selectedCrop.id)}
                   className="flex-1"
                 />
                 <FertilizeButton
-                  onPress={() => fertilizeCrop(selectedCrop.id)}
+                  onPress={() => handleFertilize(selectedCrop.id)}
                   className="flex-1"
                 />
                 <HarvestButton
@@ -497,10 +642,10 @@ export function GardenScreen() {
             <TouchableOpacity
               style={styles.masteryButton}
               onPress={() => {
-                // Navigate to mastery summary — placeholder for now
-                navigation.navigate('CropDetail', {
-                  cropId: crops[0]?.id ?? '',
-                });
+                const firstCropId = crops[0]?.id;
+                if (firstCropId) {
+                  router.push({ pathname: '/crop-detail/[cropId]', params: { cropId: firstCropId } });
+                }
               }}
               activeOpacity={0.7}
             >
@@ -510,7 +655,28 @@ export function GardenScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Bottom padding for overlay */}
+        <View className="h-96" />
       </ScrollView>
+
+      {/* ─── Walkthrough Overlay (first-time users) ─────────────────────── */}
+      {!walkthroughChecking && (
+        <WalkthroughOverlay
+          visible={showWalkthrough}
+          onComplete={completeWalkthrough}
+          onSkip={skipWalkthrough}
+        />
+      )}
+
+      {/* ─── Floating Growth Overlay ───────────────────────────────────────── */}
+      <GrowthOverlay
+        crop={selectedCropForOverlay}
+        garden={selectedGarden || null}
+        weather={weather}
+        engineState={engineState}
+        isVirtual={isVirtual}
+      />
     </View>
   );
 }
@@ -653,5 +819,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#6366f1',
+  },
+
+  // Permission Banner
+  permissionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fef3cd',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#fde68a',
+  },
+  permissionBannerText: {
+    fontSize: 13,
+    color: '#92400e',
+    flex: 1,
+  },
+  permissionBannerButton: {
+    backgroundColor: '#d97706',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginLeft: 12,
+  },
+  permissionBannerButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 });

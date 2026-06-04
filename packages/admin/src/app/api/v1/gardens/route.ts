@@ -15,14 +15,18 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type')
 
     const where: Record<string, unknown> = {}
-    if (userId) where.userId = userId
+    if (userId) {
+      where.userId = userId
+    } else if (auth.payload.role !== 'ADMIN' && auth.payload.role !== 'SUPER_ADMIN') {
+      where.userId = auth.payload.userId
+    }
     if (type) where.type = type
 
     const skip = (page - 1) * limit
     const [gardens, total] = await Promise.all([
       prisma.garden.findMany({
         where,
-        include: { crops: true, user: { select: { id: true, username: true, displayName: true, email: true } } },
+        include: { crops: true, user: { select: { id: true, username: true, displayName: true, email: true, region: true } } },
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
@@ -42,7 +46,7 @@ export async function POST(request: NextRequest) {
     if ('error' in auth) return auth.error
 
     const body = await request.json()
-    const { name, type, description, size, soilQuality, irrigationLevel, sunlightExposure, latitude, longitude, address, timezone, theme } = body
+    const { name, type, description, size, soilQuality, irrigationLevel, sunlightExposure, latitude, longitude, address, timezone, theme, gridWidth, gridHeight, irrigationType, wateringMode } = body
 
     const existing = await prisma.garden.findUnique({ where: { userId: auth.payload.userId } })
     if (existing) {
@@ -58,6 +62,10 @@ export async function POST(request: NextRequest) {
         soilQuality: soilQuality ?? 50,
         irrigationLevel: irrigationLevel ?? 50,
         sunlightExposure: sunlightExposure ?? 50,
+        gridWidth: gridWidth ?? 6,
+        gridHeight: gridHeight ?? 6,
+        irrigationType: irrigationType || 'DRIP',
+        wateringMode: wateringMode || 'MANUAL',
         latitude,
         longitude,
         address,

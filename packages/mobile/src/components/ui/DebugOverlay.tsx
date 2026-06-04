@@ -28,6 +28,14 @@ interface DebugApiLog {
   timestamp: string;
 }
 
+interface DebugAppLog {
+  level: string;
+  message: string;
+  source?: string;
+  context?: string;
+  timestamp?: string;
+}
+
 let debugVisible = false;
 const listeners = new Set<() => void>();
 
@@ -55,6 +63,7 @@ export function DebugOverlay({ storeState }: DebugOverlayProps) {
   const [visible, setVisible] = useState(false);
   const [forceApiError, setForceApiError] = useState(false);
   const [apiLogs, setApiLogs] = useState<DebugApiLog[]>([]);
+  const [appLogs, setAppLogs] = useState<DebugAppLog[]>([]);
   const [currentStoreState, setCurrentStoreState] =
     useState<Record<string, unknown>>({});
 
@@ -67,12 +76,14 @@ export function DebugOverlay({ storeState }: DebugOverlayProps) {
     };
   }, []);
 
-  // Poll API logs from window
+  // Poll debug data from globals
   useEffect(() => {
     if (!visible) return;
     const interval = setInterval(() => {
-      const logs = (globalThis as any).__DEBUG_API_LOGS || [];
-      setApiLogs(logs);
+      const apiLogsData = (globalThis as any).__DEBUG_API_LOGS || [];
+      setApiLogs(apiLogsData);
+      const appLogsData = (globalThis as any).__DEBUG_APP_LOGS || [];
+      setAppLogs(appLogsData);
       if (storeState) {
         setCurrentStoreState(storeState);
       }
@@ -192,6 +203,61 @@ export function DebugOverlay({ storeState }: DebugOverlayProps) {
                     </Text>
                     <Text style={styles.logTime}>{log.timestamp}</Text>
                   </View>
+                </View>
+              ))
+          )}
+        </View>
+      ),
+    },
+    {
+      title: "📝 App Logs (last 50)",
+      content: (
+        <View style={styles.sectionContent}>
+          {appLogs.length === 0 ? (
+            <Text style={styles.mutedText}>No app logs recorded yet.</Text>
+          ) : (
+            appLogs
+              .slice(-50)
+              .reverse()
+              .map((log, i) => (
+                <View key={i} style={styles.logRow}>
+                  <View style={styles.logLeft}>
+                    <Text
+                      style={[
+                        styles.logLevel,
+                        {
+                          color:
+                            log.level === 'ERROR'
+                              ? colors.error
+                              : log.level === 'WARN'
+                              ? colors.warning
+                              : log.level === 'INFO'
+                              ? colors.info
+                              : colors.debugText,
+                        },
+                      ]}
+                    >
+                      {log.level}
+                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.appLogMessage} numberOfLines={2}>
+                        {log.message}
+                      </Text>
+                      <View style={{ flexDirection: 'row', gap: 4 }}>
+                        {log.source && (
+                          <Text style={styles.appLogMeta}>{log.source}</Text>
+                        )}
+                        {log.context && (
+                          <Text style={styles.appLogMeta}>{log.context}</Text>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                  {log.timestamp && (
+                    <Text style={styles.logTime}>
+                      {new Date(log.timestamp).toLocaleTimeString()}
+                    </Text>
+                  )}
                 </View>
               ))
           )}
@@ -490,6 +556,28 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.debugText,
     opacity: 0.5,
+  },
+
+  // App log styles
+  logLevel: {
+    fontSize: 10,
+    fontWeight: '700',
+    width: 44,
+  },
+  appLogMessage: {
+    fontSize: 11,
+    color: colors.debugText,
+    flexShrink: 1,
+  },
+  appLogMeta: {
+    fontSize: 9,
+    color: colors.debugText,
+    opacity: 0.5,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
 
   // Muted text

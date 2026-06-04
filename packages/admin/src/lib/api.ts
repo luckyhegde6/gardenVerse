@@ -159,6 +159,10 @@ export interface ShopItem {
   levelRequired: number
   isLimited: boolean
   stock: number | null
+  itemType?: string
+  isOnSale?: boolean
+  discountPrice?: number | null
+  saleEndsAt?: string | null
 }
 
 export interface UserEnergy {

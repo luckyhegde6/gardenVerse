@@ -1,7 +1,7 @@
 # Production Deployment Guide
 
 > **Purpose**: End-to-end guide for deploying the complete GardenVerse ecosystem to production.
-> **Last updated**: 2026-06-01
+> **Last updated**: 2026-06-04
 
 ## Architecture Overview
 
@@ -9,30 +9,24 @@
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        PRODUCTION TOPOLOGY                           │
 │                                                                     │
-│  ┌────────────────────┐    ┌─────────────────────────────────────┐  │
-│  │  Vercel             │    │  Railway / Fly.io                    │  │
-│  │  ┌──────────────┐  │    │  ┌───────────────────────────────┐  │  │
-│  │  │ Admin Dashboard│  │    │  │ Backend (NestJS)             │  │  │
-│  │  │ Next.js 14     │  │    │  │ - REST API (port 3001)       │  │  │
-│  │  │ 31 static pages│  │    │  │ - WebSocket (Socket.IO)      │  │  │
-│  │  │ Login via JWT  │  │    │  │ - BullMQ workers             │  │  │
-│  │  └──────┬─────────┘  │    │  │ - Redis (Upstash)            │  │  │
-│  │         │            │    │  └──────────┬────────────────────┘  │  │
-│  │  ┌──────▼─────────┐  │    │             │                       │  │
-│  │  │ API calls       │  │    │  ┌──────────▼────────────────────┐  │  │
-│  │  │ NEXT_PUBLIC_API_│  │    │  │ AI Service (FastAPI)          │  │  │
-│  │  │ URL             │  │    │  │ - Plant disease detection     │  │  │
-│  │  └────────────────┘  │    │  │ - OpenCV + PyTorch            │  │  │
-│  └──────────────────────┘    │  └───────────────────────────────┘  │  │
-│                              └─────────────────────────────────────┘  │
-│                              │                                       │
-│  ┌───────────────────────────▼───────────────────────────────────┐   │
-│  │                   Supabase (Managed)                           │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────────┐  │   │
-│  │  │ PostgreSQL 16│  │ Auth        │  │ Storage (S3-compat)  │  │   │
-│  │  │ (Prisma ORM) │  │ (JWT/OAuth) │  │ (plant photos, etc)  │  │   │
-│  │  └─────────────┘  └─────────────┘  └──────────────────────┘  │   │
-│  └──────────────────────────────────────────────────────────────┘   │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │  Vercel (Next.js 14 — Unified App)                           │  │
+│  │  ┌────────────────────────────────────────────────────────┐  │  │
+│  │  │ Admin Dashboard (31 static pages)                      │  │  │
+│  │  │ API Routes (/api/v1/*)                                 │  │  │
+│  │  │ - Auth, Gardens, Crops, Marketplace, Weather, etc.     │  │  │
+│  │  │ - Prisma ORM, JWT auth, rate limiting                  │  │  │
+│  │  └────────────────────────────────────────────────────────┘  │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  ┌───────────────────────────┐   ┌────────────────────────────────┐ │
+│  │  Supabase (Managed)        │   │  AI Service (TBD)              │ │
+│  │  ┌──────────────────────┐ │   │  - Plant disease detection     │ │
+│  │  │ PostgreSQL 16         │ │   │  - OpenCV + PyTorch           │ │
+│  │  │ Auth (JWT/OAuth)      │ │   └────────────────────────────────┘ │
+│  │  │ Storage (S3-compat)   │ │                                     │
+│  │  └──────────────────────┘ │                                     │
+│  └───────────────────────────┘                                     │
 │                                                                     │
 │  ┌──────────────────────────────────────────────────────────────┐   │
 │  │  External APIs                                                │   │
@@ -45,13 +39,13 @@
 
 | Service | Platform | Type | URL | Scaling |
 |---------|----------|------|-----|---------|
-| Admin Dashboard | Vercel | Next.js (SSG/SSR) | `gardenverse.vercel.app` | Auto (serverless) |
-| Backend API | Railway | NestJS (container) | `gardenverse-api.railway.app` | Horizontal (3+ replicas) |
-| AI Service | Railway | FastAPI (container) | `gardenverse-ai.railway.app` | Horizontal (2+ replicas) |
+| Admin Dashboard + API | Vercel | Next.js (SSG/SSR + API Routes) | `gardenverse.vercel.app` | Auto (serverless) |
+| AI Service | TBD | FastAPI (container) | TBD | TBD |
 | Database | Supabase | PostgreSQL 16 | Managed | Auto-scale |
 | Cache/Queue | Upstash | Redis via HTTP | Managed | Auto-scale |
 | File Storage | Supabase | S3-compatible | Built-in | Managed |
-| IoT Broker | Railway | Mosquitto (MQTT) | Single (stateful) | Manual |
+
+> **Note:** The backend API is no longer a separate service. All API routes (`/api/v1/*`) are served directly by the Next.js app on Vercel. This eliminates the need for a separate backend deployment and simplifies the architecture.
 
 ---
 
@@ -61,8 +55,7 @@
 
 | Service | Purpose | Sign-up Link | Cost (Free Tier) |
 |---------|---------|-------------|------------------|
-| **Vercel** | Admin dashboard hosting, CI/CD | https://vercel.com | Free (Hobby) |
-| **Railway** | Backend + AI service hosting | https://railway.app | $5/mo credit |
+| **Vercel** | Admin dashboard + API hosting, CI/CD | https://vercel.com | Free (Hobby) |
 | **Supabase** | Database, Auth, Storage | https://supabase.com | Free (500MB DB) |
 | **Upstash** | Serverless Redis for queues/cache | https://upstash.com | Free (10K cmd/day) |
 | **OpenWeatherMap** | Weather API | https://openweathermap.org | Free (60 calls/min) |
@@ -78,7 +71,6 @@ npm -v    # Must be >= 10
 
 # CLI tools
 npm i -g vercel                # Vercel deployment
-npm i -g @railway/cli          # Railway deployment (optional, or use dashboard)
 
 # Docker (for local testing)
 docker --version
@@ -192,144 +184,19 @@ DATABASE_URL="postgresql://postgres:[PWD]@[REF].supabase.co:6543/postgres?pgboun
 
 ---
 
-## Step 2: Backend Deployment (Railway)
+## Step 2: Admin Dashboard + API Deployment (Vercel)
 
-### 2.1 Local Verification
-
-```bash
-# Verify the build works
-npm run backend:build
-npm run typecheck:backend
-
-# Check Prisma schema is up to date
-npx prisma validate
-```
-
-The backend Dockerfile is at `packages/backend/Dockerfile` — Railway will use it automatically.
-
-### 2.2 Deploy to Railway
-
-```bash
-# Login
-railway login
-
-# From monorepo root, init and create project
-railway init
-railway project create gardenverse-backend
-
-# Deploy (this builds the Dockerfile and starts the service)
-railway up --service gardenverse-backend --detach
-
-# Check deployment status
-railway status
-```
-
-### 2.3 Set Environment Variables
-
-Set these in Railway Dashboard > gardenverse-backend > **Variables**:
-
-**Security (generate fresh for production):**
-```bash
-# Run these commands to generate secrets
-openssl rand -base64 64   # → JWT_SECRET
-openssl rand -base64 64   # → JWT_REFRESH_SECRET
-openssl rand -base64 32   # → QR_SIGNING_KEY
-openssl rand -base64 32   # → MESSAGING_ENCRYPTION_KEY
-```
-
-**Required Variables:**
-
-| Variable | Value | Source |
-|----------|-------|--------|
-| `NODE_ENV` | `production` | Manual |
-| `PORT` | `3001` | Manual |
-| `DATABASE_URL` | `postgresql://postgres:[PWD]@[REF].supabase.co:6543/postgres?pgbouncer=true` | Step 1.2 |
-| `DIRECT_URL` | `postgresql://postgres:[PWD]@[REF].supabase.co:5432/postgres` | Step 1.2 |
-| `JWT_SECRET` | (generated above) | Generate |
-| `JWT_REFRESH_SECRET` | (generated above) | Generate |
-| `REDIS_URL` | Upstash REST URL | Upstash |
-| `WEATHER_API_KEY` | OpenWeatherMap key | OpenWeatherMap |
-| `AI_SERVICE_URL` | `https://gardenverse-ai.railway.app` | Railway (once Step 4 done) |
-| `CORS_ORIGINS` | `https://gardenverse.vercel.app` | Vercel domain |
-| `SUPABASE_URL` | `https://[REF].supabase.co` | Step 1.3 |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key | Step 1.3 |
-| `RATE_LIMIT_MAX` | `200` | Manual |
-| `LOG_LEVEL` | `info` | Manual |
-
-**Optional Variables:**
-
-| Variable | Value | Source |
-|----------|-------|--------|
-| `GOOGLE_MAPS_API_KEY` | Google Maps key | GCP Console |
-| `OPENFARM_API_KEY` | — | (public API) |
-| `TREFLE_API_KEY` | Trefle key | Trefle.io |
-| `SENTRY_DSN` | Sentry DSN | Sentry |
-| `MQTT_HOST` | MQTT broker URL | Railway (if deployed) |
-| `MQTT_PORT` | `1883` | Manual |
-| `SUPABASE_STORAGE_BUCKET` | `gardenverse-uploads` | Supabase |
-| `UPLOAD_PROVIDER` | `supabase` | Manual |
-
-### 2.4 Add Managed PostgreSQL (Alternative to Supabase)
-
-If deploying to Railway without Supabase:
-
-```bash
-railway add postgres
-```
-
-Railway auto-injects `DATABASE_URL` and `DATABASE_URL` (internal connection string) into the backend service. No manual configuration needed.
-
-### 2.5 Verify Backend
-
-```bash
-# Get the public URL
-railway domain
-
-# Test health endpoint
-curl https://gardenverse-backend.railway.app/api/v1/health
-
-# Expected response:
-# {"status":"ok","uptime":12345,"database":"connected","redis":"connected"}
-
-# Test Swagger
-curl https://gardenverse-backend.railway.app/api/docs
-# Expected: Swagger UI HTML (redirects to /api/docs-json)
-
-# Test auth endpoint
-curl -X POST https://gardenverse-backend.railway.app/api/v1/auth/admin/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@gardenverse.vercel.app","password":"password123"}'
-# Expected: {"token":"eyJ...","user":{"id":"...","role":"admin"}}
-
-# Test a protected endpoint
-TOKEN="eyJ..."  # from above
-curl https://gardenverse-backend.railway.app/api/v1/admin/dashboard \
-  -H "Authorization: Bearer $TOKEN"
-# Expected: Dashboard stats JSON
-```
-
-### 2.6 Rollback
-
-```bash
-railway rollback
-# Or in Railway Dashboard > Deployments > select previous > "Promote to Production"
-```
-
----
-
-## Step 3: Admin Dashboard Deployment (Vercel)
-
-### 3.1 Prerequisites
+### 2.1 Prerequisites
 
 ```bash
 # Verify the build
-export NEXT_PUBLIC_API_URL="https://gardenverse-backend.railway.app/api/v1"
+export NEXT_PUBLIC_API_URL="/api/v1"
 npm run admin:build
 
 # Should output: ✓ Generating static pages (31/31)
 ```
 
-### 3.2 Link and Configure
+### 2.2 Link and Configure
 
 ```bash
 # Login (if not already)
@@ -354,11 +221,11 @@ The root `vercel.json` is pre-configured:
 }
 ```
 
-### 3.3 Set Environment Variables
+### 2.3 Set Environment Variables
 
 ```bash
-# Backend API URL (point to deployed backend)
-echo "https://gardenverse-backend.railway.app/api/v1" | \
+# API URL (served by the same Next.js app)
+echo "/api/v1" | \
   vercel env add NEXT_PUBLIC_API_URL production
 
 # NextAuth secret (generate strong random)
@@ -378,7 +245,7 @@ echo "1" | \
   vercel env add SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING production
 ```
 
-### 3.4 Deploy to Production
+### 2.4 Deploy to Production
 
 ```bash
 # Deploy using cloud build (recommended)
@@ -392,7 +259,7 @@ vercel deploy --prod --yes
 # 5. Deploys to production
 ```
 
-### 3.5 Configure Custom Domain
+### 2.5 Configure Custom Domain
 
 ```bash
 # Vercel subdomain (free)
@@ -403,7 +270,7 @@ vercel domains add yourdomain.com
 # Then add CNAME record at your DNS provider pointing to cname.vercel-dns.com
 ```
 
-### 3.6 Production Verification
+### 2.6 Production Verification
 
 ```bash
 # 1. Check homepage
@@ -424,11 +291,11 @@ echo "Login form: $? (0=present)"
 curl -s -o /dev/null -w "%{http_code}" https://gardenverse.vercel.app/notes
 curl -s -o /dev/null -w "%{http_code}" https://gardenverse.vercel.app/garden/crop/test
 
-# 5. Verify the /api/v1/health proxy (if applicable)
-curl -s -o /dev/null -w "%{http_code}" https://gardenverse.vercel.app/api/health
+# 5. Verify API health endpoint
+curl -s https://gardenverse.vercel.app/api/v1/health
 ```
 
-### 3.7 Rollback
+### 2.7 Rollback
 
 ```bash
 # List recent deployments
@@ -443,79 +310,20 @@ vercel promote dpl_xxxxxxxxxxxx
 
 ---
 
-## Step 4: AI Service Deployment (Railway)
+## Step 3: AI Service Deployment (TBD)
 
-### 4.1 Local Verification
+AI service deployment location is **to be determined**. The FastAPI-based plant disease detection service is not yet deployed. Follow this space for updates.
 
-```bash
-cd services/ai
-
-# Verify Dockerfile
-docker build -t gardenverse-ai:test .
-docker run -p 8000:8000 gardenverse-ai:test
-
-# Test health
-curl http://localhost:8000/health
-# Expected: {"status":"ok","model_loaded":false}
-```
-
-### 4.2 Deploy to Railway
-
-```bash
-# From services/ai directory
-cd services/ai
-
-# Initialize Railway project
-railway init
-railway project create gardenverse-ai
-
-# Deploy (Railway auto-detects Dockerfile)
-railway up --detach
-
-# Or from monorepo root:
-cd ../..
-railway up --service gardenverse-ai --detach
-```
-
-### 4.3 Set Environment Variables
-
-| Variable | Value | Notes |
-|----------|-------|-------|
-| `PORT` | `8000` | Railway auto-maps to 80 |
-| `PYTHON_VERSION` | `3.11` | Python runtime |
-| `MODEL_PATH` | `models/plant-disease.pt` | Pre-trained model path |
-| `LOG_LEVEL` | `info` | Logging verbosity |
-| `ALLOWED_ORIGINS` | `https://gardenverse.vercel.app` | CORS |
-
-### 4.4 Update Backend Config
-
-After deploying, update the backend's `AI_SERVICE_URL`:
-
-```bash
-railway variables set AI_SERVICE_URL=https://gardenverse-ai.railway.app --service gardenverse-backend
-```
-
-Or set it in Railway Dashboard > gardenverse-backend > Variables.
-
-### 4.5 Verify
-
-```bash
-# Health check
-curl https://gardenverse-ai.railway.app/health
-
-# Test with a sample image
-curl -X POST https://gardenverse-ai.railway.app/analyze \
-  -F "image=@test-leaf.jpg"
-
-# Expected:
-# {"disease":"healthy","confidence":0.97,"recommendations":[]}
-```
+Options under consideration:
+- Deploy alongside the Next.js app on Vercel (via serverless functions or custom runtime)
+- Deploy as a separate container on a cloud provider (e.g., Railway, Fly.io, GCP Cloud Run)
+- Use a managed ML inference service
 
 ---
 
-## Step 5: Mobile App Deployment (EAS Build)
+## Step 4: Mobile App Deployment (EAS Build)
 
-### 5.1 Prerequisites
+### 4.1 Prerequisites
 
 ```bash
 # Install EAS CLI
@@ -529,7 +337,7 @@ eas login
 # - expo.extra.eas.projectId
 ```
 
-### 5.2 Build
+### 4.2 Build
 
 ```bash
 cd packages/mobile
@@ -545,13 +353,13 @@ eas submit --platform ios --profile production --non-interactive
 eas submit --platform android --profile production --non-interactive
 ```
 
-### 5.3 Required Environment Variables on EAS
+### 4.3 Required Environment Variables on EAS
 
 Set these in the Expo dashboard or via `eas env`:
 
 | Variable | Source | Purpose |
 |----------|--------|---------|
-| `EXPO_PUBLIC_API_URL` | Railway backend URL | API calls |
+| `EXPO_PUBLIC_API_URL` | `https://gardenverse.vercel.app/api/v1` | API calls |
 | `EXPO_PUBLIC_SUPABASE_URL` | Supabase | Auth & data |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase | Auth & data |
 | `EXPO_PUBLIC_GOOGLE_MAPS_KEY` | GCP Console | Map rendering |
@@ -559,19 +367,18 @@ Set these in the Expo dashboard or via `eas env`:
 
 ---
 
-## Step 6: GitHub Actions CI/CD
+## Step 5: GitHub Actions CI/CD
 
-### 6.1 Required GitHub Secrets
+### 5.1 Required GitHub Secrets
 
 | Secret | Value | Source |
 |--------|-------|--------|
 | `VERCEL_TOKEN` | Vercel auth token | `~/.vercel/config.json` or https://vercel.com/account/tokens |
 | `VERCEL_ORG_ID` | Vercel org ID | `.vercel/project.json` > `orgId` |
 | `VERCEL_PROJECT_ID` | Vercel project ID | `.vercel/project.json` > `projectId` |
-| `RAILWAY_TOKEN` | Railway auth token | https://railway.app/account/tokens |
 | `SLACK_WEBHOOK` | Slack webhook URL | Slack App > Incoming Webhooks |
 
-### 6.2 Workflow: Admin Dashboard (`admin-deploy.yml`)
+### 5.2 Workflow: Admin Dashboard (`admin-deploy.yml`)
 
 Create `.github/workflows/admin-deploy.yml`:
 
@@ -698,122 +505,9 @@ jobs:
             text: "${{ job.status == 'success' && ':white_check_mark:' || ':warning:' }} Admin deploy ${{ job.status }}: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 ```
 
-### 6.3 Workflow: Backend (`backend-deploy.yml`)
-
-Create `.github/workflows/backend-deploy.yml`:
-
-```yaml
-name: Backend Deploy
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'packages/backend/**'
-      - 'package.json'
-  pull_request:
-    branches: [main]
-
-env:
-  NODE_VERSION: '22'
-
-jobs:
-  test:
-    name: Test & Lint
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: gardenverse_test
-          POSTGRES_USER: gardenverse
-          POSTGRES_PASSWORD: gardenverse123
-        ports: ['5432:5432']
-      redis:
-        image: redis:7-alpine
-        ports: ['6379:6379']
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run prisma:generate
-        env:
-          DATABASE_URL: postgresql://gardenverse:gardenverse123@localhost:5432/gardenverse_test
-      - run: npx prisma migrate deploy
-        working-directory: packages/backend
-        env:
-          DATABASE_URL: postgresql://gardenverse:gardenverse123@localhost:5432/gardenverse_test
-      - run: npm run lint -w packages/backend
-      - run: npm run typecheck:backend
-      - run: npm run test -w packages/backend
-        env:
-          DATABASE_URL: postgresql://gardenverse:gardenverse123@localhost:5432/gardenverse_test
-          REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-secret
-          JWT_REFRESH_SECRET: test-refresh-secret
-
-  db-migrate:
-    name: Database Migration
-    needs: test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run prisma:generate
-      - name: Apply migrations
-        run: npx prisma migrate deploy
-        working-directory: packages/backend
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-      - name: Verify schema
-        run: npx prisma validate
-        working-directory: packages/backend
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-
-  deploy:
-    name: Deploy
-    needs: db-migrate
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm i -g @railway/cli
-      - name: Deploy to Railway
-        run: railway up --service gardenverse-backend --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      - name: Wait for health
-        run: |
-          URL=$(railway domain --service gardenverse-backend 2>/dev/null || \
-                echo "https://gardenverse-backend.railway.app")
-          for i in 1 2 3 4 5; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/v1/health")
-            if [ "$code" = "200" ]; then
-              echo "Backend healthy (attempt $i)"
-              curl -s "$URL/api/v1/health"
-              break
-            fi
-            echo "Waiting... (attempt $i, code=$code)"
-            sleep 10
-          done
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-```
-
 ---
 
-## Step 7: Post-Deployment Verification Script
+## Step 6: Post-Deployment Verification Script
 
 Create `scripts/verify-deployment.sh` (Linux/macOS) or use within CI:
 
@@ -822,8 +516,7 @@ Create `scripts/verify-deployment.sh` (Linux/macOS) or use within CI:
 # Unified deployment verification script
 
 ADMIN_URL="${ADMIN_URL:-https://gardenverse.vercel.app}"
-API_URL="${API_URL:-https://gardenverse-backend.railway.app/api/v1}"
-AI_URL="${AI_URL:-https://gardenverse-ai.railway.app}"
+API_URL="${API_URL:-https://gardenverse.vercel.app/api/v1}"
 
 fail=0
 
@@ -843,22 +536,14 @@ for path in /about /features /ai-scanner /ai-scanner/history /support /login; do
   check "Route $path returns 200 (got $code)"
 done
 
-section "Backend API"
+section "API Health"
 health=$(curl -s "$API_URL/health")
 echo "$health" | grep -q '"status":"ok"'
 check "Health endpoint returns ok"
 echo "$health" | grep -q '"database":"connected"'
 check "Database is connected"
-echo "$health" | grep -q '"redis":"connected"'
-check "Redis is connected"
 
-section "Cross-Service Integration"
-# Backend can reach AI service
-ai_check=$(curl -s "$API_URL/intelligence/health" 2>/dev/null || echo "fail")
-[ "$ai_check" != "fail" ]
-check "Backend-AI integration"
-
-# Admin dashboard login endpoint reaches backend
+section "Auth Endpoint"
 login_check=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$API_URL/auth/admin/login" \
   -H "Content-Type: application/json" \
   -d '{"email":"test@test.com","password":"test"}' 2>/dev/null)
@@ -875,7 +560,7 @@ And `scripts/verify-deployment.ps1` (Windows):
 ```powershell
 param(
   [string]$AdminUrl = "https://gardenverse.vercel.app",
-  [string]$ApiUrl = "https://gardenverse-backend.railway.app/api/v1"
+  [string]$ApiUrl = "https://gardenverse.vercel.app/api/v1"
 )
 
 $fail = 0
@@ -898,15 +583,13 @@ foreach ($path in @("/about","/features","/ai-scanner","/ai-scanner/history","/s
   Check "Route $path returns 200 (got $code)"
 }
 
-Section "Backend API"
+Section "API Health"
 try { $health = Invoke-RestMethod -Uri "$ApiUrl/health" -TimeoutSec 15 }
 catch { $health = $null }
 $LASTEXITCODE = [int]($health -and $health.status -eq "ok")
 Check "Health endpoint returns ok"
 $LASTEXITCODE = [int]($health -and $health.database -eq "connected")
 Check "Database is connected"
-$LASTEXITCODE = [int]($health -and $health.redis -eq "connected")
-Check "Redis is connected"
 
 if ($fail -eq 0) { Write-Host "ALL CHECKS PASSED" -ForegroundColor Green }
 else { Write-Host "SOME CHECKS FAILED" -ForegroundColor Red }
@@ -915,29 +598,21 @@ exit $fail
 
 ---
 
-## Step 8: Monitoring & Alerting
+## Step 7: Monitoring & Alerting
 
-### 8.1 Vercel Analytics
+### 7.1 Vercel Analytics
 
 Vercel provides built-in analytics for the admin dashboard:
 - **Web Analytics**: Page views, visit duration (enable in Vercel Dashboard > Project > Analytics)
 - **Speed Insights**: Core Web Vitals (LCP, FID, CLS)
 - **Edge Functions**: Execution duration, invocation count
 
-### 8.2 Railway Monitoring
-
-Railway provides:
-- **Metrics**: CPU, memory, network I/O per service
-- **Logs**: Real-time and persistent log streaming
-- **Deployments**: History with rollback capability
-
-### 8.3 Sentry Setup
+### 7.2 Sentry Setup
 
 For error tracking across services:
 
 1. Create a Sentry project for each service:
-   - `gardenverse-backend` (Node.js/NestJS)
-   - `gardenverse-admin` (Next.js)
+   - `gardenverse-api` (Next.js API routes)
    - `gardenverse-mobile` (React Native)
 
 2. Configure DSN in each service's environment variables
@@ -948,22 +623,21 @@ For error tracking across services:
    - Migrate `sentry.client.config.ts` → `instrumentation-client.ts`
    - Re-enable `withSentryConfig` in `next.config.mjs`
 
-### 8.4 Uptime Monitoring
+### 7.3 Uptime Monitoring
 
 Set up external monitoring:
 
 | Service | Tool | Check Interval | Alert |
 |---------|------|---------------|-------|
-| Admin Dashboard | Better Uptime / Pingdom | 1 minute | Slack + Email |
-| Backend API | Better Uptime / Pingdom | 1 minute | Slack + Email |
+| Admin Dashboard + API | Better Uptime / Pingdom | 1 minute | Slack + Email |
 | Database | Supabase Dashboard | Built-in | Email |
 | Redis | Upstash Dashboard | Built-in | Email |
 
 ---
 
-## Step 9: Backup & Disaster Recovery
+## Step 8: Backup & Disaster Recovery
 
-### 9.1 Database Backups
+### 8.1 Database Backups
 
 Supabase handles automated backups:
 - **Daily backups**: Retained for 7 days (Free), 30 days (Pro)
@@ -975,26 +649,25 @@ pg_dump "postgresql://postgres:[PWD]@[REF].supabase.co:5432/postgres" \
   | gzip > gardenverse-$(date +%Y%m%d).sql.gz
 ```
 
-### 9.2 Environment Backups
+### 8.2 Environment Backups
 
 All env vars are stored in three places for redundancy:
-1. Vercel/Railway dashboard (primary)
+1. Vercel dashboard (primary)
 2. `.env.example` (documented, no secrets)
 3. Password manager (e.g., 1Password, Bitwarden)
 
-### 9.3 Disaster Recovery Runbook
+### 8.3 Disaster Recovery Runbook
 
 | Scenario | Recovery Time | Steps |
 |----------|--------------|-------|
-| Admin dashboard down | 5 min | `vercel rollback` |
-| Backend API down | 10 min | `railway rollback` or `railway redeploy` |
+| App down (dashboard + API) | 5 min | `vercel rollback` |
 | Database corruption | 30 min | Restore from Supabase backup |
 | Full region outage | 2 hours | Deploy to new region, update DNS |
-| Accidental deployment | 2 min | `vercel rollback` + `railway rollback` |
+| Accidental deployment | 2 min | `vercel rollback` |
 
 ---
 
-## Step 10: Security Checklist
+## Step 9: Security Checklist
 
 - [ ] `JWT_SECRET` and `JWT_REFRESH_SECRET` are unique per environment
 - [ ] `NEXTAUTH_SECRET` has no hardcoded fallback in code
@@ -1018,7 +691,7 @@ All env vars are stored in three places for redundancy:
 ## Appendix A: Quick Reference Commands
 
 ```bash
-# === ADMIN DASHBOARD (Vercel) ===
+# === DEPLOYMENT (Vercel) ===
 vercel login                          # Login to Vercel
 vercel link --project gardenverse     # Link local dir to project
 vercel env add NAME production        # Add env var
@@ -1026,15 +699,6 @@ vercel deploy --prod --yes            # Deploy to production
 vercel list                            # List deployments
 vercel rollback dpl_xxx                # Rollback deployment
 vercel domains add example.com        # Add custom domain
-
-# === BACKEND (Railway) ===
-railway login                          # Login to Railway
-railway project create NAME           # Create project
-railway up --service NAME --detach    # Deploy service
-railway domain                         # Get public URL
-railway variables set KEY=VALUE       # Set env var
-railway rollback                       # Rollback
-railway logs                           # View logs
 
 # === DATABASE (Prisma) ===
 npx prisma migrate deploy             # Apply migrations
@@ -1044,9 +708,8 @@ npx prisma studio                     # Open DB browser
 DATABASE_URL=... npx prisma db seed   # Seed data
 
 # === VERIFICATION ===
-curl https://gardenverse.vercel.app                        # Admin dashboard
-curl https://gardenverse-backend.railway.app/api/v1/health  # Backend health
-curl https://gardenverse-ai.railway.app/health               # AI service health
+curl https://gardenverse.vercel.app                     # Admin dashboard + API health
+curl https://gardenverse.vercel.app/api/v1/health        # API health check
 ```
 
 ---
@@ -1056,13 +719,11 @@ curl https://gardenverse-ai.railway.app/health               # AI service health
 | Symptom | Likely Cause | Solution |
 |---------|-------------|----------|
 | Vercel build fails with `NEXT_MISSING_LAMBDA` | Local `vercel build` bug | Use cloud deploy: `vercel deploy --prod --yes` |
-| Admin login returns 401 | Backend API URL wrong | Check `NEXT_PUBLIC_API_URL` on Vercel |
-| Backend health shows DB disconnected | Wrong `DATABASE_URL` or Supabase not provisioned | Verify connection string in Railway dashboard |
+| Admin login returns 401 | API URL wrong | Check `NEXT_PUBLIC_API_URL` on Vercel |
+| API health shows DB disconnected | Wrong `DATABASE_URL` or Supabase not provisioned | Verify connection string in Vercel environment variables |
 | Sentry build warnings | Missing Sentry config or auth token | Set `SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING=1` |
 | Prisma migration fails on Supabase | Direct connection needed | Use `DIRECT_URL` (port 5432) instead of PgBouncer (6543) |
-| CORS errors in browser | Backend `CORS_ORIGINS` not set | Set to `https://gardenverse.vercel.app` |
-| 504 Gateway Timeout | Backend cold start or overload | Increase Railway replicas or upgrade plan |
-| WebSocket not connecting | No persistent connection on Vercel | Run Socket.IO on Railway worker service |
+| CORS errors in browser | `CORS_ORIGINS` not set | Set to `https://gardenverse.vercel.app` |
 | Mobile app build fails | EAS config or project ID mismatch | Check `app.json` for correct `projectId` |
 
 ---
@@ -1072,13 +733,12 @@ curl https://gardenverse-ai.railway.app/health               # AI service health
 | Service | Free Tier | Pro Tier (Estimated) |
 |---------|-----------|---------------------|
 | Vercel | $0 (Hobby) | $20 (Pro) |
-| Railway | $5 credit | $20-50 (usage-based) |
 | Supabase | $0 (Free) | $25 (Pro) |
 | Upstash | $0 (Free) | $10 (Pay-as-you-go) |
 | OpenWeatherMap | $0 (Free) | $40 (Startup) |
 | Google Maps | $0 ($200 credit) | $10-50 (usage-based) |
 | Sentry | $0 (Free) | $26 (Team) |
-| **Total** | **~$0-5** | **~$150-200** |
+| **Total** | **$0** | **~$130-170** |
 
 ---
 

@@ -6,23 +6,28 @@ import {
   TextInput,
   TouchableOpacity,
   RefreshControl,
+  Dimensions,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { useMarketplace } from "../../hooks/useMarketplace";
 import { ListingCard } from "../../components/marketplace/ListingCard";
 import { CategoryFilter } from "../../components/marketplace/CategoryFilter";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { MarketplaceStackParamList, MarketplaceListing } from "../../types";
+import { MarketplaceListing } from "../../types";
 
-type MarketplaceNavProp = NativeStackNavigationProp<
-  MarketplaceStackParamList,
-  "MarketplaceHome"
->;
+const { width } = Dimensions.get("window");
+
+const FEATURED_EMOJIS: Record<string, string> = {
+  seeds: "🌱",
+  fertilizers: "🧪",
+  tools: "🔧",
+  services: "🛠️",
+  harvest: "🌾",
+};
 
 export function MarketplaceScreen() {
-  const navigation = useNavigation<MarketplaceNavProp>();
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -34,9 +39,9 @@ export function MarketplaceScreen() {
 
   const handleListingPress = useCallback(
     (listing: MarketplaceListing) => {
-      navigation.navigate("ListingDetail", { listingId: listing.id });
+      router.push({ pathname: "/listing-detail/[listingId]", params: { listingId: listing.id } });
     },
-    [navigation],
+    [router],
   );
 
   const filteredListings = searchQuery
@@ -46,6 +51,8 @@ export function MarketplaceScreen() {
           l.description?.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : listings;
+
+  const featured = filteredListings.slice(0, 3);
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -74,7 +81,7 @@ export function MarketplaceScreen() {
         onSelect={setSelectedCategory}
       />
 
-      {/* Listings */}
+      {/* Main Content */}
       {isLoading && listings.length === 0 ? (
         <LoadingSpinner fullScreen message="Loading listings..." />
       ) : filteredListings.length === 0 ? (
@@ -91,6 +98,62 @@ export function MarketplaceScreen() {
         <FlatList
           data={filteredListings}
           keyExtractor={(item) => item.id}
+          ListHeaderComponent={() => (
+            <>
+              {/* Featured Section */}
+              {featured.length > 0 && selectedCategory === "all" && !searchQuery && (
+                <View className="px-4 mb-4">
+                  <Text className="text-lg font-bold text-gray-900 mb-3">
+                    ⭐ Featured Listings
+                  </Text>
+                  <FlatList
+                    horizontal
+                    data={featured}
+                    keyExtractor={(item) => `featured-${item.id}`}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 12 }}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        onPress={() => handleListingPress(item)}
+                        activeOpacity={0.8}
+                        className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+                        style={{ width: width * 0.7 }}
+                      >
+                        <View className="h-28 bg-gradient-to-br from-primary-50 to-green-50 items-center justify-center">
+                          <Text className="text-4xl">
+                            {FEATURED_EMOJIS[item.category] || "🌿"}
+                          </Text>
+                        </View>
+                        <View className="p-3">
+                          <Text className="font-semibold text-gray-900 text-sm" numberOfLines={1}>
+                            {item.title}
+                          </Text>
+                          <View className="flex-row items-center justify-between mt-1">
+                            <Text className="text-xs text-gray-400">
+                              {item.seller?.username || "Unknown"}
+                            </Text>
+                            <Text className="text-sm font-bold text-primary-600">
+                              {item.price} {item.currency}
+                            </Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    )}
+                  />
+                </View>
+              )}
+
+              {/* Section Header */}
+              <View className="px-4 mb-2">
+                <Text className="text-base font-bold text-gray-900">
+                  {searchQuery ? `Results for "${searchQuery}"` : "All Listings"}
+                </Text>
+                <Text className="text-xs text-gray-400 mt-0.5">
+                  {filteredListings.length} item{filteredListings.length !== 1 ? "s" : ""} available
+                </Text>
+              </View>
+            </>
+          )}
           renderItem={({ item }) => (
             <View className="px-4">
               <ListingCard
@@ -105,13 +168,13 @@ export function MarketplaceScreen() {
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 80 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
         />
       )}
 
       {/* Create Listing FAB */}
       <TouchableOpacity
-        onPress={() => navigation.navigate("CreateListing")}
+        onPress={() => router.push("/create-listing")}
         className="absolute bottom-6 right-6 w-14 h-14 bg-primary-600 rounded-full items-center justify-center shadow-lg"
       >
         <Text className="text-white text-2xl font-bold">+</Text>

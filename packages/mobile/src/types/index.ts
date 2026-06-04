@@ -28,6 +28,15 @@ export interface Garden {
   irrigationLevel: number;
   sunlightExposure: number;
   crops: Crop[];
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  timezone?: string;
+  gridWidth?: number;
+  gridHeight?: number;
+  irrigationType?: string;
+  wateringMode?: string;
+  hasMotorPump?: boolean;
 }
 
 export enum GardenType {
@@ -77,7 +86,16 @@ export interface MarketplaceListing {
   currency: string;
   quantity: number;
   status: ListingStatus;
-  seller: { username: string; avatarUrl?: string };
+  images?: string[];
+  location?: string;
+  isLocal?: boolean;
+  seller: {
+    id?: string;
+    username: string;
+    displayName?: string;
+    avatarUrl?: string;
+    marketplaceReliability?: number;
+  };
   createdAt: string;
 }
 
@@ -107,7 +125,7 @@ export interface WeatherData {
 
 export interface WeatherForecast {
   date: string;
-  temperature: number;
+  temperature: number | { min: number; max: number };
   humidity: number;
   condition: string;
 }

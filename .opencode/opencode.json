@@ -268,6 +268,45 @@
           "git log *": "allow"
         }
       }
+    },
+    "virtual-gardener": {
+      "description": "Tests virtual garden features — growth engine, 100x speed, gamification, collections, plant/harvest cycle",
+      "file": ".opencode/agents/virtual-gardener.md",
+      "mode": "subagent",
+      "steps": 15,
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      }
+    },
+    "real-gardener": {
+      "description": "Tests real garden features — garden CRUD, weather, marketplace, community, profile",
+      "file": ".opencode/agents/real-gardener.md",
+      "mode": "subagent",
+      "steps": 15,
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      }
+    },
+    "hybrid-gardener": {
+      "description": "Tests cross-feature integration — virtual/real mode switching, edge cases, error handling, responsive layout",
+      "file": ".opencode/agents/hybrid-gardener.md",
+      "mode": "subagent",
+      "steps": 15,
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      }
     }
   },
   "command": {

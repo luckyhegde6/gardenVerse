@@ -1,14 +1,16 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Download, Ban, Unlock, Trash2, KeyRound, Search, Filter, MoreHorizontal, Loader2, AlertCircle, CheckCircle, XCircle, ShieldAlert } from 'lucide-react'
+import { Download, Ban, Unlock, Trash2, KeyRound, Search, Filter, MoreHorizontal, Loader2, AlertCircle, CheckCircle, XCircle, ShieldAlert, MapPin, ExternalLink, Eye } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { DataTable } from '@/components/DataTable'
 import { Modal, ModalFooter } from '@/components/Modal'
 import { Input } from '@/components/Input'
 import { Select } from '@/components/Select'
+import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/Tabs'
 import { downloadCSV } from '@/lib/utils'
+import { decodeGeohash } from '@/lib/geo'
 import api, { type User } from '@/lib/api'
 
 const MOCK_USERS: User[] = [
@@ -32,6 +34,8 @@ interface BackendUser {
   isBlocked?: boolean
   isVerified: boolean
   isOnboarded: boolean
+  geohash: string | null
+  region: string | null
   level: number
   trustScore: number
   greenCredits: number
@@ -60,10 +64,93 @@ function mapBackendUser(u: BackendUser): User {
     status: u.isBlocked ? 'banned' : 'active',
     joinedAt: u.createdAt,
     lastLoginAt: u.lastActiveAt || u.createdAt,
-    gardens: u._count.crops,
+    gardens: u._count?.crops ?? 0,
     invitesUsed: 0,
     reports: 0,
   }
+}
+
+function LocationView({ userId, mapsKey: key }: { userId: string; mapsKey: string }) {
+  const [loc, setLoc] = useState<{ latitude: number | null; longitude: number | null; geohash: string | null; region: string | null } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    api.get(`/users/${userId}/location`)
+      .then(r => setLoc(r.data))
+      .catch(() => setLoc(null))
+      .finally(() => setLoading(false))
+  }, [userId])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[300px]">
+        <Loader2 className="w-6 h-6 text-admin-400 animate-spin" />
+      </div>
+    )
+  }
+
+  if (!loc || !loc.geohash || loc.latitude == null || loc.longitude == null) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[300px] text-slate-500 gap-3">
+        <MapPin className="w-10 h-10 text-slate-600" />
+        <p className="text-sm">No location data available for this user.</p>
+        <p className="text-xs text-slate-600">User has not set a geohash location.</p>
+      </div>
+    )
+  }
+
+  const src = key
+    ? `https://www.google.com/maps/embed/v1/view?key=${key}&center=${loc.latitude},${loc.longitude}&zoom=12`
+    : `https://www.openstreetmap.org/export/embed.html?bbox=${loc.longitude - 0.1},${loc.latitude - 0.1},${loc.longitude + 0.1},${loc.latitude + 0.1}&layer=mapnik&marker=${loc.latitude},${loc.longitude}`
+
+  const mapsUrl = `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}&z=12`
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-sm text-slate-400">
+        <MapPin className="w-4 h-4 text-admin-400" />
+        <span>Approximate location based on geohash</span>
+        {loc.region && (
+          <Badge variant="info" className="ml-auto">{loc.region}</Badge>
+        )}
+      </div>
+
+      {key && (
+        <p className="text-xs text-slate-500">
+          Geohash: <code className="text-slate-400 bg-slate-800 px-1 rounded">{loc.geohash}</code>
+          <span className="ml-3">
+            {loc.latitude.toFixed(4)}, {loc.longitude.toFixed(4)}
+          </span>
+        </p>
+      )}
+
+      <div className="relative w-full overflow-hidden rounded-lg border border-slate-700/50" style={{ height: 380 }}>
+        <iframe
+          src={src}
+          width="100%"
+          height="100%"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          title="User location"
+        />
+      </div>
+
+      <div className="flex justify-end">
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs text-admin-400 hover:text-admin-300 transition-colors"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          Open in Google Maps
+        </a>
+      </div>
+    </div>
+  )
 }
 
 function roleToApi(value: string): string | undefined {
@@ -84,7 +171,11 @@ export default function UsersPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [isUsingFallback, setIsUsingFallback] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [backendUsers, setBackendUsers] = useState<BackendUser[]>([])
+  const [selectedGeo, setSelectedGeo] = useState<{ geohash: string | null; region: string | null } | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const [detailTab, setDetailTab] = useState('details')
+  const [mapsKey, setMapsKey] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -106,10 +197,11 @@ export default function UsersPage() {
       const params: Record<string, string | number> = { limit: 100 }
       if (roleParam) params.role = roleParam
 
-      const res = await api.get('/admin/users', { params })
-      const body = res.data as { users: BackendUser[]; total: number }
-      const mapped: User[] = (body.users || []).map(mapBackendUser)
+      const res = await api.get('/users', { params })
+      const body = res.data as { data: BackendUser[]; total: number }
+      const mapped: User[] = (body.data || []).map(mapBackendUser)
       setUsers(mapped)
+      setBackendUsers(body.data || [])
     } catch (err) {
       console.error('Failed to fetch users from API, using mock data:', err)
       setError('Could not load from server. Showing cached data.')
@@ -122,6 +214,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers()
+    api.get('/config/maps-key').then(r => setMapsKey(r.data?.key || '')).catch(() => {})
   }, [fetchUsers])
 
   useEffect(() => {
@@ -314,14 +407,17 @@ export default function UsersPage() {
               key: 'actions',
               header: '',
               width: '40px',
-              render: u => (
-                <button
-                  onClick={e => { e.stopPropagation(); setSelectedUser(u as unknown as User); setShowDetailModal(true) }}
-                  className="p-1 rounded hover:bg-slate-700 text-slate-500 hover:text-slate-200"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              ),
+              render: u => {
+                const rowUser = u as unknown as User
+                return (
+                  <button
+                    onClick={e => { e.stopPropagation(); setSelectedUser(rowUser); setSelectedGeo({ geohash: null, region: null }); setDetailTab('details'); setShowDetailModal(true) }}
+                    className="p-1 rounded hover:bg-slate-700 text-slate-500 hover:text-slate-200"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                )
+              },
             },
           ]}
           data={filtered as unknown as Record<string, unknown>[]}
@@ -331,6 +427,8 @@ export default function UsersPage() {
           onRowClick={u => {
             const user = u as unknown as User
             setSelectedUser(user)
+            setSelectedGeo({ geohash: null, region: null })
+            setDetailTab('details')
             setShowDetailModal(true)
           }}
           pageSize={10}
@@ -340,83 +438,106 @@ export default function UsersPage() {
 
       {/* Detail Modal */}
       {selectedUser && showDetailModal && (
-        <Modal open={showDetailModal} onOpenChange={o => { if (!o) { setShowDetailModal(false); setSelectedUser(null) } }} title={selectedUser.displayName}>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-slate-500">Username</p>
-                <p className="text-sm text-slate-200">@{selectedUser.username}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Email</p>
-                <p className="text-sm text-slate-200">{selectedUser.email}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Level / XP</p>
-                <p className="text-sm text-slate-200">Lv.{selectedUser.level} / {selectedUser.xp.toLocaleString()} XP</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Role</p>
-                <Badge variant={selectedUser.role === 'premium' ? 'success' : selectedUser.role === 'moderator' ? 'info' : 'default'}>
-                  {selectedUser.role}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Status</p>
-                <Badge variant={selectedUser.status as 'active' | 'suspended' | 'banned' | 'inactive'} dot>
-                  {selectedUser.status}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Gardens</p>
-                <p className="text-sm text-slate-200">{selectedUser.gardens}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Joined</p>
-                <p className="text-sm text-slate-200">{selectedUser.joinedAt}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Last Login</p>
-                <p className="text-sm text-slate-200">{selectedUser.lastLoginAt}</p>
-              </div>
-            </div>
+        <Modal open={showDetailModal} onOpenChange={o => { if (!o) { setShowDetailModal(false); setSelectedUser(null); setDetailTab('details') } }} title={selectedUser.displayName}>
+          <TabsRoot value={detailTab} onValueChange={setDetailTab}>
+            <TabsList>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="location">Location</TabsTrigger>
+            </TabsList>
 
-            <div className="border-t border-slate-800 pt-4 space-y-2">
-              <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Actions</p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => setShowBlockModal(true)}
-                  disabled={selectedUser.status === 'banned'}
-                >
-                  <Ban className="w-4 h-4" /> {selectedUser.status === 'banned' ? 'Blocked' : 'Block User'}
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowUnblockModal(true)}
-                  disabled={selectedUser.status !== 'banned'}
-                >
-                  <Unlock className="w-4 h-4" /> Unblock
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowResetPwModal(true)}
-                >
-                  <KeyRound className="w-4 h-4" /> Reset Password
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => setShowDeleteModal(true)}
-                >
-                  <Trash2 className="w-4 h-4" /> Delete User
-                </Button>
+            <TabsContent value="details">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500">Username</p>
+                    <p className="text-sm text-slate-200">@{selectedUser.username}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Email</p>
+                    <p className="text-sm text-slate-200">{selectedUser.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Level / XP</p>
+                    <p className="text-sm text-slate-200">Lv.{selectedUser.level} / {selectedUser.xp.toLocaleString()} XP</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Role</p>
+                    <Badge variant={selectedUser.role === 'premium' ? 'success' : selectedUser.role === 'moderator' ? 'info' : 'default'}>
+                      {selectedUser.role}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Status</p>
+                    <Badge variant={selectedUser.status as 'active' | 'suspended' | 'banned' | 'inactive'} dot>
+                      {selectedUser.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Gardens</p>
+                    <p className="text-sm text-slate-200">{selectedUser.gardens}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Joined</p>
+                    <p className="text-sm text-slate-200">{selectedUser.joinedAt}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Last Login</p>
+                    <p className="text-sm text-slate-200">{selectedUser.lastLoginAt}</p>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-800 pt-4 space-y-2">
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Actions</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => setShowBlockModal(true)}
+                      disabled={selectedUser.status === 'banned'}
+                    >
+                      <Ban className="w-4 h-4" /> {selectedUser.status === 'banned' ? 'Blocked' : 'Block User'}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setShowUnblockModal(true)}
+                      disabled={selectedUser.status !== 'banned'}
+                    >
+                      <Unlock className="w-4 h-4" /> Unblock
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setShowResetPwModal(true)}
+                    >
+                      <KeyRound className="w-4 h-4" /> Reset Password
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => setShowDeleteModal(true)}
+                    >
+                      <Trash2 className="w-4 h-4" /> Delete User
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setShowDetailModal(false)
+                        window.location.href = `/garden?userId=${selectedUser.id}`
+                      }}
+                    >
+                      <Eye className="w-4 h-4" /> View Garden
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="location">
+              <LocationView userId={selectedUser.id} mapsKey={mapsKey} />
+            </TabsContent>
+          </TabsRoot>
         </Modal>
       )}
 

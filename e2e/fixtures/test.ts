@@ -1,7 +1,7 @@
 import { test as base, type Page, type BrowserContext } from '@playwright/test';
 import path from 'path';
 
-const API_URL = process.env.API_URL || 'http://localhost:3001/api/v1';
+const API_URL = process.env.API_URL || 'http://localhost:3000/api/v1';
 const ADMIN_URL = process.env.ADMIN_URL || 'http://localhost:3000';
 
 export interface AuthSession {
@@ -11,13 +11,18 @@ export interface AuthSession {
 }
 
 export async function loginAs(email: string, password: string): Promise<AuthSession> {
-  const res = await fetch(`${API_URL}/admin/login`, {
+  const res = await fetch(`${API_URL}/auth/admin/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) throw new Error(`Login failed: ${res.status} ${await res.text()}`);
-  return res.json();
+  const data = await res.json();
+  return {
+    accessToken: data.token,
+    refreshToken: data.refreshToken,
+    user: { id: data.id, email: data.email, role: data.role },
+  };
 }
 
 export async function setupAuthPage(
@@ -35,6 +40,11 @@ export async function setupAuthPage(
     localStorage.setItem('admin_token', token);
     localStorage.setItem('admin_user', JSON.stringify(user));
   }, { token: session.accessToken, user: userInfo });
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+  // Confirm auth worked by navigating to dashboard
+  await page.goto(`${ADMIN_URL}/dashboard`, { waitUntil: 'networkidle', timeout: 15000 }).catch(() => {});
+  await page.waitForSelector('nav', { timeout: 10000 }).catch(() => {});
 }
 
 export interface TestFixtures {
@@ -52,7 +62,7 @@ export const test = base.extend<TestFixtures>({
     const context = await browser.newContext({ storageState: undefined });
     const page = await context.newPage();
     try {
-      const session = await loginAs('admin@gardenverse.vercel.app', 'Password123');
+      const session = await loginAs('admin@gardenverse.vercel.app', 'password123');
       await setupAuthPage(page, session);
     } catch {
       // Fallback: navigate to login page
@@ -66,7 +76,7 @@ export const test = base.extend<TestFixtures>({
     const context = await browser.newContext({ storageState: undefined });
     const page = await context.newPage();
     try {
-      const session = await loginAs('admin@gardenverse.vercel.app', 'Password123');
+      const session = await loginAs('admin@gardenverse.vercel.app', 'password123');
       await setupAuthPage(page, session);
     } catch {
       await page.goto(`${ADMIN_URL}/login`);

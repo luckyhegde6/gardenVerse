@@ -8,16 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useRoute, RouteProp } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
 import { MessageBubble } from "../../components/community/MessageBubble";
 import { useAuthStore } from "../../stores/authStore";
-import { CommunityStackParamList, Message } from "../../types";
-
-type ChatScreenRouteProp = RouteProp<CommunityStackParamList, "ChatScreen">;
+import { Message } from "../../types";
 
 export function ChatScreen() {
-  const route = useRoute<ChatScreenRouteProp>();
-  const { groupId } = route.params;
+  const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const user = useAuthStore((s) => s.user);
   const flatListRef = useRef<FlatList>(null);
   const [messages, setMessages] = useState<Message[]>([

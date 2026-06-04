@@ -137,7 +137,7 @@ export function RegisterScreen() {
 
           <Input
             label="Password"
-            placeholder="Min 8 chars, uppercase, lowercase, number"
+            placeholder="Min 8 chars with a number"
             value={password}
             onChangeText={(t) => updateField("password", t)}
             error={errors.password}
