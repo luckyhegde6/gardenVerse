@@ -152,6 +152,22 @@ model User {
   sessions                Session[]
   tokenTransactions       TokenTransaction[]
   appLogs                 AppLog[]
+  userQuests              UserQuest[]
+  friends                 Friend[]                   @relation("UserFriends")
+  friendOf                Friend[]                   @relation("FriendOf")
+  sentFriendRequests      FriendRequest[]            @relation("SentRequests")
+  receivedFriendRequests  FriendRequest[]            @relation("ReceivedRequests")
+  gardenVisits            GardenVisit[]               @relation("VisitsMade")
+  sentGifts               Gift[]                     @relation("GiftsSent")
+  receivedGifts           Gift[]                     @relation("GiftsReceived")
+  streakShields           StreakShield[]
+  notificationPreferences NotificationPreferences?
+  eventProgress           UserEventProgress[]
+  breedingLabs            BreedingLab[]
+  diseaseCases            DiseaseCase[]
+  gardenDecorations       UserGardenDecoration[]
+  referralMade            Referral[]                 @relation("ReferralsMade")
+  referralReceived        Referral?                  @relation("ReferralReceived")
 
   @@index([email])
   @@index([username])
@@ -204,6 +220,9 @@ model PlantSpecies {
   hybridsAsParent1  PlantHybrid[]                    @relation("HybridParent1")
   hybridsAsParent2  PlantHybrid[]                    @relation("HybridParent2")
   hybridResults     PlantHybrid[]                    @relation("HybridResult")
+  breedingLabParent1 BreedingLab[]                   @relation("BreedParent1")
+  breedingLabParent2 BreedingLab[]                   @relation("BreedParent2")
+  breedingResults    BreedingLab[]                   @relation("BreedResult")
 
   dataSource        String   @default("openfarm")
   externalId        String?
@@ -309,6 +328,8 @@ model Garden {
 
   crops            Crop[]
   inventoryItems   UserInventory[]
+  visits           GardenVisit[]
+  userDecorations  UserGardenDecoration[]
 
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
@@ -351,6 +372,8 @@ model Crop {
 
   userId            String     @db.Uuid
   user              User       @relation(fields: [userId], references: [id])
+
+  diseaseCases      DiseaseCase[]
 
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
@@ -1053,4 +1076,293 @@ model CampaignReward {
   campaign   Campaign @relation(fields: [campaignId], references: [id])
 
   @@index([campaignId])
+}
+
+// --- Quest System ----------------------------------------------------------
+
+model Quest {
+  id              String        @id @default(uuid()) @db.Uuid
+  key             String        @unique
+  title           String
+  description     String
+  category        String        @default("DAILY")
+  type            String        @default("PLANT")
+  targetCount     Int           @default(1)
+  xpReward        Int           @default(0)
+  creditReward    Float         @default(0)
+  itemReward      String?
+  icon            String?
+  isActive        Boolean       @default(true)
+  sortOrder       Int           @default(0)
+  seasonId        String?       @db.Uuid
+  season          SeasonEvent?  @relation(fields: [seasonId], references: [id])
+  userProgress    UserQuest[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  @@index([category])
+  @@index([isActive])
+  @@index([seasonId])
+}
+
+model UserQuest {
+  id              String    @id @default(uuid()) @db.Uuid
+  progress        Int       @default(0)
+  isCompleted     Boolean   @default(false)
+  completedAt     DateTime?
+  claimedAt       DateTime?
+  questKey        String
+  userId          String    @db.Uuid
+  user            User      @relation(fields: [userId], references: [id])
+  questId         String    @db.Uuid
+  quest           Quest     @relation(fields: [questId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  @@unique([userId, questId])
+  @@index([userId])
+  @@index([isCompleted])
+}
+
+// --- Social: Friends -------------------------------------------------------
+
+model Friend {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  user            User     @relation("UserFriends", fields: [userId], references: [id])
+  friendId        String   @db.Uuid
+  friend          User     @relation("FriendOf", fields: [friendId], references: [id])
+  createdAt       DateTime @default(now())
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
+model FriendRequest {
+  id              String   @id @default(uuid()) @db.Uuid
+  status          String   @default("PENDING")
+  fromUserId      String   @db.Uuid
+  fromUser        User     @relation("SentRequests", fields: [fromUserId], references: [id])
+  toUserId        String   @db.Uuid
+  toUser          User     @relation("ReceivedRequests", fields: [toUserId], references: [id])
+  createdAt       DateTime @default(now())
+  respondedAt     DateTime?
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId])
+  @@index([status])
+}
+
+// --- Garden Visits ----------------------------------------------------------
+
+model GardenVisit {
+  id              String   @id @default(uuid()) @db.Uuid
+  rating          Int?
+  comment         String?
+  visitorId       String   @db.Uuid
+  visitor         User     @relation("VisitsMade", fields: [visitorId], references: [id])
+  gardenId        String   @db.Uuid
+  garden          Garden   @relation(fields: [gardenId], references: [id])
+  visitedAt       DateTime @default(now())
+  @@index([gardenId])
+  @@index([visitorId])
+}
+
+// --- Gifting ---------------------------------------------------------------
+
+model Gift {
+  id              String   @id @default(uuid()) @db.Uuid
+  itemType        String
+  itemName        String
+  quantity        Int      @default(1)
+  message         String?
+  isOpened        Boolean  @default(false)
+  fromUserId      String   @db.Uuid
+  fromUser        User     @relation("GiftsSent", fields: [fromUserId], references: [id])
+  toUserId        String   @db.Uuid
+  toUser          User     @relation("GiftsReceived", fields: [toUserId], references: [id])
+  createdAt       DateTime @default(now())
+  openedAt        DateTime?
+  @@index([toUserId])
+  @@index([fromUserId])
+}
+
+// --- Streak Shields ---------------------------------------------------------
+
+model StreakShield {
+  id              String   @id @default(uuid()) @db.Uuid
+  isActive        Boolean  @default(true)
+  reason          String?
+  userId          String   @db.Uuid
+  user            User     @relation(fields: [userId], references: [id])
+  createdAt       DateTime @default(now())
+  usedAt          DateTime?
+  @@index([userId])
+}
+
+// --- Notification Preferences -----------------------------------------------
+
+model NotificationPreferences {
+  id                    String  @id @default(uuid()) @db.Uuid
+  growthAlerts          Boolean @default(true)
+  waterReminders        Boolean @default(true)
+  weatherAlerts         Boolean @default(true)
+  socialNotifications   Boolean @default(true)
+  marketplaceUpdates    Boolean @default(true)
+  achievementUnlocks    Boolean @default(true)
+  streakReminders       Boolean @default(true)
+  eventNotifications    Boolean @default(true)
+  quietHoursStart       String?
+  quietHoursEnd         String?
+  quietHoursEnabled     Boolean @default(false)
+  userId                String  @unique @db.Uuid
+  user                  User    @relation(fields: [userId], references: [id])
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// --- Seasonal Events --------------------------------------------------------
+
+model SeasonEvent {
+  id              String        @id @default(uuid()) @db.Uuid
+  key             String        @unique
+  name            String
+  description     String?
+  type            String        @default("SEASONAL")
+  status          String        @default("DRAFT")
+  startDate       DateTime
+  endDate         DateTime
+  icon            String?
+  bannerUrl       String?
+  themeColor      String?
+  quests          Quest[]
+  shopItems       EventShopItem[]
+  userProgress    UserEventProgress[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  @@index([status])
+  @@index([startDate, endDate])
+}
+
+model EventShopItem {
+  id              String      @id @default(uuid()) @db.Uuid
+  name            String
+  description     String?
+  price           Float
+  currency        String      @default("GREEN_CREDITS")
+  icon            String?
+  stock           Int?
+  isLimited       Boolean     @default(true)
+  seasonEventId   String      @db.Uuid
+  seasonEvent     SeasonEvent @relation(fields: [seasonEventId], references: [id])
+  createdAt       DateTime    @default(now())
+  @@index([seasonEventId])
+}
+
+model UserEventProgress {
+  id              String      @id @default(uuid()) @db.Uuid
+  points          Int         @default(0)
+  tier            Int         @default(1)
+  rewardsClaimed  Json?
+  userId          String      @db.Uuid
+  user            User        @relation(fields: [userId], references: [id])
+  seasonEventId   String      @db.Uuid
+  seasonEvent     SeasonEvent @relation(fields: [seasonEventId], references: [id])
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  @@unique([userId, seasonEventId])
+  @@index([userId])
+}
+
+// --- Breeding Lab -----------------------------------------------------------
+
+model BreedingLab {
+  id              String   @id @default(uuid()) @db.Uuid
+  status          String   @default("BREEDING")
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  resultSpeciesId String?  @db.Uuid
+  resultSpecies   PlantSpecies? @relation("BreedResult", fields: [resultSpeciesId], references: [id])
+  userId          String   @db.Uuid
+  user            User     @relation(fields: [userId], references: [id])
+  parent1Id       String   @db.Uuid
+  parent1         PlantSpecies @relation("BreedParent1", fields: [parent1Id], references: [id])
+  parent2Id       String   @db.Uuid
+  parent2         PlantSpecies @relation("BreedParent2", fields: [parent2Id], references: [id])
+  @@index([userId])
+  @@index([status])
+}
+
+// --- Disease & Treatment ----------------------------------------------------
+
+model DiseaseCase {
+  id              String   @id @default(uuid()) @db.Uuid
+  diseaseType     String
+  severity        Int      @default(1)
+  status          String   @default("ACTIVE")
+  startedAt       DateTime @default(now())
+  treatedAt       DateTime?
+  resolvedAt      DateTime?
+  cropId          String   @db.Uuid
+  crop            Crop     @relation(fields: [cropId], references: [id])
+  userId          String   @db.Uuid
+  user            User     @relation(fields: [userId], references: [id])
+  @@index([cropId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Treatment {
+  id              String   @id @default(uuid()) @db.Uuid
+  treatmentType   String
+  name            String
+  cost            Float    @default(0)
+  effectiveness   Int      @default(80)
+  durationHours   Int      @default(24)
+  createdAt       DateTime @default(now())
+}
+
+// --- Garden Themes & Decorations --------------------------------------------
+
+model GardenTheme {
+  id              String   @id @default(uuid()) @db.Uuid
+  key             String   @unique
+  name            String
+  description     String?
+  icon            String?
+  price           Float    @default(0)
+  currency        String   @default("GREEN_CREDITS")
+  isDefault       Boolean  @default(false)
+  soilColor       String?
+  grassColor      String?
+  decorStyle      String?
+  createdAt       DateTime @default(now())
+}
+
+model UserGardenDecoration {
+  id              String   @id @default(uuid()) @db.Uuid
+  decorationType  String
+  name            String
+  position        Json?
+  isActive        Boolean  @default(true)
+  userId          String   @db.Uuid
+  user            User     @relation(fields: [userId], references: [id])
+  gardenId        String   @db.Uuid
+  garden          Garden   @relation(fields: [gardenId], references: [id])
+  createdAt       DateTime @default(now())
+  @@index([userId])
+  @@index([gardenId])
+}
+
+// --- Referral System --------------------------------------------------------
+
+model Referral {
+  id              String   @id @default(uuid()) @db.Uuid
+  code            String   @unique
+  status          String   @default("PENDING")
+  referrerId      String   @db.Uuid
+  referrer        User     @relation("ReferralsMade", fields: [referrerId], references: [id])
+  refereeId       String?  @unique @db.Uuid
+  referee         User?    @relation("ReferralReceived", fields: [refereeId], references: [id])
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+  @@index([code])
+  @@index([referrerId])
 }

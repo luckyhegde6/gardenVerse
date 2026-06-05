@@ -88,3 +88,4 @@ gamification-final-verify.png
 login-page-snapshot.yml
 
 .vercel
+.claude/settings.local.json
