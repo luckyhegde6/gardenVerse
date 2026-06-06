@@ -2,9 +2,52 @@ import { StyleSheet, Platform, Dimensions } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-// ─── Color Palette ──────────────────────────────────────────────────────────
+// ─── Theme Type ─────────────────────────────────────────────────────────────
 
-export const colors = {
+export interface Theme {
+  primary: string;
+  primaryDark: string;
+  primaryLight: string;
+  primaryBg: string;
+
+  background: string;
+  surface: string;
+  surfaceVariant: string;
+  surfaceSecondary: string;
+
+  text: string;
+  textSecondary: string;
+  textInverse: string;
+  textMuted: string;
+
+  border: string;
+  borderFocus: string;
+  divider: string;
+
+  error: string;
+  errorBg: string;
+  success: string;
+  successBg: string;
+  warning: string;
+  warningBg: string;
+  info: string;
+  infoBg: string;
+
+  shadow: string;
+  overlay: string;
+
+  white: string;
+  black: string;
+
+  // Debug mode specific
+  debugBg: string;
+  debugText: string;
+  debugAccent: string;
+}
+
+// ─── Light Theme ────────────────────────────────────────────────────────────
+
+export const lightTheme: Theme = {
   primary: "#16a34a",
   primaryDark: "#15803d",
   primaryLight: "#22c55e",
@@ -12,14 +55,17 @@ export const colors = {
 
   background: "#f8fafc",
   surface: "#ffffff",
-  surfaceSecondary: "#f1f5f9",
+  surfaceVariant: "#f1f5f9",
+  surfaceSecondary: "#e2e8f0",
 
   text: "#0f172a",
   textSecondary: "#64748b",
+  textInverse: "#ffffff",
   textMuted: "#94a3b8",
 
   border: "#e2e8f0",
   borderFocus: "#16a34a",
+  divider: "#e2e8f0",
 
   error: "#ef4444",
   errorBg: "#fef2f2",
@@ -30,15 +76,62 @@ export const colors = {
   info: "#3b82f6",
   infoBg: "#eff6ff",
 
-  white: "#ffffff",
-  black: "#000000",
+  shadow: "#000000",
   overlay: "rgba(0, 0, 0, 0.5)",
 
-  // Debug mode specific
+  white: "#ffffff",
+  black: "#000000",
+
   debugBg: "#1e1b4b",
   debugText: "#c7d2fe",
   debugAccent: "#818cf8",
-} as const;
+};
+
+// ─── Dark Theme ─────────────────────────────────────────────────────────────
+
+export const darkTheme: Theme = {
+  primary: "#4ade80",
+  primaryDark: "#22c55e",
+  primaryLight: "#86efac",
+  primaryBg: "#052e16",
+
+  background: "#0f172a",
+  surface: "#1e293b",
+  surfaceVariant: "#334155",
+  surfaceSecondary: "#475569",
+
+  text: "#f1f5f9",
+  textSecondary: "#94a3b8",
+  textInverse: "#0f172a",
+  textMuted: "#64748b",
+
+  border: "#334155",
+  borderFocus: "#4ade80",
+  divider: "#1e293b",
+
+  error: "#f87171",
+  errorBg: "#450a0a",
+  success: "#4ade80",
+  successBg: "#052e16",
+  warning: "#fbbf24",
+  warningBg: "#451a03",
+  info: "#60a5fa",
+  infoBg: "#172554",
+
+  shadow: "#000000",
+  overlay: "rgba(0, 0, 0, 0.7)",
+
+  white: "#ffffff",
+  black: "#000000",
+
+  debugBg: "#1e1b4b",
+  debugText: "#c7d2fe",
+  debugAccent: "#818cf8",
+};
+
+// ─── Backward-compatible flat colors object (uses light theme) ──────────────
+
+export const colors = lightTheme as Theme;
 
 // ─── Spacing ────────────────────────────────────────────────────────────────
 
@@ -69,44 +162,37 @@ export const typography = {
     fontWeight: "700" as const,
     lineHeight: 34,
     letterSpacing: -0.5,
-    color: colors.text,
   },
   h2: {
     fontSize: 24,
     fontWeight: "700" as const,
     lineHeight: 30,
     letterSpacing: -0.3,
-    color: colors.text,
   },
   h3: {
     fontSize: 20,
     fontWeight: "600" as const,
     lineHeight: 26,
-    color: colors.text,
   },
   h4: {
     fontSize: 18,
     fontWeight: "600" as const,
     lineHeight: 24,
-    color: colors.text,
   },
   body: {
     fontSize: 16,
     fontWeight: "400" as const,
     lineHeight: 24,
-    color: colors.text,
   },
   bodySmall: {
     fontSize: 14,
     fontWeight: "400" as const,
     lineHeight: 20,
-    color: colors.textSecondary,
   },
   caption: {
     fontSize: 12,
     fontWeight: "400" as const,
     lineHeight: 16,
-    color: colors.textMuted,
   },
   button: {
     fontSize: 16,
@@ -117,7 +203,6 @@ export const typography = {
     fontSize: 14,
     fontWeight: "500" as const,
     lineHeight: 18,
-    color: colors.text,
   },
 } as const;
 
@@ -126,7 +211,7 @@ export const typography = {
 export const shadows = {
   sm: Platform.select({
     ios: {
-      shadowColor: colors.black,
+      shadowColor: "#000000",
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.05,
       shadowRadius: 2,
@@ -138,7 +223,7 @@ export const shadows = {
   }),
   md: Platform.select({
     ios: {
-      shadowColor: colors.black,
+      shadowColor: "#000000",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 4,
@@ -150,7 +235,7 @@ export const shadows = {
   }),
   lg: Platform.select({
     ios: {
-      shadowColor: colors.black,
+      shadowColor: "#000000",
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.15,
       shadowRadius: 8,
@@ -162,7 +247,7 @@ export const shadows = {
   }),
   xl: Platform.select({
     ios: {
-      shadowColor: colors.black,
+      shadowColor: "#000000",
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.2,
       shadowRadius: 16,
@@ -236,7 +321,7 @@ export const globalStyles = StyleSheet.create({
     height: 52,
   },
   inputContainerFocused: {
-    borderColor: colors.borderFocus,
+    borderColor: colors.primary,
   },
   inputContainerError: {
     borderColor: colors.error,
@@ -289,7 +374,7 @@ export const globalStyles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   buttonSecondary: {
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: colors.surfaceVariant,
   },
   buttonOutline: {
     backgroundColor: "transparent",
@@ -304,7 +389,7 @@ export const globalStyles = StyleSheet.create({
   },
   buttonText: {
     ...typography.button,
-    color: colors.white,
+    color: "#ffffff",
   },
   buttonTextSecondary: {
     ...typography.button,
@@ -320,7 +405,7 @@ export const globalStyles = StyleSheet.create({
   },
   buttonTextDanger: {
     ...typography.button,
-    color: colors.white,
+    color: "#ffffff",
   },
 
   // Badge
@@ -364,7 +449,7 @@ export const globalStyles = StyleSheet.create({
   dividerText: {
     marginHorizontal: spacing.md,
     fontSize: 12,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontWeight: "500",
   },
 
@@ -397,7 +482,7 @@ export const globalStyles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: colors.surfaceVariant,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.md,

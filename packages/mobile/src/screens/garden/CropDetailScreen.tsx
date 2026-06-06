@@ -17,6 +17,7 @@ import {
   formatGrowthStage,
 } from "../../utils/formatting";
 import { CropStatus } from "../../types";
+import HapticFeedback from "../../utils/haptics";
 
 function getHealthTip(health: number): string {
   if (health >= 80) return "⭐ Excellent condition! Keep up the good work.";
@@ -171,7 +172,7 @@ export function CropDetailScreen() {
         </Card>
 
         {/* AI Analysis Button */}
-        <TouchableOpacity className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl px-4 py-3 mb-4 flex-row items-center justify-center">
+        <TouchableOpacity className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl px-4 py-3 mb-4 flex-row items-center justify-center" onPress={() => HapticFeedback.light()}>
           <Text className="text-lg mr-2">🤖</Text>
           <Text className="text-white font-semibold">AI Health Analysis</Text>
         </TouchableOpacity>
@@ -179,9 +180,9 @@ export function CropDetailScreen() {
         {/* Action Buttons */}
         {!isHarvested && (
           <View className="flex-row gap-3 mb-6">
-            <WaterButton onPress={() => waterCrop(crop.id)} className="flex-1" />
-            <FertilizeButton onPress={() => fertilizeCrop(crop.id)} className="flex-1" />
-            {isMature && <HarvestButton onPress={() => harvestCrop(crop.id)} className="flex-1" />}
+            <WaterButton onPress={() => { HapticFeedback.medium(); waterCrop(crop.id); }} className="flex-1" />
+            <FertilizeButton onPress={() => { HapticFeedback.medium(); fertilizeCrop(crop.id); }} className="flex-1" />
+            {isMature && <HarvestButton onPress={() => { HapticFeedback.success(); harvestCrop(crop.id); }} className="flex-1" />}
           </View>
         )}
       </View>

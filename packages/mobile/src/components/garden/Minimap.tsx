@@ -3,6 +3,7 @@ import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGarden } from '../../hooks/useGarden';
 import { Crop } from '../../types';
+import HapticFeedback from '../../utils/haptics';
 
 const GRID = 6;
 const CELL = 24;
@@ -34,6 +35,7 @@ export function Minimap() {
   const wiltingCount = crops.filter((c: Crop) => (c.health ?? 100) < 40).length;
 
   const handleCellPress = useCallback((col: number, row: number, crop?: Crop) => {
+    HapticFeedback.light();
     if (crop) {
       router.push({ pathname: '/crop-detail/[cropId]', params: { cropId: crop.id } });
     }

@@ -5,45 +5,15 @@ import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { GroupCard } from "../../components/community/GroupCard";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 import { Group } from "../../types";
 import api from "../../services/api";
-
-const MOCK_LEADERBOARD = [
-  { rank: 1, name: "GreenMaster", score: 15420, avatar: "🌿" },
-  { rank: 2, name: "EcoWarrior", score: 12380, avatar: "🌍" },
-  { rank: 3, name: "SeedKing", score: 10950, avatar: "🌱" },
-];
-
-const CHALLENGES = [
-  {
-    id: "1",
-    title: "Summer Harvest Sprint",
-    description: "Harvest 20 crops before summer ends",
-    progress: 9,
-    target: 20,
-    active: true,
-  },
-  {
-    id: "2",
-    title: "Watering Warrior",
-    description: "Water crops 50 times",
-    progress: 32,
-    target: 50,
-    active: true,
-  },
-  {
-    id: "3",
-    title: "Community Supporter",
-    description: "Join 3 community groups",
-    progress: 1,
-    target: 3,
-    active: false,
-  },
-];
 
 export function CommunityScreen() {
   const router = useRouter();
   const [groups, setGroups] = useState<Group[]>([]);
+  const [leaderboard, setLeaderboard] = useState<{rank: number; name: string; score: number; avatar: string}[]>([]);
+  const [challenges, setChallenges] = useState<{id: string; title: string; description: string; progress: number; target: number; active: boolean}[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -54,22 +24,43 @@ export function CommunityScreen() {
       setGroups(Array.isArray(data) ? data : []);
     } catch {
       setGroups([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+    }
+  }, []);
+
+  const fetchLeaderboard = useCallback(async () => {
+    try {
+      const resp = await api.get("/gamification/leaderboard?limit=3");
+      const data = resp.data?.data || resp.data || [];
+      setLeaderboard(Array.isArray(data) ? data : []);
+    } catch {
+      setLeaderboard([]);
+    }
+  }, []);
+
+  const fetchChallenges = useCallback(async () => {
+    try {
+      const resp = await api.get("/gamification/quests?active=true&limit=2");
+      const data = resp.data?.data || resp.data || [];
+      setChallenges(Array.isArray(data) ? data : []);
+    } catch {
+      setChallenges([]);
     }
   }, []);
 
   useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
+    Promise.all([fetchGroups(), fetchLeaderboard(), fetchChallenges()]).finally(() =>
+      setLoading(false)
+    );
+  }, [fetchGroups, fetchLeaderboard, fetchChallenges]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchGroups();
-  }, [fetchGroups]);
+    Promise.all([fetchGroups(), fetchLeaderboard(), fetchChallenges()]).finally(() =>
+      setRefreshing(false)
+    );
+  }, [fetchGroups, fetchLeaderboard, fetchChallenges]);
 
-  const topChallenges = CHALLENGES.filter((c) => c.active).slice(0, 2);
+  const topChallenges = challenges.filter((c) => c.active).slice(0, 2);
 
   return (
     <ScrollView
@@ -90,7 +81,10 @@ export function CommunityScreen() {
               Connect with gardeners in your area
             </Text>
           </View>
-          <TouchableOpacity className="bg-white/20 rounded-xl px-4 py-2">
+          <TouchableOpacity
+            className="bg-white/20 rounded-xl px-4 py-2"
+            onPress={() => router.push("/(tabs)/garden")}
+          >
             <Text className="text-white font-semibold">Explore</Text>
           </TouchableOpacity>
         </View>
@@ -100,45 +94,57 @@ export function CommunityScreen() {
       <View className="px-4 mb-4">
         <View className="flex-row justify-between items-center mb-3">
           <Text className="text-lg font-bold text-gray-900">🏆 Leaderboard</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => {}}>
             <Text className="text-primary-600 text-sm font-medium">
               See All
             </Text>
           </TouchableOpacity>
         </View>
-        {MOCK_LEADERBOARD.map((entry) => (
-          <View
-            key={entry.rank}
-            className="flex-row items-center bg-white rounded-xl px-4 py-3 mb-2 border border-gray-100"
-          >
-            <Text
-              className={`text-lg font-bold w-8 ${
-                entry.rank === 1
-                  ? "text-amber-500"
-                  : entry.rank === 2
-                    ? "text-gray-400"
-                    : entry.rank === 3
-                      ? "text-amber-700"
-                      : "text-gray-400"
-              }`}
+        {loading ? (
+          <>
+            <SkeletonLoader height={52} style={{ marginBottom: 8, borderRadius: 12 }} />
+            <SkeletonLoader height={52} style={{ marginBottom: 8, borderRadius: 12 }} />
+            <SkeletonLoader height={52} style={{ borderRadius: 12 }} />
+          </>
+        ) : leaderboard.length === 0 ? (
+          <Card className="p-4 items-center">
+            <Text className="text-gray-400 text-sm">No leaderboard data yet</Text>
+          </Card>
+        ) : (
+          leaderboard.map((entry: { rank: number; name: string; score: number; avatar: string }) => (
+            <View
+              key={entry.rank}
+              className="flex-row items-center bg-white rounded-xl px-4 py-3 mb-2 border border-gray-100"
             >
-              #{entry.rank}
-            </Text>
-            <Text className="text-2xl mr-3">{entry.avatar}</Text>
-            <View className="flex-1">
-              <Text className="text-sm font-semibold text-gray-900">
-                {entry.name}
+              <Text
+                className={`text-lg font-bold w-8 ${
+                  entry.rank === 1
+                    ? "text-amber-500"
+                    : entry.rank === 2
+                      ? "text-gray-400"
+                      : entry.rank === 3
+                        ? "text-amber-700"
+                        : "text-gray-400"
+                }`}
+              >
+                #{entry.rank}
+              </Text>
+              <Text className="text-2xl mr-3">{entry.avatar}</Text>
+              <View className="flex-1">
+                <Text className="text-sm font-semibold text-gray-900">
+                  {entry.name}
+                </Text>
+              </View>
+              <Text className="text-sm font-bold text-primary-700">
+                {entry.score.toLocaleString()}
               </Text>
             </View>
-            <Text className="text-sm font-bold text-primary-700">
-              {entry.score.toLocaleString()}
-            </Text>
-          </View>
-        ))}
+          ))
+        )}
       </View>
 
       {/* Active Challenges */}
-      {topChallenges.length > 0 && (
+      {!loading && topChallenges.length > 0 && (
         <View className="px-4 mb-4">
           <Text className="text-lg font-bold text-gray-900 mb-3">
             🎯 Active Challenges
@@ -172,14 +178,17 @@ export function CommunityScreen() {
       <View className="px-4 mb-4">
         <View className="flex-row justify-between items-center mb-3">
           <Text className="text-lg font-bold text-gray-900">👥 Groups</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => {}}>
             <Text className="text-primary-600 text-sm font-medium">
               + Create Group
             </Text>
           </TouchableOpacity>
         </View>
         {loading ? (
-          <LoadingSpinner message="Loading groups..." />
+          <>
+            <SkeletonLoader height={100} style={{ marginBottom: 8, borderRadius: 12 }} />
+            <SkeletonLoader height={100} style={{ borderRadius: 12 }} />
+          </>
         ) : groups.length === 0 ? (
           <Card className="p-6 items-center">
             <Text className="text-3xl mb-2">🌐</Text>

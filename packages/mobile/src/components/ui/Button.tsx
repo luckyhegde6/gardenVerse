@@ -21,6 +21,7 @@ interface ButtonProps {
   icon?: string;
   disabled?: boolean;
   fullWidth?: boolean;
+  testID?: string;
   /** @deprecated Use StyleSheet instead of className */
   className?: string;
 }
@@ -34,6 +35,7 @@ export function Button({
   icon,
   disabled = false,
   fullWidth = false,
+  testID,
   className: _className,
 }: ButtonProps) {
   const isDisabled = disabled || isLoading;
@@ -66,8 +68,10 @@ export function Button({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.7}
+      testID={testID}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled }}
+      accessibilityLabel={title}
     >
       {isLoading ? (
         <ActivityIndicator

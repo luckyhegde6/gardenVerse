@@ -14,6 +14,7 @@ import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 
 export function IotDashboardScreen() {
   const { devices, readings, isLoading, error, refresh } = useIot();
@@ -27,7 +28,17 @@ export function IotDashboardScreen() {
   };
 
   if (isLoading && devices.length === 0) {
-    return <LoadingSpinner fullScreen message="Loading devices..." />;
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: "#f9fafb" }} contentContainerStyle={{ padding: 16 }}>
+        <SkeletonLoader height={100} style={{ marginBottom: 16, borderRadius: 16 }} />
+        <View style={{ flexDirection: "row", gap: 12, marginBottom: 16 }}>
+          <SkeletonLoader width="50%" height={100} style={{ borderRadius: 16 }} />
+          <SkeletonLoader width="50%" height={100} style={{ borderRadius: 16 }} />
+        </View>
+        <SkeletonLoader height={120} style={{ marginBottom: 16, borderRadius: 16 }} />
+        <SkeletonLoader height={120} style={{ borderRadius: 16 }} />
+      </ScrollView>
+    );
   }
 
   if (error && devices.length === 0) {

@@ -84,6 +84,7 @@ export function LoginScreen() {
           )}
 
           <Input
+            testID="login-email"
             label="Email or Username"
             placeholder="Enter your email or username"
             value={email}
@@ -98,6 +99,7 @@ export function LoginScreen() {
           />
 
           <Input
+            testID="login-password"
             label="Password"
             placeholder="Enter your password"
             value={password}
@@ -120,6 +122,7 @@ export function LoginScreen() {
           </TouchableOpacity>
 
           <Button
+            testID="login-button"
             title="Login"
             onPress={handleLogin}
             isLoading={isLoading}

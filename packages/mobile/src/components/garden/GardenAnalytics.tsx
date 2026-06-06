@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-nati
 import Svg, { Rect } from "react-native-svg"
 import { Crop, CropStatus } from "../../types"
 import { colors, spacing, borderRadius } from "../../styles/theme"
+import HapticFeedback from "../../utils/haptics"
 
 type AnalyticsTab = "overview" | "hydration" | "health"
 
@@ -120,7 +121,7 @@ export function GardenAnalytics({
       <View className="flex-row items-center justify-between px-4 pt-3 pb-2">
         <Text className="text-base font-bold text-gray-900">📊 Garden Analytics</Text>
         {onClose && (
-          <TouchableOpacity onPress={onClose} className="p-1">
+          <TouchableOpacity onPress={() => { HapticFeedback.light(); onClose?.(); }} className="p-1">
             <Text className="text-gray-400 text-lg">✕</Text>
           </TouchableOpacity>
         )}
@@ -130,7 +131,7 @@ export function GardenAnalytics({
         {(["overview", "hydration", "health"] as AnalyticsTab[]).map(t => (
           <TouchableOpacity
             key={t}
-            onPress={() => setTab(t)}
+            onPress={() => { HapticFeedback.light(); setTab(t); }}
             className={`px-3 py-1.5 rounded-full ${tab === t ? "bg-primary-600" : "bg-gray-100"}`}
           >
             <Text className={`text-xs font-medium ${tab === t ? "text-white" : "text-gray-500"}`}>

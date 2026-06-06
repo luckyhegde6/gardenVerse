@@ -6,6 +6,7 @@ import Animated, {
   withSpring,
   withSequence,
 } from 'react-native-reanimated'
+import { HapticFeedback } from '../../utils/haptics'
 
 interface AnimatedActionButtonProps {
   onPress: () => void
@@ -44,7 +45,10 @@ export function AnimatedActionButton({
         )
       }}
       onPress={() => {
-        if (!disabled && !isLoading) onPress()
+        if (!disabled && !isLoading) {
+          HapticFeedback.light()
+          onPress()
+        }
       }}
       disabled={disabled || isLoading}
     >

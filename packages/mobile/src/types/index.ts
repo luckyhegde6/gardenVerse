@@ -239,6 +239,8 @@ export interface ProfileStackParamList {
    Achievements: undefined;
    Inventory: undefined;
    Invites: undefined;
+   DailyRewards: undefined;
+   Quests: undefined;
  }
 
 export interface PlantSpecies {

@@ -27,8 +27,14 @@ export function AiScannerScreen() {
     scanHistory,
     error,
     scanImage,
+    fetchScanHistory,
     setCurrentResult,
   } = useAI();
+
+  // ─── Fetch scan history on mount ────────────────────────────────────────
+  useEffect(() => {
+    fetchScanHistory();
+  }, []);
   const cameraRef = useRef<any>(null);
 
   const handleCapture = async () => {
@@ -41,7 +47,9 @@ export function AiScannerScreen() {
       setCapturedImage(photo.uri);
       await scanImage(photo.uri);
       setMode("result");
-    } catch {}
+    } catch (e) {
+      console.error('Capture failed:', e);
+    }
   };
 
   const handleGalleryPick = async () => {

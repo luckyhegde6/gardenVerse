@@ -1,13 +1,17 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Card } from "../../components/ui/Card";
 import { useAuthStore } from "../../stores/authStore";
+import { useTheme } from "../../styles/ThemeContext";
+import { lightTheme } from "../../styles/theme";
 
 export function SettingsScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
   const { user, updateProfile, logout } = useAuthStore();
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [notifications, setNotifications] = useState(true);
@@ -180,9 +184,9 @@ export function SettingsScreen() {
           <Text className="text-base font-semibold text-gray-900 mb-2">
             Appearance
           </Text>
-          <TouchableOpacity className="py-4 border-b border-gray-100">
+          <TouchableOpacity className="py-4 border-b border-gray-100" onPress={toggleTheme}>
             <Text className="text-sm font-medium text-gray-900">
-              Theme: Light
+              Theme: {theme === lightTheme ? 'Light' : 'Dark'}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity className="py-4 border-b border-gray-100">

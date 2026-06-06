@@ -10,7 +10,13 @@ import { ErrorBoundary } from "../src/components/ui/ErrorBoundary";
 import { DebugOverlay } from "../src/components/ui/DebugOverlay";
 import { useWebSocket } from "../src/hooks/useWebSocket";
 import { initLogger } from "../src/services/logger";
+import {
+  registerForPushNotifications,
+  setupNotificationHandlers,
+  notifyGrowthReady,
+} from "../src/services/notifications";
 import { colors, typography } from "../src/styles/theme";
+import { ThemeProvider, useTheme } from "../src/styles/ThemeContext";
 
 initLogger();
 
@@ -32,10 +38,40 @@ const queryClient = new QueryClient({
 function RootContent() {
   const { isAuthenticated, isLoading, loadStoredAuth, ...storeState } =
     useAuthStore();
+  const { theme, isDark } = useTheme();
   const router = useRouter();
   const segments = useSegments();
 
   useWebSocket();
+
+  // ─── Push Notifications ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    registerForPushNotifications();
+
+    const cleanup = setupNotificationHandlers(
+      // Foreground notification received
+      (notification) => {
+        // Could update local state here (e.g., badge count)
+      },
+      // Notification tapped (background/killed)
+      (response) => {
+        const data = response.notification.request.content.data;
+        if (data?.type === "growth_ready" && data?.cropId) {
+          router.push({ pathname: "/crop-detail/[cropId]", params: { cropId: data.cropId as string } });
+        } else if (data?.type === "friend_request") {
+          router.push("/friends");
+        } else if (data?.type === "gift_received") {
+          router.push("/friends");
+        } else if (data?.type === "weather_alert") {
+          router.push("/(tabs)/garden");
+        }
+      },
+    );
+
+    return cleanup;
+  }, [isAuthenticated]);
 
   useEffect(() => {
     loadStoredAuth();
@@ -55,15 +91,16 @@ function RootContent() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: theme.background }}>
         <Text style={{ fontSize: 64, marginBottom: 16 }}>🌿</Text>
-        <Text style={{ ...typography.h2, color: colors.primary }}>GardenVerse</Text>
+        <Text style={{ ...typography.h2, color: theme.primary }}>GardenVerse</Text>
       </View>
     );
   }
 
   return (
     <>
+      <StatusBar style={isDark ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <>
@@ -74,6 +111,16 @@ function RootContent() {
             <Stack.Screen name="listing-detail/[listingId]" options={{ headerShown: false, presentation: 'card' }} />
             <Stack.Screen name="group-detail/[groupId]" options={{ headerShown: false, presentation: 'card' }} />
             <Stack.Screen name="chat" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="daily-rewards" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="quests" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="friends" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="add-friend" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="garden-visit/[friendId]" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="inventory" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="achievements" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="invites" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="settings" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="admin" options={{ headerShown: false, presentation: 'card' }} />
           </>
         ) : (
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -90,8 +137,9 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <QueryClientProvider client={queryClient}>
-            <StatusBar style="dark" />
-            <RootContent />
+            <ThemeProvider>
+              <RootContent />
+            </ThemeProvider>
           </QueryClientProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>

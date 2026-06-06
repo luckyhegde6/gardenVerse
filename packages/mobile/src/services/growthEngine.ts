@@ -25,6 +25,17 @@ export interface GrowthState {
   ticksElapsed: number
 }
 
+export type WeatherCondition = "clear" | "rain" | "heavy_rain" | "frost" | "heatwave" | "wind" | "cloudy"
+
+export interface WeatherState {
+  condition: WeatherCondition
+  temperature: number // Celsius
+  humidity: number     // 0-100
+  rainfall: number     // mm per hour
+}
+
+const DEFAULT_WEATHER: WeatherState = { condition: "clear", temperature: 25, humidity: 50, rainfall: 0 }
+
 export type GrowthEventCallback = (updatedCrops: Crop[]) => void
 
 export class GrowthEngine {
@@ -32,6 +43,7 @@ export class GrowthEngine {
   private crops: Crop[] = []
   private gardenType: GardenType = GardenType.VIRTUAL
   private sunlightExposure: number = 50
+  private weather: WeatherState = DEFAULT_WEATHER
   private onUpdate: GrowthEventCallback | null = null
   private paused = false
 
@@ -66,6 +78,10 @@ export class GrowthEngine {
 
   updateSunlight(sunlightExposure: number) {
     this.sunlightExposure = sunlightExposure
+  }
+
+  setWeather(weather: WeatherState) {
+    this.weather = weather
   }
 
   onCropAction(cropId: string, action: 'water' | 'fertilize') {
@@ -105,9 +121,26 @@ export class GrowthEngine {
       const growthBoost = boost > 0 ? BASE_GROWTH_PER_TICK * 2 : BASE_GROWTH_PER_TICK
       growthStage = Math.min(100, growthStage + growthBoost)
 
-      // Hydration decay (more in high sun)
+      // Hydration decay (modified by sun + weather)
       const sunModifier = this.sunlightExposure > 70 ? 1.5 : this.sunlightExposure < 30 ? 0.5 : 1
-      hydration = Math.max(0, hydration - HYDRATION_DECAY_PER_TICK * sunModifier)
+      let hydrationChange = -HYDRATION_DECAY_PER_TICK * sunModifier
+
+      // Weather effects on hydration
+      if (this.weather.condition === "rain") {
+        hydrationChange += 3 // Light rain adds moisture
+      } else if (this.weather.condition === "heavy_rain") {
+        hydrationChange += 6 // Heavy rain adds more moisture
+        // Flooding risk: excess rain can damage health
+        if (hydration > 80) {
+          health = Math.max(0, health - 1)
+        }
+      } else if (this.weather.condition === "heatwave") {
+        hydrationChange -= 2 // Heat dries soil faster
+      } else if (this.weather.condition === "wind") {
+        hydrationChange -= 1 // Wind increases evaporation
+      }
+
+      hydration = Math.max(0, Math.min(100, hydration + hydrationChange))
 
       // Nutrient decay
       nutrientLevel = Math.max(0, nutrientLevel - NUTRIENT_DECAY_PER_TICK)
@@ -117,6 +150,16 @@ export class GrowthEngine {
         health = Math.max(0, health - STRESS_DAMAGE_PER_TICK)
       } else if (health < 100) {
         health = Math.min(100, health + HEALTH_RECOVERY_PER_TICK)
+      }
+
+      // Weather-specific health effects
+      if (this.weather.condition === "frost") {
+        // Frost damages crops that aren't protected
+        const frostDamage = this.weather.temperature < 0 ? 3 : 1
+        health = Math.max(0, health - frostDamage)
+      } else if (this.weather.condition === "heatwave" && this.weather.temperature > 40) {
+        // Extreme heat damages crops
+        health = Math.max(0, health - 2)
       }
 
       // Status transitions

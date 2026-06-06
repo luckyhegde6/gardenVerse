@@ -17,6 +17,7 @@ import Animated, {
   withDelay,
 } from "react-native-reanimated";
 import { Crop, CropStatus } from "../../types";
+import HapticFeedback from "../../utils/haptics";
 import { CropSpriteSVG } from "./CropSpriteSVG";
 
 interface IsometricGridProps {
@@ -255,11 +256,13 @@ export function IsometricGrid({
 
     if (crop && lastTap && now - lastTap < 300) {
       lastTapRef.current.set(key, 0);
+      HapticFeedback.medium();
       onWaterCrop?.(crop.id);
       return;
     }
 
     lastTapRef.current.set(key, now);
+    HapticFeedback.light();
     onTilePress?.(col, row, crop);
   }, [onTilePress, onWaterCrop]);
 

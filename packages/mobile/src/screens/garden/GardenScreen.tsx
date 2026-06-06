@@ -33,12 +33,16 @@ import { WeatherBar } from '../../components/garden/WeatherBar';
 import { WalkthroughOverlay, useWalkthrough } from '../../components/garden/WalkthroughOverlay';
 import { Crop, CollectionStats, GardenType, WeatherData } from '../../types';
 import GamificationService from '../../services/gamification';
-import { growthEngine, GrowthState } from '../../services/growthEngine';
+import { growthEngine, GrowthState, WeatherCondition } from '../../services/growthEngine';
 import { useGardenStore } from '../../stores/gardenStore';
+import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import api from '../../services/api';
 import { requestLocationPermission, requestNotificationPermission } from '../../utils/permissions';
+import HapticFeedback from '../../utils/haptics';
+import { useTheme } from '../../styles/ThemeContext';
 
 export function GardenScreen() {
+  const { theme } = useTheme();
   const router = useRouter();
   const {
     crops,
@@ -143,6 +147,24 @@ export function GardenScreen() {
     }
   }, [crops])
 
+  // ─── Feed weather data to growth engine ─────────────────────────────────
+  useEffect(() => {
+    if (!weather || !engineStarted.current) return
+    const conditionMap: Record<string, WeatherCondition> = {
+      Clear: "clear", Clouds: "cloudy", Rain: "rain", Drizzle: "rain",
+      Thunderstorm: "heavy_rain", Snow: "frost", Mist: "cloudy",
+      Fog: "cloudy", Haze: "cloudy", Wind: "wind",
+    }
+    const condition = conditionMap[weather.condition] || "clear"
+    const isHeatwave = weather.temperature > 38 && condition === "clear"
+    growthEngine.setWeather({
+      condition: isHeatwave ? "heatwave" : condition,
+      temperature: weather.temperature,
+      humidity: weather.humidity,
+      rainfall: weather.rainfall,
+    })
+  }, [weather])
+
   // ─── Engine state polling ───────────────────────────────────────────────
   useEffect(() => {
     const interval = setInterval(() => {
@@ -169,6 +191,7 @@ export function GardenScreen() {
   }, [refreshGardens, fetchCollectionStats, fetchWeather]);
 
   const switchView = useCallback((mode: '2d' | '3d') => {
+    HapticFeedback.light();
     viewTransition.value = withSpring(0, { damping: 15 });
     setTimeout(() => {
       setViewMode(mode);
@@ -191,6 +214,7 @@ export function GardenScreen() {
 
   const handleTilePress = useCallback(
     (col: number, row: number, crop?: Crop) => {
+      HapticFeedback.light();
       if (crop) {
         if (selectedCropId === crop.id) {
           router.push({ pathname: '/crop-detail/[cropId]', params: { cropId: crop.id } });
@@ -223,6 +247,7 @@ export function GardenScreen() {
 
   const handleWater = useCallback(
     async (cropId: string) => {
+      HapticFeedback.medium();
       try {
         await waterCrop(cropId);
         growthEngine.onCropAction(cropId, 'water');
@@ -235,6 +260,7 @@ export function GardenScreen() {
 
   const handleFertilize = useCallback(
     async (cropId: string) => {
+      HapticFeedback.medium();
       try {
         await fertilizeCrop(cropId);
         growthEngine.onCropAction(cropId, 'fertilize');
@@ -247,6 +273,7 @@ export function GardenScreen() {
 
   const handleHarvest = useCallback(
     async (cropId: string) => {
+      HapticFeedback.success();
       try {
         await harvestCrop(cropId);
       } catch {
@@ -261,7 +288,7 @@ export function GardenScreen() {
     : null;
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* ─── Plant-Centric Header ──────────────────────────────────────────── */}
       <View style={styles.plantHeader}>
         <View style={styles.headerRow}>
@@ -471,8 +498,62 @@ export function GardenScreen() {
           </View>
         )}
 
+        {/* ─── Loading Skeletons (while data loads) ─────────────────────────── */}
+        {isLoading && (
+          <View className="px-4 mb-4">
+            <View style={styles.sectionCard}>
+              <SkeletonLoader width="50%" height={20} borderRadius={6} style={{ marginBottom: 12 }} />
+              <SkeletonLoader width={60} height={22} borderRadius={11} style={{ marginBottom: 12 }} />
+              <View style={{ marginBottom: 8 }}>
+                <SkeletonLoader width="100%" height={8} borderRadius={4} />
+              </View>
+              <SkeletonLoader width="70%" height={12} borderRadius={4} />
+            </View>
+          </View>
+        )}
+
+        {isLoading && (
+          <View className="px-4 mb-4">
+            <View style={styles.sectionCard}>
+              <SkeletonLoader width="40%" height={20} borderRadius={6} style={{ marginBottom: 12 }} />
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={[styles.streakRow, { borderBottomColor: '#f3f4f6', borderBottomWidth: 1 }]}>
+                  <View style={styles.streakLeft}>
+                    <SkeletonLoader width={20} height={20} borderRadius={10} />
+                    <View style={{ marginLeft: 10, flex: 1 }}>
+                      <SkeletonLoader width="80%" height={14} borderRadius={4} style={{ marginBottom: 4 }} />
+                      <SkeletonLoader width="50%" height={10} borderRadius={4} />
+                    </View>
+                  </View>
+                  <SkeletonLoader width={30} height={20} borderRadius={6} />
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {isLoading && (
+          <View className="px-4 mb-6">
+            <View style={styles.sectionCard}>
+              <View className="flex-row items-center justify-between mb-2">
+                <SkeletonLoader width="45%" height={20} borderRadius={6} />
+                <SkeletonLoader width={50} height={22} borderRadius={11} />
+              </View>
+              <View className="flex-row items-center justify-between mb-2">
+                <SkeletonLoader width={60} height={28} borderRadius={6} />
+                <SkeletonLoader width={60} height={28} borderRadius={6} />
+                <SkeletonLoader width={60} height={28} borderRadius={6} />
+              </View>
+              <SkeletonLoader width="100%" height={8} borderRadius={4} style={{ marginTop: 12 }} />
+              <SkeletonLoader width={80} height={28} borderRadius={10} style={{ marginTop: 16 }} />
+            </View>
+          </View>
+        )}
+
         {/* ─── Collections Section ─────────────────────────────────────────── */}
-        <View className="px-4 mb-4">
+        {!isLoading && (
+          <>
+          <View className="px-4 mb-4">
           <View style={styles.sectionCard}>
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-base font-bold text-gray-900">
@@ -655,6 +736,8 @@ export function GardenScreen() {
             </TouchableOpacity>
           </View>
         </View>
+          </>
+        )}
 
         {/* Bottom padding for overlay */}
         <View className="h-96" />

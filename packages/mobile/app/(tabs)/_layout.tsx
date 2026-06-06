@@ -1,29 +1,40 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import { Tabs } from "expo-router";
-import { colors } from "../../src/styles/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../src/styles/ThemeContext";
 
-function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
+function TabIcon({
+  icon,
+  focused,
+  color,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  focused: boolean;
+  color: string;
+}) {
   return (
     <View style={{ alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>{icon}</Text>
+      <Ionicons name={icon} size={22} color={color} />
     </View>
   );
 }
 
 export default function TabLayout() {
+  const { theme } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          backgroundColor: theme.surface,
+          borderTopColor: theme.border,
           paddingTop: 4,
           height: 60,
         },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: "600",
@@ -36,7 +47,10 @@ export default function TabLayout() {
         options={{
           title: "Garden",
           tabBarLabel: "Garden",
-          tabBarIcon: ({ focused }) => <TabIcon icon="🌱" focused={focused} />,
+          tabBarTestID: "tab-garden",
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon icon={focused ? "leaf" : "leaf-outline"} focused={focused} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -44,7 +58,14 @@ export default function TabLayout() {
         options={{
           title: "Market",
           tabBarLabel: "Market",
-          tabBarIcon: ({ focused }) => <TabIcon icon="🏪" focused={focused} />,
+          tabBarTestID: "tab-marketplace",
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              icon={focused ? "storefront" : "storefront-outline"}
+              focused={focused}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -52,7 +73,14 @@ export default function TabLayout() {
         options={{
           title: "Scan",
           tabBarLabel: "Scan",
-          tabBarIcon: ({ focused }) => <TabIcon icon="📷" focused={focused} />,
+          tabBarTestID: "tab-scanner",
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              icon={focused ? "camera" : "camera-outline"}
+              focused={focused}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -60,15 +88,39 @@ export default function TabLayout() {
         options={{
           title: "Community",
           tabBarLabel: "Community",
-          tabBarIcon: ({ focused }) => <TabIcon icon="👥" focused={focused} />,
+          tabBarTestID: "tab-community",
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              icon={focused ? "people" : "people-outline"}
+              focused={focused}
+              color={color}
+            />
+          ),
         }}
       />
+      <Tabs.Screen
+        name="events"
+        options={{
+          title: "Events",
+          tabBarLabel: "Events",
+          tabBarTestID: "tab-events",
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon icon={focused ? "calendar" : "calendar-outline"} focused={focused} color={color} />
+          ),
+        }} />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
           tabBarLabel: "Profile",
-          tabBarIcon: ({ focused }) => <TabIcon icon="👤" focused={focused} />,
+          tabBarTestID: "tab-profile",
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              icon={focused ? "person" : "person-outline"}
+              focused={focused}
+              color={color}
+            />
+          ),
         }}
       />
     </Tabs>

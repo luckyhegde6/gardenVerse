@@ -15,6 +15,7 @@ import { useGarden } from "../../hooks/useGarden";
 import { PlantSpecies } from "../../types";
 import api from "../../services/api";
 import debounce from "../../utils/debounce";
+import HapticFeedback from "../../utils/haptics";
 
 const CATEGORIES = [
   { key: "all", label: "All", icon: "🌱" },
@@ -132,6 +133,7 @@ export function PlantCropScreen() {
 
   const handlePlant = async () => {
     if (!selectedSeed || !selectedPlot) return;
+    HapticFeedback.success();
     try {
       await plantCrop(selectedSeed.commonName, selectedSeed.scientificName, selectedPlot.x, selectedPlot.y);
       setShowCoinsAnimation(true);
@@ -175,7 +177,7 @@ export function PlantCropScreen() {
                   return (
                     <TouchableOpacity
                       key={`${row}-${col}`}
-                      onPress={() => !existingCrop && setSelectedPlot({ x: col, y: row })}
+                      onPress={() => { if (!existingCrop) { HapticFeedback.light(); setSelectedPlot({ x: col, y: row }); } }}
                       disabled={!!existingCrop}
                       className={`flex-1 aspect-square rounded-lg items-center justify-center border-2 ${
                         isSelected
@@ -220,7 +222,7 @@ export function PlantCropScreen() {
             {CATEGORIES.map(cat => (
               <TouchableOpacity
                 key={cat.key}
-                onPress={() => setCategory(cat.key)}
+                onPress={() => { HapticFeedback.light(); setCategory(cat.key); }}
                 className={`flex-row items-center px-3 py-2 rounded-full border ${
                   category === cat.key ? "bg-primary-600 border-primary-600" : "bg-white border-gray-200"
                 }`}
@@ -259,7 +261,7 @@ export function PlantCropScreen() {
               return (
                 <TouchableOpacity
                   key={plant.id}
-                  onPress={() => setSelectedSeed(plant)}
+                  onPress={() => { HapticFeedback.light(); setSelectedSeed(plant); }}
                   activeOpacity={0.7}
                   className={`bg-white rounded-2xl p-4 border-2 w-[48%] ${isSelected ? "border-primary-500" : "border-gray-100"}`}
                 >

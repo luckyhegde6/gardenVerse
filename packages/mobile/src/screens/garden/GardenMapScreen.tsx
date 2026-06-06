@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Dimensions } from "react-native";
 import axios from "axios";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import HapticFeedback from "../../utils/haptics";
 import { NearbyGardener } from "../../types";
 
 const { width } = Dimensions.get("window");
@@ -64,6 +65,7 @@ function GardenMapScreen() {
               <TouchableOpacity
                 key={g.id}
                 className="flex-row items-center py-2 border-b border-gray-100"
+                onPress={() => HapticFeedback.light()}
               >
                 <View className="w-8 h-8 rounded-full bg-primary-100 items-center justify-center mr-3">
                   <Text className="text-sm">

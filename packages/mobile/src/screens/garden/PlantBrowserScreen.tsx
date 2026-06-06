@@ -12,6 +12,7 @@ import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { PlantSpecies } from "../../types";
 import debounce from "../../utils/debounce";
+import HapticFeedback from "../../utils/haptics";
 
 const DIFFICULTY_BADGES: Record<
   string,
@@ -109,7 +110,7 @@ function PlantBrowserScreen() {
       >
         <View className="px-4 py-4">
           <TouchableOpacity
-            onPress={() => setSelectedPlant(null)}
+            onPress={() => { HapticFeedback.light(); setSelectedPlant(null); }}
             className="mb-4"
           >
             <Text className="text-primary-600 font-medium">
@@ -223,7 +224,7 @@ function PlantBrowserScreen() {
               {plants.map((plant) => (
                 <TouchableOpacity
                   key={plant.id}
-                  onPress={() => setSelectedPlant(plant)}
+                  onPress={() => { HapticFeedback.light(); setSelectedPlant(plant); }}
                   activeOpacity={0.7}
                   className="bg-white rounded-2xl p-4 border border-gray-100 w-[48%]"
                 >

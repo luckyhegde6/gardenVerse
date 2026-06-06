@@ -20,6 +20,7 @@ interface InputProps {
   keyboardType?: KeyboardTypeOptions;
   multiline?: boolean;
   leftIcon?: string;
+  testID?: string;
   /** @deprecated Use StyleSheet instead of className */
   className?: string;
   /** @deprecated Use editable via ...rest */
@@ -37,6 +38,7 @@ export function Input({
   keyboardType = "default",
   multiline = false,
   leftIcon,
+  testID,
   className: _className,
   editable,
   ...rest
@@ -69,6 +71,7 @@ export function Input({
           textAlignVertical={multiline ? "top" : "center"}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          testID={testID}
           accessibilityLabel={label || placeholder}
           editable={editable}
           {...rest}
