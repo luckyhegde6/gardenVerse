@@ -32,6 +32,12 @@ module.exports = {
       build: 'cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release',
       reversePorts: [3000],
     },
+    'android.prod': {
+      type: 'android.apk',
+      binaryPath: 'android/app/build/outputs/apk/release/app-release.apk',
+      build: 'cd android && ./gradlew assembleRelease -DtestBuildType=release',
+      reversePorts: [],
+    },
   },
   devices: {
     simulator: {
@@ -73,6 +79,21 @@ module.exports = {
     'android.att.debug': {
       device: 'attached',
       app: 'android.debug',
+    },
+    'android.att.release': {
+      device: 'attached',
+      app: 'android.release',
+    },
+    'android.emu.prod': {
+      device: 'emulator',
+      app: 'android.prod',
+      behavior: {
+        init: {
+          expose: [
+            { seal: true },
+          ],
+        },
+      },
     },
   },
 };

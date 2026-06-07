@@ -8,7 +8,10 @@ import {
   GovernmentAdvisory,
 } from "../types";
 
-const WS_URL = __DEV__ ? "http://localhost:3001" : "wss://ws.gardenverse.app";
+const WS_URL =
+  process.env.WS_URL || (__DEV__
+    ? "http://localhost:3001"
+    : "wss://ws.gardenverse.app");
 
 export interface ServerToClientEvents {
   "garden:update": (data: { gardenId: string; crops: Crop[] }) => void;

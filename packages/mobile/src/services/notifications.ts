@@ -42,8 +42,11 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
 async function registerTokenWithBackend(token: string) {
   try {
+    const baseUrl =
+      process.env.API_URL ||
+      (__DEV__ ? "http://localhost:3000" : "https://gardenverse.vercel.app");
     await fetch(
-      `${process.env.API_URL || "https://api.gardenverse.app"}/api/v1/notifications/register-token`,
+      `${baseUrl}/api/v1/notifications/register-token`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -1,4 +1,4 @@
-const IS_DEV = process.env.APP_ENV === 'development'
+const IS_DEV = process.env.APP_ENV === 'development';
 
 export default {
   expo: {
@@ -51,7 +51,7 @@ export default {
       ],
       config: {
         googleMaps: {
-          apiKey: process.env.GOOGLE_MAPS_API_KEY || 'YOUR_GOOGLE_MAPS_API_KEY',
+          apiKey: process.env.GOOGLE_MAPS_API_KEY || '',
         },
       },
     },
@@ -102,11 +102,19 @@ export default {
       'expo-file-system',
     ],
     extra: {
-      apiUrl: process.env.API_URL || 'https://api.gardenverse.app',
-      wsUrl: process.env.WS_URL || 'wss://ws.gardenverse.app',
+      apiUrl:
+        process.env.API_URL ||
+        (IS_DEV
+          ? 'http://localhost:3000/api/v1'
+          : 'https://gardenverse.vercel.app/api/v1'),
+      wsUrl:
+        process.env.WS_URL ||
+        (IS_DEV ? 'ws://localhost:3001' : 'wss://ws.gardenverse.app'),
       eas: {
-        projectId: process.env.EAS_PROJECT_ID || '5c01de7d-484e-4704-b4a1-d5833b59d62c',
+        projectId:
+          process.env.EAS_PROJECT_ID ||
+          '5c01de7d-484e-4704-b4a1-d5833b59d62c',
       },
     },
   },
-}
+};
