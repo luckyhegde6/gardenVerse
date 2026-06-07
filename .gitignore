@@ -14,6 +14,7 @@ build/
 .env.*.local
 .env.development
 .env.production
+.env.vercel
 
 # IDE
 .vscode/
@@ -78,7 +79,8 @@ contracts/cache/
 .husky/_/
 
 # Claude agent config (user-specific)
-.claude/
+.claude/settings.local.json
+
 
 # Generated test screenshots at root
 admin-dashboard-logged-in.png
@@ -88,4 +90,3 @@ gamification-final-verify.png
 login-page-snapshot.yml
 
 .vercel
-.claude/settings.local.json

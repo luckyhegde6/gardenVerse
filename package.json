@@ -54,7 +54,11 @@
     "script:reset-db": "powershell -ExecutionPolicy Bypass -File scripts/reset-db.ps1",
     "script:run-migrations": "powershell -ExecutionPolicy Bypass -File scripts/run-migrations.ps1",
     "script:stop-all": "powershell -ExecutionPolicy Bypass -File scripts/stop-all.ps1",
-    "script:docker-cleanup": "powershell -ExecutionPolicy Bypass -File scripts/docker-cleanup.ps1"
+    "script:docker-cleanup": "powershell -ExecutionPolicy Bypass -File scripts/docker-cleanup.ps1",
+    "test:e2e:mobile": "powershell -ExecutionPolicy Bypass -File e2e/mobile/run-mobile-e2e.ps1",
+    "test:e2e:mobile:build": "powershell -ExecutionPolicy Bypass -File e2e/mobile/run-mobile-e2e.ps1 -Build",
+    "test:e2e:integration": "npx playwright test --config=e2e/playwright.config.ts e2e/tests/integration.spec.ts",
+    "test:e2e:all": "npm run test:e2e && npm run test:e2e:integration"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -85,7 +89,9 @@
     "@babel/plugin-transform-class-static-block": "^7.29.7",
     "@typescript-eslint/eslint-plugin": "^8.60.0",
     "@typescript-eslint/parser": "^8.60.0",
+    "detox": "^20.51.3",
     "husky": "^9.1.7",
+    "jest": "^30.4.2",
     "turbo": "^2.9.16"
   },
   "overrides": {

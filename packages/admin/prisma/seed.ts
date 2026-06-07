@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
+import { extraPlants } from './extra-plants';
+
+// Ensure DATABASE_URL is set for Prisma
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'postgresql://gardenverse:gardenverse123@localhost:5432/gardenverse?schema=public';
+}
 
 const prisma = new PrismaClient();
 
@@ -14,6 +20,7 @@ async function main() {
     'notification', 'gardenPlanPlant', 'gardenPlan', 'cropVariety',
     'crop', 'weatherRecord', 'garden', 'plantCollection', 'speciesMastery', 'plantHybrid', 'plantSpecies', 'featureFlag',
     'dailyReward', 'userEnergy', 'userAchievement', 'achievement', 'userPurchase', 'shopItem', 'user',
+    'quest', 'campaignReward', 'campaign',
   ];
   for (const t of tables) {
     try { await (prisma as any)[t].deleteMany(); } catch { }
@@ -89,19 +96,28 @@ async function main() {
     { commonName: 'Basil', scientificName: 'Ocimum basilicum', family: 'Lamiaceae', growingDays: 35, difficulty: 'EASY', waterNeeds: 'MODERATE', sunlightNeeds: 'FULL_SUN', seasons: ['spring', 'summer'], edible: true, medicinal: true, tags: ['basil', 'tulsi', 'herb', 'medicinal'], minTemp: 15, maxTemp: 35, description: 'Aromatic herb used in cooking. Holy basil (Tulsi) is sacred in India.' },
     { commonName: 'Watermelon', scientificName: 'Citrullus lanatus', family: 'Cucurbitaceae', growingDays: 80, difficulty: 'MEDIUM', waterNeeds: 'HIGH', sunlightNeeds: 'FULL_SUN', seasons: ['summer'], edible: true, tags: ['watermelon', 'fruit', 'summer'], minTemp: 20, maxTemp: 40, description: 'Large, sweet summer fruit that needs plenty of space and water.' },
     { commonName: 'Fenugreek', scientificName: 'Trigonella foenum-graecum', family: 'Fabaceae', growingDays: 25, difficulty: 'EASY', waterNeeds: 'LOW', sunlightNeeds: 'FULL_SUN', seasons: ['winter', 'spring', 'fall'], edible: true, medicinal: true, tags: ['fenugreek', 'methi', 'herb', 'indian', 'medicinal'], minTemp: 10, maxTemp: 35, description: 'Also known as methi. Leaves used as vegetable, seeds as spice.' },
+    ...extraPlants,
   ];
 
+  const seenNames = new Set<string>();
+  const uniquePlants = plants.filter((p: any) => {
+    if (seenNames.has(p.scientificName)) return false;
+    seenNames.add(p.scientificName);
+    return true;
+  });
+
   const createdPlantIds: string[] = [];
-  for (const p of plants) {
+  for (const p of uniquePlants) {
     const id = uuidv4();
     createdPlantIds.push(id);
+    const { baseYield: pBaseYield, tokensPerHarvest: pTokens, toxic: _toxic, ...rest } = p as any;
     await prisma.plantSpecies.create({
       data: {
         id,
-        ...p,
+        ...rest,
         isNative: true,
-        baseYield: 3,
-        tokensPerHarvest: 10,
+        baseYield: pBaseYield ?? 3,
+        tokensPerHarvest: pTokens ?? 10,
         growthTimeHours: p.growingDays * 24,
         dataSource: 'manual',
       },
@@ -394,6 +410,145 @@ async function main() {
   });
 
   console.log('Created 2 campaigns with 4 rewards');
+
+  // Achievements
+  const achievements = [
+    { key: 'first_sprout', name: 'First Sprout', description: 'Plant your first crop', icon: 'seedling', category: 'gardening', maxProgress: 1, xpReward: 50, tokenReward: 0 },
+    { key: 'green_thumb', name: 'Green Thumb', description: 'Plant 10 crops', icon: 'thumbsup', category: 'gardening', maxProgress: 10, xpReward: 200, tokenReward: 5 },
+    { key: 'master_gardener', name: 'Master Gardener', description: 'Plant 50 crops across 10+ species', icon: 'farmer', category: 'gardening', maxProgress: 50, xpReward: 1000, tokenReward: 25 },
+    { key: 'water_warrior', name: 'Water Warrior', description: 'Water crops 20 times', icon: 'droplet', category: 'care', maxProgress: 20, xpReward: 100, tokenReward: 3 },
+    { key: 'harvest_hero', name: 'Harvest Hero', description: 'Harvest 5 mature crops', icon: 'wheat', category: 'harvest', maxProgress: 5, xpReward: 300, tokenReward: 10 },
+    { key: 'market_mogul', name: 'Market Mogul', description: 'Create 5 marketplace listings', icon: 'store', category: 'commerce', maxProgress: 5, xpReward: 250, tokenReward: 8 },
+    { key: 'community_builder', name: 'Community Builder', description: 'Join 3 community groups', icon: 'people', category: 'social', maxProgress: 3, xpReward: 150, tokenReward: 5 },
+    { key: 'streak_keeper', name: 'Streak Keeper', description: 'Maintain a 7-day care streak', icon: 'fire', category: 'engagement', maxProgress: 7, xpReward: 500, tokenReward: 15 },
+    { key: 'ai_detective', name: 'AI Detective', description: 'Use the AI scanner 5 times', icon: 'magnifying-glass', category: 'ai', maxProgress: 5, xpReward: 200, tokenReward: 5 },
+    { key: 'eco_warrior', name: 'Eco Warrior', description: 'Reach sustainability score of 80', icon: 'earth', category: 'sustainability', maxProgress: 80, xpReward: 750, tokenReward: 20 },
+    { key: 'species_collector', name: 'Species Collector', description: 'Discover 15 plant species', icon: 'book', category: 'collection', maxProgress: 15, xpReward: 400, tokenReward: 10 },
+    { key: 'daily_claimer', name: 'Daily Claimer', description: 'Claim a daily reward', icon: 'gift', category: 'engagement', maxProgress: 1, xpReward: 25, tokenReward: 1 },
+  ];
+  for (const a of achievements) {
+    await prisma.achievement.create({ data: a });
+  }
+  console.log(`Created ${achievements.length} achievements`);
+
+  // Quests
+  const quests = [
+    { key: 'plant_3_tomato', title: 'Plant 3 Tomato Crops', description: 'Plant tomato seeds in your garden', category: 'DAILY', type: 'PLANT', targetCount: 3, xpReward: 100, creditReward: 0, icon: 'seedling', sortOrder: 1 },
+    { key: 'water_10_crops', title: 'Water 10 Crops', description: 'Keep your garden hydrated', category: 'DAILY', type: 'WATER', targetCount: 10, xpReward: 50, creditReward: 0, icon: 'droplet', sortOrder: 2 },
+    { key: 'harvest_5_crops', title: 'Harvest 5 Crops', description: 'Reap what you have sown', category: 'WEEKLY', type: 'HARVEST', targetCount: 5, xpReward: 200, creditReward: 50, icon: 'wheat', sortOrder: 3 },
+    { key: 'plant_5_species', title: 'Plant Any 5 Species', description: 'Diversify your garden', category: 'WEEKLY', type: 'PLANT_SPECIES', targetCount: 5, xpReward: 300, creditReward: 25, icon: 'leaf', sortOrder: 4 },
+    { key: 'streak_3_days', title: 'Maintain 3-day Streak', description: 'Care for your garden 3 days in a row', category: 'WEEKLY', type: 'STREAK', targetCount: 3, xpReward: 150, creditReward: 25, icon: 'fire', sortOrder: 5 },
+    { key: 'ai_scan_1', title: 'Scan a Diseased Plant', description: 'Use AI scanner to detect plant disease', category: 'DAILY', type: 'AI_SCAN', targetCount: 1, xpReward: 75, creditReward: 0, icon: 'magnifying-glass', sortOrder: 6 },
+    { key: 'earn_500_xp', title: 'Earn 500 XP', description: 'Level up through gardening', category: 'WEEKLY', type: 'EARN_XP', targetCount: 500, xpReward: 0, creditReward: 100, icon: 'star', sortOrder: 7 },
+    { key: 'fertilize_5_crops', title: 'Fertilize 5 Crops', description: 'Give your crops a nutrient boost', category: 'DAILY', type: 'FERTILIZE', targetCount: 5, xpReward: 80, creditReward: 0, icon: 'flask', sortOrder: 8 },
+  ];
+  for (const q of quests) {
+    await prisma.quest.create({ data: q });
+  }
+  console.log(`Created ${quests.length} quests`);
+
+  // Additional Users with Gardens
+  const userData = [
+    { email: 'priya@gardenverse.com', username: 'priya_grows', displayName: 'Priya Sharma', region: 'IN-MH', geohash: 'te7u3', level: 12, xp: 4800 },
+    { email: 'raj@gardenverse.com', username: 'raj_farms', displayName: 'Raj Patel', region: 'IN-GJ', geohash: 'tsk5r', level: 8, xp: 2800 },
+    { email: 'ananya@gardenverse.com', username: 'ananya_garden', displayName: 'Ananya Iyer', region: 'IN-TN', geohash: 'dtyk7', level: 15, xp: 7200 },
+    { email: 'karan@gardenverse.com', username: 'karan_green', displayName: 'Karan Singh', region: 'IN-RJ', geohash: 'thrc4', level: 6, xp: 1500 },
+    { email: 'meera@gardenverse.com', username: 'meera_plants', displayName: 'Meera Nair', region: 'IN-KL', geohash: 'tj4k8', level: 20, xp: 12000 },
+  ];
+  const cities = { 'IN-MH': 'Mumbai', 'IN-GJ': 'Ahmedabad', 'IN-TN': 'Chennai', 'IN-RJ': 'Jaipur', 'IN-KL': 'Kochi' };
+  const gTypes = ['VIRTUAL', 'REAL', 'HYBRID'];
+  const irrTypes = ['DRIP', 'SPRINKLER', 'MANUAL'];
+  const cStatuses = ['SEED', 'SPROUTING', 'GROWING', 'MATURE'];
+
+  for (const u of userData) {
+    const uid = uuidv4();
+    await prisma.user.create({
+      data: {
+        id: uid, email: u.email, username: u.username, displayName: u.displayName,
+        passwordHash: hash, role: 'USER', isVerified: true, isOnboarded: true,
+        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`,
+        bio: `${u.displayName} - passionate gardener from ${u.region}.`,
+        geohash: u.geohash, region: u.region, level: u.level, experience: u.xp,
+        greenCredits: u.level * 100, ecoPoints: u.level * 50,
+        sustainabilityScore: 30 + Math.random() * 50, trustScore: 40 + Math.random() * 40,
+        marketplaceReliability: 20 + Math.random() * 60, communityStanding: 30 + Math.random() * 50,
+        inviteCount: Math.floor(Math.random() * 5), currentStreak: Math.floor(Math.random() * 14),
+        longestStreak: 14 + Math.floor(Math.random() * 30), lastActiveAt: new Date(),
+      },
+    });
+    const gid = uuidv4();
+    await prisma.garden.create({
+      data: {
+        id: gid, name: `${u.displayName.split(' ')[0]}'s Garden`,
+        type: gTypes[Math.floor(Math.random() * gTypes.length)],
+        description: `${u.displayName}'s personal garden space.`,
+        soilQuality: 40 + Math.floor(Math.random() * 50),
+        irrigationLevel: 30 + Math.floor(Math.random() * 60),
+        sunlightExposure: 40 + Math.floor(Math.random() * 50),
+        gridWidth: 6, gridHeight: 6,
+        irrigationType: irrTypes[Math.floor(Math.random() * irrTypes.length)],
+        wateringMode: 'MANUAL', address: `${cities[u.region] || 'India'}`,
+        timezone: 'Asia/Kolkata', userId: uid,
+      },
+    });
+    const cropCount = 2 + Math.floor(Math.random() * 3);
+    const usedPos = new Set();
+    for (let i = 0; i < cropCount; i++) {
+      let px, py, key;
+      do { px = Math.floor(Math.random() * 6); py = Math.floor(Math.random() * 6); key = `${px},${py}`; } while (usedPos.has(key));
+      usedPos.add(key);
+      const pIdx = Math.floor(Math.random() * Math.min(createdPlantIds.length, 20));
+      await prisma.crop.create({
+        data: {
+          id: uuidv4(), name: uniquePlants[pIdx].commonName, species: uniquePlants[pIdx].scientificName,
+          status: cStatuses[Math.floor(Math.random() * cStatuses.length)],
+          growthStage: Math.floor(Math.random() * 100),
+          health: 40 + Math.floor(Math.random() * 60),
+          hydration: 20 + Math.floor(Math.random() * 70),
+          nutrientLevel: 20 + Math.floor(Math.random() * 70),
+          plotX: px, plotY: py,
+          careStreak: Math.floor(Math.random() * 10),
+          totalCareCount: Math.floor(Math.random() * 20),
+          estimatedHarvest: new Date(now.getTime() + Math.random() * 14 * 86400000),
+          plantedAt: new Date(now.getTime() - Math.random() * 10 * 86400000),
+          speciesId: createdPlantIds[pIdx], gardenId: gid, userId: uid,
+        },
+      });
+    }
+  }
+  console.log(`Created ${userData.length} additional users with gardens and crops`);
+
+  // AI Scans
+  const scanData = [
+    { userId: demoId, imageUrl: '/uploads/scans/tomato-blight.jpg', plantName: 'Tomato', species: 'Solanum lycopersicum', healthScore: 45, diseases: JSON.stringify([{ name: 'Early Blight', confidence: 0.87 }]), recommendations: JSON.stringify(['Remove affected leaves', 'Apply copper-based fungicide']) },
+    { userId: demoId, imageUrl: '/uploads/scans/chilli-healthy.jpg', plantName: 'Chilli', species: 'Capsicum annuum', healthScore: 92, diseases: JSON.stringify([]), recommendations: JSON.stringify(['Plant is healthy', 'Continue current care']) },
+    { userId: adminId, imageUrl: '/uploads/scans/mint-rust.jpg', plantName: 'Mint', species: 'Mentha spicata', healthScore: 60, diseases: JSON.stringify([{ name: 'Mint Rust', confidence: 0.78 }]), recommendations: JSON.stringify(['Remove infected stems', 'Apply neem oil spray']) },
+  ];
+  for (const s of scanData) { await prisma.aiScan.create({ data: s }); }
+  console.log(`Created ${scanData.length} AI scan records`);
+
+  // Notifications
+  const notifData = [
+    { userId: demoId, type: 'system', title: 'Welcome to GardenVerse!', body: 'Start your gardening journey by planting your first crop.', isRead: false },
+    { userId: demoId, type: 'growth', title: 'Tomato is sprouting!', body: 'Your tomato crop has entered the sprouting stage.', isRead: false },
+    { userId: demoId, type: 'weather', title: 'Rain expected tomorrow', body: 'Heavy rain forecast in Bangalore.', isRead: true },
+    { userId: demoId, type: 'achievement', title: 'Achievement: First Sprout', body: 'You planted your first crop. +50 XP!', isRead: true },
+    { userId: demoId, type: 'marketplace', title: 'Your mint listing got a view', body: 'Someone is interested in your listing.', isRead: false },
+  ];
+  for (const n of notifData) { await prisma.notification.create({ data: n }); }
+  console.log(`Created ${notifData.length} notifications`);
+
+  // Invites
+  const inviteData = [
+    { code: 'GARDEN2024', maxUses: 100, useCount: 12, isActive: true, expiresAt: new Date(Date.now() + 30 * 86400000), createdById: superadminId },
+    { code: 'WELCOME50', maxUses: 50, useCount: 3, isActive: true, expiresAt: new Date(Date.now() + 60 * 86400000), createdById: adminId },
+    { code: 'DEMO-FRIEND', maxUses: 10, useCount: 0, isActive: true, createdById: demoId },
+  ];
+  for (const inv of inviteData) { await prisma.invite.create({ data: inv }); }
+  console.log(`Created ${inviteData.length} invite codes`);
+
+  console.log('');
+  console.log('=== SEED COMPLETE - GardenVerse database populated! ===');
 }
 
 main().catch((e) => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());

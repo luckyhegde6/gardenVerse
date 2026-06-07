@@ -1,83 +1,149 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Behavioral guidelines + project reference for Claude Code.
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+---
+
+## Clean Code Policy
+
+### 1. Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them — don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+### 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask: *"Would a senior engineer say this is overcomplicated?"* If yes, simplify.
+
+### 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it — don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that **your** changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+**Test:** Every changed line traces directly to the user's request.
+
+### 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation.
+
+---
 
 ## Project Overview
 
-**GardenVerse** — Hybrid agriculture simulation ecosystem combining virtual gardening, AI-powered agriculture assistant, IoT-enabled farming, and geospatial community platform.
+**GardenVerse** — Hybrid agriculture simulation ecosystem: virtual gardening, AI-powered agriculture assistant, IoT-enabled farming, geospatial community platform.
 
-**Architecture**: Next.js 14 (unified Admin Dashboard + API) + React Native/Expo (Mobile) + FastAPI (AI) + MQTT (IoT), all backed by PostgreSQL (Prisma) + Redis.
+**Architecture:** Next.js 14 (unified Admin Dashboard + API) + React Native/Expo (Mobile) + FastAPI (AI) + MQTT (IoT), backed by PostgreSQL (Prisma) + Redis.
 
-## Commands
+**Production:** Vercel (admin) + Supabase (DB) + Upstash Redis (serverless cache) + Google Play (mobile).
 
-### Development
+---
+
+## Quick Reference — Commands
+
+### Services
 ```bash
-# Start all services
-npm run admin:dev        # Next.js admin + API on :3000
-npm run mobile:dev       # Expo mobile app
-npm run ai:dev           # FastAPI AI service on :8000
-
-# Infrastructure
-npm run docker:local     # Start Postgres (5432) + Redis (6379)
+npm run admin:dev          # Next.js admin + API → :3000
+npm run mobile:dev         # Expo mobile app
+npm run docker:local       # Postgres (5432) + Redis (6379)
 npm run docker:local:down
 ```
 
-### Database (Prisma)
+### Database
 ```bash
-npm run prisma:generate  # Generate Prisma client
-npm run prisma:migrate   # Run migrations (dev)
-npm run prisma:seed      # Seed database (20 Indian plant species + demo garden)
-npm run prisma:studio    # Prisma Studio UI
+npm run prisma:generate    # Generate Prisma client
+npm run prisma:migrate     # Run migrations (dev)
+npm run prisma:seed        # Seed demo data (8 users, 220+ plants, 6 gardens, 18+ crops)
+npm run prisma:studio      # Prisma Studio UI → :5555
 ```
 
 ### Quality
 ```bash
-npm run lint             # Lint (uses TypeScript check in admin)
-npm run typecheck        # TypeScript strict check (admin + mobile)
-npm run test             # Jest tests (admin)
+npm run lint               # ESLint (mobile)
+npm run typecheck          # TypeScript strict (admin + mobile)
+npm run typecheck:admin    # TypeScript strict (admin only)
+npm run typecheck:mobile   # TypeScript strict (mobile only)
+npm run test               # Jest (admin)
+npm run test:admin         # Jest (admin, explicit)
 ```
 
-### E2E Testing & Workflows
+### E2E Testing
 ```bash
-npm run test:e2e         # Full E2E: Docker infra → migrate → apps → Playwright
-npm run test:e2e:headed  # Headed browser
-npm run test:e2e:docker-only  # Just Docker infra
+# Playwright (admin web)
+npm run test:e2e                  # Full E2E pipeline
+npm run test:e2e:headed           # Headed browser
+npm run test:e2e:integration      # Integration tests only
 
-# Module-by-module (8 workflows)
-npm run e2e:auth
-npm run e2e:garden
-npm run e2e:admin
-npm run e2e:weather
-npm run e2e:marketplace
-npm run e2e:community
-npm run e2e:ai-scanner
-npm run e2e:invites
+# Module-by-module Playwright
+npm run e2e:auth|e2e:garden|e2e:admin|e2e:weather|e2e:marketplace|e2e:community|e2e:ai-scanner|e2e:invites
 
-# Screenshots & recordings
-npm run workflow:all     # All screenshots + recordings
-npm run workflow:screenshots
-npm run workflow:recordings
+# Detox (mobile emulator)
+npm run test:e2e:mobile           # Run on running emulator
+npm run test:e2e:mobile:build     # Build APK + run
+
+# Combined
+npm run test:e2e:all              # Playwright + integration
 ```
 
 ### Deployment
 ```bash
-npm run deploy:test      # Full deploy test pipeline
-npm run deploy:preview   # Vercel preview
-npm run deploy:prod      # Vercel production (cloud build)
+npm run deploy:test        # Full deploy test pipeline
+npm run deploy:preview     # Vercel preview
+npm run deploy:prod        # Vercel production (cloud build)
 ```
 
-### PowerShell Scripts (scripts/)
+### PowerShell Utilities
 ```bash
 npm run script:docker-local        # Start Docker + optionally apps
-npm run script:docker-prod-debug   # Apps → Supabase (⚠ production!)
-npm run script:stop-all            # Stop Docker + kill Node apps
 npm run script:health-check        # Full service health check
 npm run script:db-diagnostic       # DB inspection, repair, slow queries
 npm run script:reset-db            # Drop + recreate + seed
 npm run script:run-migrations      # Apply pending Prisma migrations
+npm run script:stop-all            # Stop Docker + kill Node apps
+npm run script:docker-cleanup      # Docker cleanup
 ```
 
-## High-Level Architecture
+---
+
+## Architecture
 
 ```
 ┌──────────────┐   ┌──────────────────────┐   ┌──────────────┐
@@ -89,80 +155,92 @@ npm run script:run-migrations      # Apply pending Prisma migrations
                           │
                  ┌────────▼────────┐
                  │   PostgreSQL    │
-                 │   (Prisma)      │
+                 │   (Supabase)    │
                  └────────┬────────┘
                           │
           ┌───────────────┼───────────────┐
           ▼               ▼               ▼
      ┌──────────┐    ┌──────────┐    ┌──────────┐
-     │  Redis   │    │ FastAPI  │    │  BullMQ  │
-     │(Cache+Q) │    │ (AI Svc) │    │ (Worker) │
+     │  Upstash │    │ FastAPI  │    │  BullMQ  │
+     │  Redis   │    │ (AI Svc) │    │ (Worker) │
      └──────────┘    └──────────┘    └──────────┘
 ```
 
-### Monorepo Structure (npm workspaces)
+### Monorepo Structure
 
 ```
 gardenverse/
 ├── packages/
-│   ├── admin/             # Next.js 14 unified app (API routes + UI, port 3000)
-│   │   ├── prisma/        # Database schema (30+ models)
+│   ├── admin/             # Next.js 14 (API + UI, port 3000)
+│   │   ├── prisma/        # Schema (42+ models), seed, migrations
 │   │   └── src/
 │   │       ├── app/
-│   │       │   ├── api/v1/ # 71 API routes across 29 modules
-│   │       │   └── ...     # 31 UI pages (admin dashboard)
-│   │       ├── components/ # Reusable UI components (Radix UI + Tailwind)
-│   │       └── lib/        # Auth, API client, logger, queue, websocket, cron, AI
-│   ├── mobile/            # React Native (Expo) — garden map, plant browser
-│   │   └── src/
-│   │       ├── screens/   # 32+ screens
-│   │       ├── stores/    # Zustand state management
-│   │       ├── services/  # API client, socket, logger
-│   │       └── components/# Reusable UI components
+│   │       │   ├── api/v1/ # 71 API routes (29 modules)
+│   │       │   └── ...     # 31 UI pages
+│   │       ├── components/ # Radix UI + Tailwind
+│   │       └── lib/        # Auth, API client, logger, queue, ws, cron, AI
+│   └── mobile/            # React Native (Expo)
+│       └── src/
+│           ├── screens/   # 32+ screens
+│           ├── stores/    # Zustand state
+│           ├── services/  # API client, socket, logger
+│           └── components/# Reusable UI
 ├── services/
-│   ├── ai/                # FastAPI + OpenCV AI service (port 8000)
-│   └── iot/               # MQTT gateway & bridge (Mosquitto)
+│   ├── ai/                # FastAPI + OpenCV (port 8000)
+│   └── iot/               # MQTT gateway & bridge
 ├── contracts/             # Solidity smart contracts (Hardhat)
-├── e2e/                   # Playwright E2E tests & workflow screenshots
-├── docs/                  # Full documentation suite
+├── e2e/
+│   ├── tests/             # Playwright integration tests
+│   ├── mobile/            # Detox mobile E2E tests (5 test suites + helpers)
+│   ├── modules/           # Module-by-module Playwright E2E
+│   └── workflows/         # Screenshot/recording workflows
+├── docs/                  # Documentation suite
+│   ├── README.md          # Docs index
+│   ├── deployment/        # Vercel + APK publish guides
+│   ├── mobile/            # Emulator testing guide
+│   └── guides/            # Dev guide, production sync, changelog
+├── scripts/               # PowerShell utilities
 ├── docker-compose.local.yml
-└── scripts/               # Vercel deploy, utility scripts
+├── vercel.json            # Vercel deployment config
+└── eas.json               # EAS Build config
 ```
 
 ### Key Directories
 
 | Directory | Purpose |
 |-----------|---------|
-| `packages/admin/src/app/api/v1/` | 71 API routes across auth, gardens, crops, marketplace, community, weather, AI, gamification, moderation, invites, analytics, feature flags |
-| `packages/admin/src/lib/` | Core utilities: `auth.ts`, `api-client.ts`, `logger/`, `queue.ts`, `websocket.ts`, `cron.ts`, `ai/index.ts` |
-| `packages/admin/prisma/schema.prisma` | 30+ models: User, Garden, Crop, PlantSpecies, MarketplaceListing, CommunityGroup, AIScan, Invite, FeatureFlag, etc. |
-| `packages/mobile/src/screens/` | Mobile screens: Garden (2D/3D), Marketplace, Community, AI Scanner, Profile, Auth |
-| `packages/mobile/src/stores/` | Zustand stores: `authStore`, `gardenStore`, `marketplaceStore`, `communityStore` |
-| `services/ai/src/` | FastAPI endpoints: `/scan`, `/recommendations`, `/health` |
-| `services/iot/` | MQTT gateway (device auth), bridge (sensor data), simulator |
+| `packages/admin/src/app/api/v1/` | 71 API routes: auth, gardens, crops, marketplace, community, weather, AI, gamification, moderation, invites, analytics, feature flags |
+| `packages/admin/src/lib/` | `auth.ts`, `api-client.ts`, `logger/`, `queue.ts`, `websocket.ts`, `cron.ts`, `ai/index.ts` |
+| `packages/admin/prisma/schema.prisma` | 42+ models, 9 enums |
+| `packages/mobile/src/screens/` | Garden (2D/3D), Marketplace, Community, AI Scanner, Profile, Auth |
+| `packages/mobile/src/stores/` | `authStore`, `gardenStore`, `marketplaceStore`, `communityStore` |
+| `e2e/mobile/` | Detox tests: `gardenverse.e2e.test.ts`, `auth.test.ts`, `garden.test.ts`, `marketplace.test.ts`, `navigation.test.ts`, `helpers.ts` |
+
+---
 
 ## Technology Stack
 
 | Category | Technology |
 |----------|-----------|
 | **Backend** | Node.js 22, Next.js 14 App Router, TypeScript 5 |
-| **Database** | PostgreSQL 16, Prisma ORM 5 |
-| **Cache/Queue** | Redis 7, BullMQ (in-process queue in Next.js) |
+| **Database** | PostgreSQL 16 (Supabase), Prisma ORM 5 |
+| **Cache/Queue** | Redis 7 (Upstash HTTP for serverless), BullMQ |
 | **Realtime** | Socket.IO + Redis adapter (SSE in Next.js) |
-| **Mobile** | React Native 0.74, Expo 51, NativeWind (Tailwind), React Navigation |
-| **AI/ML** | FastAPI, OpenCV, PyTorch 2.1, Transformers, Sentence Transformers |
-| **IoT** | MQTT, Mosquitto, ESP32 simulator |
+| **Mobile** | React Native 0.74, Expo 51, NativeWind, React Navigation |
+| **AI/ML** | FastAPI, OpenCV, PyTorch 2.1, Transformers |
+| **IoT** | MQTT, Mosquitto, ESP32 |
 | **Blockchain** | Solidity, Hardhat, OpenZeppelin (8 contracts) |
 | **Admin UI** | Next.js 14, TailwindCSS, Recharts, Radix UI |
-| **Monitoring** | Sentry (instrumentation.ts), Prometheus, Grafana |
-| **E2E Testing** | Playwright, Docker Compose, ts-node |
-| **External APIs** | OpenWeatherMap, Google Maps, OpenFarm, Trefle |
-| **CI/CD** | GitHub Actions, Vercel, Husky pre-commit |
+| **Monitoring** | Sentry, Prometheus, Grafana |
+| **E2E Testing** | Playwright (admin), Detox (mobile), Jest (unit) |
+| **CI/CD** | GitHub Actions, Vercel, EAS Build, Husky pre-commit |
+
+---
 
 ## Development Workflow
 
 ### Git Conventions
-- Branch: `feature/*`, `fix/*`, `release/*`
+- Branches: `feature/*`, `fix/*`, `release/*`
 - Commits: Conventional Commits — `feat(scope): description`
 - Scopes: `backend`, `mobile`, `admin`, `ai`, `iot`, `contracts`, `docs`, `infra`
 
@@ -183,7 +261,10 @@ gardenverse/
 8. Helmet + CORS for production
 9. Geolocation: store geohash only, never exact coordinates
 
-### API Route Patterns (Next.js App Router)
+---
+
+## API Route Pattern
+
 ```typescript
 // packages/admin/src/app/api/v1/module/route.ts
 import { NextRequest, NextResponse } from 'next/server';
@@ -194,23 +275,23 @@ import { paginated } from '@/lib/api-response';
 export async function GET(request: NextRequest) {
   const session = await getServerSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  
+
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
-  
+
   const [data, total] = await prisma.model.findMany({
     skip: (page - 1) * limit,
     take: limit,
   });
-  
+
   return NextResponse.json(paginated(data, total, page, limit));
 }
 ```
 
-### Mobile State Management (Zustand)
+## Mobile State Pattern (Zustand)
+
 ```typescript
-// packages/mobile/src/stores/gardenStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -218,7 +299,7 @@ interface GardenStore {
   crops: Crop[];
   selectedGarden: Garden | null;
   addCrop: (crop: Crop) => void;
-  syncCrops: (crops: Crop[]) => void;  // For growth engine integration
+  syncCrops: (crops: Crop[]) => void;
 }
 
 export const useGardenStore = create<GardenStore>()(
@@ -231,37 +312,52 @@ export const useGardenStore = create<GardenStore>()(
 );
 ```
 
+---
+
+## Key Patterns
+
 ### Growth Engine (Mobile)
-Client-side tick-based simulation (`packages/mobile/src/utils/growthEngine.ts`):
+Client-side tick-based simulation (`packages/mobile/src/services/growthEngine.ts`):
 - 30s real-time = 1 game tick = 50 virtual minutes
 - 100% growth ≈ 36 minutes real time
-- Hydration/nutrient decay, health recovery/stress
-- Water/fertilize actions give growth boost
+- Weather modifiers: rain (+3 hydration), heavy_rain (+6, flood risk), heatwave (-2), wind (-1), frost (health damage)
 - Integrated into `GardenScreen.tsx` via `useGardenStore.syncCrops()`
 
 ### Logger Pipeline (Mobile → Backend)
 - `packages/mobile/src/services/logger.ts` — circular buffer (200), debounced batch send (500ms)
 - Console override in `__DEV__` mode
-- Sends to `POST /api/v1/logs` (admin route)
-- DebugOverlay shows "App Logs" section
+- Sends to `POST /api/v1/logs`
+
+### Mobile E2E (Detox)
+- **Emulator:** Pixel 7 API 34 (Android 14)
+- **Config:** `.detoxrc.js` → `android.emu.debug` configuration
+- **APK path:** `packages/mobile/android/app/build/outputs/apk/debug/app-debug.apk`
+- **Test files:** `e2e/mobile/` — 5 test suites, ~38 test cases total
+- **Helpers:** `e2e/mobile/helpers.ts` — 25+ utilities (login, tap, scroll, assert, screenshot)
+- **Emulator → host:** `10.0.2.2:3000` maps to host `localhost:3000`
+- **Run:** `npm run test:e2e:mobile` (or `:build` to compile APK first)
+
+---
 
 ## Key Configuration Files
 
 | File | Purpose |
 |------|---------|
-| `tsconfig.base.json` | Base TypeScript config (strict, ES2022, NodeNext) |
+| `tsconfig.base.json` | Base TS config (strict, ES2022, NodeNext) |
 | `turbo.json` | Turborepo pipeline config |
-| `docker-compose.local.yml` | Local Postgres + Redis + MQTT |
-| `packages/admin/next.config.mjs` | Next.js config (Sentry instrumentation) |
-| `packages/mobile/app.config.js` | Expo config with env vars for EAS |
-| `packages/mobile/tailwind.config.js` | NativeWind/Tailwind config |
+| `docker-compose.local.yml` | Local Postgres + Redis |
+| `packages/admin/next.config.mjs` | Next.js config (Sentry, security headers) |
+| `packages/mobile/app.config.js` | Expo config, env vars, EAS project ID |
 | `eas.json` | EAS Build profiles (dev/preview/prod) |
+| `vercel.json` | Vercel deploy config (build command, output dir, env) |
+| `.detoxrc.js` | Detox config (Pixel 7 API 34 emulator) |
+
+---
 
 ## Environment Variables
 
-Key env vars (see `.env.example`):
 ```bash
-# Database
+# Database (local)
 DATABASE_URL=postgresql://gardenverse:gardenverse123@localhost:5432/gardenverse
 
 # Auth
@@ -280,59 +376,56 @@ AI_SERVICE_URL=http://localhost:8000
 # Redis (local)
 REDIS_URL=redis://localhost:6379
 
-# Production (Vercel) - use Upstash Redis HTTP
+# Production (Vercel)
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
+SUPABASE_URL=https://PROJECT.supabase.co
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-## Testing
-
-### Backend (Jest)
-```bash
-npm run test -w packages/admin
-npm run test:watch -w packages/admin
-```
-
-### Mobile (Jest + React Native Testing Library)
-```bash
-npm run test -w packages/mobile
-```
-
-### E2E (Playwright)
-```bash
-npm run test:e2e              # Full stack
-npm run e2e:auth              # Single module
-npm run workflow:all          # Screenshots + recordings
-```
+---
 
 ## Important Notes
 
 ### Vercel Deployment
-- **Always use cloud build**: `vercel deploy --prod --yes` (local `vercel build` has `@vercel/next` bug)
-- Redis on Vercel: Use **Upstash Redis** (HTTP-based) — serverless functions don't support persistent TCP
+- **Always use cloud build:** `vercel deploy --prod --yes` — local `vercel build` has `@vercel/next` bug
+- Redis: Use **Upstash Redis** (HTTP) — serverless functions can't use TCP
 - BullMQ/Socket.IO need separate long-running worker (Railway/Fly.io)
+- See `docs/deployment/vercel-deployment.md` for full guide
 
 ### Database
-- No migration files in admin Prisma yet — use `prisma db push` for schema sync
-- Seed script uses `tsx` (not `ts-node`) for Windows compatibility
-- Demo accounts: admin@gardenverse.vercel.app / superadmin@gardenverse.vercel.app / demo@gardenverse.vercel.app (all `password123`)
+- Initial migration: `packages/admin/prisma/migrations/20260608000000_init/` (1,723 lines, 42+ models)
+- Dev schema sync: `npx prisma db push`
+- Seed: `npx prisma db seed` (8 users, 220+ plants, 6 gardens, 18+ crops, marketplace, weather, achievements, quests, AI scans, notifications, invites)
+- Seed uses hardcoded `DATABASE_URL` fallback for cross-platform compatibility
 
 ### Mobile Development
 - Start admin API first: `npm run admin:dev` (serves API at localhost:3000)
 - Then mobile: `cd packages/mobile && npx expo start`
-- Expo web uses `localStorage` for auth persistence (not in-memory Map)
+- Emulator networking: `10.0.2.2` → host `localhost`
+- APK build: `cd packages/mobile/android && ./gradlew assembleDebug`
+- EAS Build: `eas build --platform android --profile production`
+- See `docs/mobile/emulator-testing.md` for full E2E guide
+- See `docs/deployment/apk-publishing.md` for Play Store publishing
 
-### Recent Major Changes (Session 11)
-- **NestJS backend fully migrated** into Next.js API routes (`packages/backend/` deleted)
-- **Mobile logger pipeline** created — mobile logs → backend via `POST /api/v1/logs`
-- **Seed data restored** — 20 Indian plant species, demo garden with 3 crops
-- **First-time walkthrough** — 5-step overlay (Welcome → Plant → Water → Fertilize → Harvest)
-- **Admin build**: 126 pages/routes, zero TypeScript errors
+### Demo Accounts
+| Email | Password | Role |
+|-------|----------|------|
+| `admin@gardenverse.vercel.app` | `password123` | Admin |
+| `superadmin@gardenverse.vercel.app` | `password123` | Super Admin |
+| `demo@gardenverse.vercel.app` | `password123` | Demo User |
 
-### Documentation References
-- Architecture: `docs/architecture/overview.md`
-- API Reference: `docs/api/README.md`
-- Gamification: `docs/architecture/gamification-flow.md`
-- Security: `docs/security/security-plan.md`
-- Deployment: `docs/deployment/production-deployment.md`
-- Lessons Learned: `docs/improvements/lessons-learned.md`
+---
+
+## Documentation
+
+| Document | Path |
+|----------|------|
+| Docs index | `docs/README.md` |
+| Local development & testing | `docs/guides/local-development.md` |
+| Vercel deployment | `docs/deployment/vercel-deployment.md` |
+| APK build & Play Store publish | `docs/deployment/apk-publishing.md` |
+| Android emulator E2E testing | `docs/mobile/emulator-testing.md` |
+| Production sync & rollback | `docs/guides/production-sync.md` |
+| Phase A changelog | `docs/guides/phase-a-changelog.md` |

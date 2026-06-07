@@ -12,23 +12,112 @@ export async function GET(request: NextRequest) {
     if ('error' in auth) return auth.error
 
     try {
-      const [user, collections, masteries, totalSpecies] = await Promise.all([
+      const userId = auth.payload.userId
+      const now = new Date()
+      const todayStart = new Date(now)
+      todayStart.setHours(0, 0, 0, 0)
+
+      const [user, collections, masteries, totalSpecies, dailyRewards, shieldCount] = await Promise.all([
         prisma.user.findUnique({
-          where: { id: auth.payload.userId },
+          where: { id: userId },
           select: { level: true, experience: true, greenCredits: true, ecoPoints: true },
         }),
         prisma.plantCollection.findMany({
-          where: { userId: auth.payload.userId },
+          where: { userId },
           include: { species: true },
         }),
         prisma.speciesMastery.findMany({
-          where: { userId: auth.payload.userId },
+          where: { userId },
           include: { species: true },
         }),
         prisma.plantSpecies.count(),
+        prisma.dailyReward.findMany({
+          where: { userId },
+          orderBy: { claimedAt: 'desc' },
+          select: { day: true, claimedAt: true },
+        }),
+        prisma.streakShield.count({
+          where: { userId, isActive: true },
+        }),
       ])
 
       if (!user) return notFound('User not found')
+
+      // ── Compute daily reward streak stats ──────────────────────────────
+      const MS_PER_DAY = 86_400_000
+      const startOfDay = (d: Date) => { const c = new Date(d); c.setHours(0, 0, 0, 0); return c }
+
+      let currentStreak = 0
+      let longestStreakRun = 0
+      let runLength = 0
+      let prevDate: Date | null = null
+      let claimedToday = false
+
+      // dailyRewards is ordered DESC — compute current streak from the front
+      let expectedDate: Date | null = null
+      for (const r of dailyRewards) {
+        const rDate = startOfDay(r.claimedAt)
+
+        // Check if claimed today
+        if (rDate.getTime() === todayStart.getTime()) {
+          claimedToday = true
+        }
+
+        // Current streak (DESC walk)
+        if (expectedDate === null) {
+          currentStreak = 1
+          expectedDate = new Date(rDate.getTime() - MS_PER_DAY)
+        } else {
+          const gap = Math.floor((expectedDate.getTime() - rDate.getTime()) / MS_PER_DAY)
+          if (gap === 0) {
+            // same day duplicate — skip
+            continue
+          }
+          if (gap === 1) {
+            currentStreak++
+            expectedDate = new Date(rDate.getTime() - MS_PER_DAY)
+          } else {
+            // Streak broken — stop counting current
+            // but we still need longest, so break out of current-only loop
+            break
+          }
+        }
+      }
+
+      // Longest streak (ASC walk through all records)
+      const sortedAsc = [...dailyRewards].reverse()
+      runLength = 0
+      prevDate = null
+      for (const r of sortedAsc) {
+        const d = startOfDay(r.claimedAt)
+        if (prevDate === null) {
+          runLength = 1
+        } else {
+          const gap = Math.floor((d.getTime() - prevDate.getTime()) / MS_PER_DAY)
+          if (gap === 1) {
+            runLength++
+          } else {
+            runLength = 1
+          }
+        }
+        if (runLength > longestStreakRun) longestStreakRun = runLength
+        prevDate = d
+      }
+
+      // Determine current reward day (1-7) for the UI
+      let currentRewardDay = 1
+      if (dailyRewards.length > 0) {
+        const latest = dailyRewards[0]
+        const latestDate = startOfDay(latest.claimedAt)
+        const daysSince = Math.floor((todayStart.getTime() - latestDate.getTime()) / MS_PER_DAY)
+        if (daysSince === 0) {
+          currentRewardDay = latest.day >= 7 ? 1 : latest.day + 1
+        } else if (daysSince === 1) {
+          currentRewardDay = latest.day >= 7 ? 1 : latest.day + 1
+        } else {
+          currentRewardDay = 1
+        }
+      }
 
       return success({
         level: user.level,
@@ -53,6 +142,13 @@ export async function GET(request: NextRequest) {
           totalForNextLevel: m.level * 100,
           perfectedAt: m.perfectedAt,
         })),
+        dailyRewards: {
+          currentStreak,
+          longestStreak: longestStreakRun,
+          streakShieldCount: shieldCount,
+          claimedToday,
+          currentRewardDay,
+        },
       })
     } catch (error) {
       return serverError(error)
