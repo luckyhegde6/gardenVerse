@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, GardenType, CropStatus } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
 import { extraPlants } from './extra-plants';
@@ -455,10 +455,10 @@ async function main() {
     { email: 'karan@gardenverse.com', username: 'karan_green', displayName: 'Karan Singh', region: 'IN-RJ', geohash: 'thrc4', level: 6, xp: 1500 },
     { email: 'meera@gardenverse.com', username: 'meera_plants', displayName: 'Meera Nair', region: 'IN-KL', geohash: 'tj4k8', level: 20, xp: 12000 },
   ];
-  const cities = { 'IN-MH': 'Mumbai', 'IN-GJ': 'Ahmedabad', 'IN-TN': 'Chennai', 'IN-RJ': 'Jaipur', 'IN-KL': 'Kochi' };
-  const gTypes = ['VIRTUAL', 'REAL', 'HYBRID'];
+  const cities: Record<string, string> = { 'IN-MH': 'Mumbai', 'IN-GJ': 'Ahmedabad', 'IN-TN': 'Chennai', 'IN-RJ': 'Jaipur', 'IN-KL': 'Kochi' };
+  const gTypes: GardenType[] = ['VIRTUAL', 'REAL', 'HYBRID'];
   const irrTypes = ['DRIP', 'SPRINKLER', 'MANUAL'];
-  const cStatuses = ['SEED', 'SPROUTING', 'GROWING', 'MATURE'];
+  const cStatuses: CropStatus[] = ['SEED', 'SPROUTING', 'GROWING', 'MATURE'];
 
   for (const u of userData) {
     const uid = uuidv4();
