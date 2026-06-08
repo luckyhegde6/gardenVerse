@@ -12,6 +12,7 @@
     "mobile:build": "npm run build -w packages/mobile",
     "admin:dev": "npm run dev -w packages/admin",
     "admin:build": "npm run build -w packages/admin",
+    "vercel-build": "npm run prisma:generate -w packages/admin && npm run admin:build",
     "ai:dev": "npm run dev -w services/ai",
     "docker:up": "docker compose -f docker-compose.local.yml up -d",
     "docker:down": "docker compose -f docker-compose.local.yml down",
