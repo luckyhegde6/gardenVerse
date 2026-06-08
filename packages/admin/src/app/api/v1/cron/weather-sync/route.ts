@@ -4,9 +4,6 @@ import { success, serverError } from '@/lib/middleware/auth'
 import { listTasks, recordTaskRun } from '@/lib/cron'
 
 const CRON_SECRET = process.env.CRON_SECRET
-if (!CRON_SECRET) {
-  throw new Error('CRON_SECRET environment variable is required')
-}
 
 const REGIONS = [
   'IN-KA', 'IN-MH', 'IN-DL', 'IN-TG', 'IN-TN', 'IN-WB', 'IN-GJ', 'IN-UP', 'IN-RJ', 'IN-PB',
@@ -28,6 +25,10 @@ function randomWeather() {
 }
 
 export async function GET(request: NextRequest) {
+  if (!CRON_SECRET) {
+    return new Response(JSON.stringify({ error: 'CRON_SECRET not configured' }), { status: 500 })
+  }
+
   const authHeader = request.headers.get('authorization') || ''
   const cronSecret = request.headers.get('x-cron-secret') || ''
 
