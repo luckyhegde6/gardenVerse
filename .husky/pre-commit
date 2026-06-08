@@ -5,11 +5,11 @@ npm run lint -w packages/admin
 if [ $? -ne 0 ]; then exit 1; fi
 
 echo "Running admin typecheck..."
-npx tsc --noEmit -w packages/admin 2>/dev/null || npx tsc --noEmit --project packages/admin/tsconfig.json
+npx tsc --noEmit --project packages/admin/tsconfig.json
 if [ $? -ne 0 ]; then exit 1; fi
 
 echo "Running mobile typecheck..."
-npx tsc --noEmit -w packages/mobile 2>/dev/null || npx tsc --noEmit --project packages/admin/tsconfig.json
+npx tsc --noEmit --project packages/mobile/tsconfig.json
 if [ $? -ne 0 ]; then exit 1; fi
 
 echo "All pre-commit checks passed!"
