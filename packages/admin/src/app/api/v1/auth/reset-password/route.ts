@@ -2,10 +2,13 @@ import { NextRequest } from 'next/server'
 import bcrypt from 'bcrypt'
 import { prisma } from '@/lib/prisma/client'
 import { success, badRequest, serverError } from '@/lib/middleware/auth'
-
-const otpStore = new Map<string, { otp: string; expiresAt: number }>()
+import { strictRateLimit } from '@/lib/middleware/rate-limit'
+import { verifyOtp } from '@/lib/otp'
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = strictRateLimit(request)
+  if (rateLimitResult) return rateLimitResult
+
   try {
     const body = await request.json()
     const { email, otp, newPassword } = body as {
@@ -22,32 +25,23 @@ export async function POST(request: NextRequest) {
       return badRequest('Password must be at least 8 characters')
     }
 
-    if (otp.length !== 6) {
-      return badRequest('OTP must be 6 characters')
+    const valid = verifyOtp(`reset:${email}`, otp)
+
+    if (!valid) {
+      return badRequest('Invalid or expired OTP')
     }
-
-    const stored = otpStore.get(`reset:${email}`)
-
-    if (!stored) {
-      return badRequest('No password reset requested for this email')
-    }
-
-    if (Date.now() > stored.expiresAt) {
-      otpStore.delete(`reset:${email}`)
-      return badRequest('OTP has expired')
-    }
-
-    if (stored.otp !== otp) {
-      return badRequest('Invalid OTP')
-    }
-
-    otpStore.delete(`reset:${email}`)
 
     const passwordHash = await bcrypt.hash(newPassword, 12)
 
     await prisma.user.update({
       where: { email },
       data: { passwordHash },
+    })
+
+    // Revoke all existing sessions for this user
+    await prisma.session.updateMany({
+      where: { userId: (await prisma.user.findUnique({ where: { email }, select: { id: true } }))?.id, isRevoked: false },
+      data: { isRevoked: true },
     })
 
     return success({ message: 'Password reset successfully' })

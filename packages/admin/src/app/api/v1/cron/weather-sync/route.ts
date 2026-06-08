@@ -3,7 +3,10 @@ import { prisma } from '@/lib/prisma/client'
 import { success, serverError } from '@/lib/middleware/auth'
 import { listTasks, recordTaskRun } from '@/lib/cron'
 
-const CRON_SECRET = process.env.CRON_SECRET || ''
+const CRON_SECRET = process.env.CRON_SECRET
+if (!CRON_SECRET) {
+  throw new Error('CRON_SECRET environment variable is required')
+}
 
 const REGIONS = [
   'IN-KA', 'IN-MH', 'IN-DL', 'IN-TG', 'IN-TN', 'IN-WB', 'IN-GJ', 'IN-UP', 'IN-RJ', 'IN-PB',

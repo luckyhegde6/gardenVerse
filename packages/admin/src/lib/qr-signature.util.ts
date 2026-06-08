@@ -9,9 +9,17 @@ export interface QrPayload {
 }
 
 export class QrSignatureUtil {
+  private static getSigningKey(secretKey?: string): string {
+    const key = secretKey || process.env.ENCRYPTION_KEY
+    if (!key) {
+      throw new Error('ENCRYPTION_KEY environment variable is required')
+    }
+    return key
+  }
+
   static sign(payload: QrPayload, secretKey?: string): string {
     const payloadStr = JSON.stringify(payload);
-    const hash = crypto.createHmac('sha256', secretKey || process.env.ENCRYPTION_KEY || 'qr-signing-key')
+    const hash = crypto.createHmac('sha256', this.getSigningKey(secretKey))
       .update(payloadStr)
       .digest('hex');
 
@@ -35,7 +43,7 @@ export class QrSignatureUtil {
       );
 
       const expectedSig = crypto
-        .createHmac('sha256', secretKey || process.env.ENCRYPTION_KEY || 'qr-signing-key')
+        .createHmac('sha256', this.getSigningKey(secretKey))
         .update(decryptedStr)
         .digest('hex');
 

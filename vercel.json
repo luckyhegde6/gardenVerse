@@ -5,7 +5,8 @@
       "contracts": false,
       "mobile": false,
       "services": false
-    }
+    },
+    "productionBranch": "main"
   },
   "installCommand": "npm install",
   "buildCommand": "npm run vercel-build",
@@ -13,11 +14,6 @@
   "outputDirectory": "packages/admin/.next",
   "crons": [],
   "env": {
-    "DATABASE_URL": "postgres://postgres.tkzgilckewyurjgwjpzq:0ev0xFarzGQoO5jE@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true",
-    "SUPABASE_URL": "https://tkzgilckewyurjgwjpzq.supabase.co",
-    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRremdpbGNrZXd5dXJqZ3dqcHpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MjU5MTQsImV4cCI6MjA5NTQwMTkxNH0.M7KFfnGwZAtd56LLZeljP1vpWhXT-dmarz_OSaA9shA",
-    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRremdpbGNrZXd5dXJqZ3dqcHpxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTgyNTkxNCwiZXhwIjoyMDk1NDAxOTE0fQ.RZIEYOzJXbMEHcEYu3IwM6GyiGEEudBk2BCyorqUHnk",
-    "JWT_SECRET": "6D3rQSw4IpMgFfVFpZC4nTedpdLiQXCnE3o1wOctXCsStPgbq8FkrT835GPNJmlYIsl3meTb+ai/7ZXzbQFFQw==",
     "NODE_ENV": "production"
   }
 }

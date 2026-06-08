@@ -5,7 +5,10 @@ const IV_LENGTH = 16;
 
 export class CryptoUtil {
   private static getKey(secretKey?: string): Buffer {
-    const key = secretKey || process.env.ENCRYPTION_KEY || 'default-32-byte-encryption-key!!';
+    const key = secretKey || process.env.ENCRYPTION_KEY
+    if (!key) {
+      throw new Error('ENCRYPTION_KEY environment variable is required')
+    }
     return crypto.scryptSync(key, 'gardenverse-salt', 32);
   }
 

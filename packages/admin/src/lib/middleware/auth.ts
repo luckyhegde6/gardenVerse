@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'fallback-secret-do-not-use-in-production'
+const JWT_SECRET: string = process.env.NEXTAUTH_SECRET ?? (() => { throw new Error('NEXTAUTH_SECRET environment variable is required') })()
 
 export interface JwtPayload {
   userId: string
@@ -15,7 +15,7 @@ export function signToken(payload: JwtPayload, expiresIn = '15m'): string {
 }
 
 export function verifyToken(token: string): JwtPayload {
-  return jwt.verify(token, JWT_SECRET) as JwtPayload
+  return jwt.verify(token, JWT_SECRET) as unknown as JwtPayload
 }
 
 export function getTokenFromRequest(request: NextRequest): string | null {
@@ -44,8 +44,11 @@ export function notFound(message = 'Not found') {
 }
 
 export function serverError(error: unknown) {
-  const message = error instanceof Error ? error.message : 'Internal server error'
-  return NextResponse.json({ error: message }, { status: 500 })
+  if (process.env.NODE_ENV !== 'production') {
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+  return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 }
 
 export function success<T>(data: T, status = 200) {

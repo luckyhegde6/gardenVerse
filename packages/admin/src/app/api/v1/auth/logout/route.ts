@@ -1,9 +1,12 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { getTokenFromRequest, success, serverError } from '@/lib/middleware/auth'
+import { getTokenFromRequest, requireAuth, success, serverError } from '@/lib/middleware/auth'
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = requireAuth(request)
+    if ('error' in auth) return auth.error
+
     const token = getTokenFromRequest(request)
 
     if (token) {
@@ -19,6 +22,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       expires: new Date(0),
       path: '/',
+      sameSite: 'strict',
     })
 
     return response
