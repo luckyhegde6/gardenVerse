@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
 import { requireRole, success, badRequest, notFound, serverError } from '@/lib/middleware/auth'
 
 export async function GET(
@@ -52,13 +53,13 @@ export async function PATCH(
       return badRequest(`Invalid status. Must be one of: ${validStatuses.join(', ')}`)
     }
 
-    const data: Record<string, unknown> = {
+    const data: Prisma.ModerationReportUpdateInput = {
       status: newStatus,
-      actionedById: auth.payload.userId,
+      actionedBy: { connect: { id: auth.payload.userId } },
     }
 
     if (actionTaken !== undefined) {
-      data.actionTaken = actionTaken
+      data.actionTaken = actionTaken as string
     }
 
     if (newStatus === 'RESOLVED' || newStatus === 'DISMISSED') {
@@ -67,7 +68,7 @@ export async function PATCH(
 
     const report = await prisma.moderationReport.update({
       where: { id: params.id },
-      data: data as any,
+      data,
       include: {
         reporter: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
         actionedBy: { select: { id: true, username: true, displayName: true } },

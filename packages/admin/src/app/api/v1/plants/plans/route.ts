@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
 import { requireAuth, requireRole } from '@/lib/middleware/auth'
 import { success, badRequest, serverError, paginated } from '@/lib/middleware/auth'
 import { startRequestLog, finishRequestLog, logApiError } from '@/lib/middleware/logging'
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const season = searchParams.get('season')
     const difficulty = searchParams.get('difficulty')
 
-    const where: Record<string, unknown> = { isPublic: true }
+    const where: Prisma.GardenPlanWhereInput = { isPublic: true }
     if (season) where.season = season
     if (difficulty) where.difficulty = difficulty.toUpperCase()
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     const [plans, total] = await Promise.all([
       prisma.gardenPlan.findMany({
-        where: where as any,
+        where,
         include: {
           plants: {
             include: { species: true },
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         skip: offset,
       }),
-      prisma.gardenPlan.count({ where: where as any }),
+      prisma.gardenPlan.count({ where }),
     ])
 
     finishRequestLog(ctx, request, 200)

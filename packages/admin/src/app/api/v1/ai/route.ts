@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
 import { requireAuth, success, badRequest, serverError, paginated } from '@/lib/middleware/auth'
 
 export async function POST(request: NextRequest) {
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
     const isAdmin = auth.payload.role.toUpperCase() === 'ADMIN' || auth.payload.role.toUpperCase() === 'SUPER_ADMIN'
     const userId = searchParams.get('userId')
 
-    const where: Record<string, unknown> = {}
+    const where: Prisma.AiScanWhereInput = {}
     if (userId) {
       where.userId = userId
     } else if (!isAdmin) {
@@ -65,13 +66,13 @@ export async function GET(request: NextRequest) {
 
     const [scans, total] = await Promise.all([
       prisma.aiScan.findMany({
-        where: where as any,
+        where,
         include: { user: { select: { username: true } } },
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
       }),
-      prisma.aiScan.count({ where: where as any }),
+      prisma.aiScan.count({ where }),
     ])
 
     return paginated(scans, total, page, limit)

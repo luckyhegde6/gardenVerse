@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
 import { requireRole, success, badRequest, notFound, serverError } from '@/lib/middleware/auth'
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -16,13 +17,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const existing = await prisma.supportTicket.findUnique({ where: { id } })
     if (!existing) return notFound('Support ticket not found')
 
-    const updateData: Record<string, unknown> = { status }
-    if (adminNotes) updateData.adminNotes = adminNotes
+    const updateData: Prisma.SupportTicketUpdateInput = { status }
+    if (adminNotes) updateData.adminNotes = adminNotes as string
     if (status === 'RESOLVED' || status === 'CLOSED') updateData.closedAt = new Date()
 
     const ticket = await prisma.supportTicket.update({
       where: { id },
-      data: updateData as any,
+      data: updateData,
       include: {
         user: { select: { id: true, username: true, email: true } },
         assignedTo: { select: { id: true, username: true } },

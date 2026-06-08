@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
+import { UserRole } from '@prisma/client'
 import { requireRole, success, badRequest, notFound, serverError } from '@/lib/middleware/auth'
 
 export async function GET(
@@ -92,17 +94,17 @@ export async function PATCH(
       return notFound('User not found')
     }
 
-    const data: Record<string, unknown> = {}
+    const data: Prisma.UserUpdateInput = {}
 
-    if (displayName !== undefined) data.displayName = displayName
-    if (bio !== undefined) data.bio = bio
-    if (phone !== undefined) data.phone = phone
-    if (region !== undefined) data.region = region
-    if (isVerified !== undefined) data.isVerified = isVerified
-    if (isOnboarded !== undefined) data.isOnboarded = isOnboarded
+    if (displayName !== undefined) data.displayName = displayName as string
+    if (bio !== undefined) data.bio = bio as string
+    if (phone !== undefined) data.phone = phone as string
+    if (region !== undefined) data.region = region as string
+    if (isVerified !== undefined) data.isVerified = isVerified as boolean
+    if (isOnboarded !== undefined) data.isOnboarded = isOnboarded as boolean
 
     if (isBlocked !== undefined) {
-      data.isBlocked = isBlocked
+      data.isBlocked = isBlocked as boolean
       data.blockedAt = isBlocked ? new Date() : null
       if (!isBlocked) {
         data.blockedReason = null
@@ -110,7 +112,7 @@ export async function PATCH(
     }
 
     if (blockedReason !== undefined && isBlocked !== false) {
-      data.blockedReason = blockedReason
+      data.blockedReason = blockedReason as string
     }
 
     if (role !== undefined) {
@@ -126,12 +128,12 @@ export async function PATCH(
       if (!validRoles.includes(normalizedRole)) {
         return badRequest(`Invalid role. Must be one of: ${validRoles.map(r => r.toLowerCase()).join(', ')}`)
       }
-      data.role = normalizedRole
+      data.role = normalizedRole as UserRole
     }
 
     const user = await prisma.user.update({
       where: { id: params.id },
-      data: data as any,
+      data,
       select: {
         id: true,
         email: true,
