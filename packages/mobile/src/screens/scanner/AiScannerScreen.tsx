@@ -1,5 +1,13 @@
-import React, { useState, useRef, useEffect } from "react";
-import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Animated,
+  StyleSheet,
+} from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { requestCameraPermission } from "../../utils/permissions";
 import { Button } from "../../components/ui/Button";
@@ -9,6 +17,8 @@ import { ScanHistory } from "../../components/scanner/ScanHistory";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { useAI } from "../../hooks/useAI";
 import { AiScanResult } from "../../types";
+import { plantIdQuest } from "../../services/plantIdentificationQuest";
+import HapticFeedback from "../../utils/haptics";
 
 export function AiScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -37,6 +47,86 @@ export function AiScannerScreen() {
   }, []);
   const cameraRef = useRef<any>(null);
 
+  // ─── Plant-ID quest integration ────────────────────────────────────────
+  const [questXpEarned, setQuestXpEarned] = useState(0);
+  const [isNewSpecies, setIsNewSpecies] = useState(false);
+  const [questProgressText, setQuestProgressText] = useState<string | null>(null);
+  const [showPhotoPrompt, setShowPhotoPrompt] = useState(false);
+  const questXpOpacity = useRef(new Animated.Value(0)).current;
+  const questXpTranslateY = useRef(new Animated.Value(20)).current;
+
+  const showQuestXpAnimation = useCallback(
+    (xp: number, newSpecies: boolean, progressText: string) => {
+      setQuestXpEarned(xp);
+      setIsNewSpecies(newSpecies);
+      setQuestProgressText(progressText);
+      questXpOpacity.setValue(0);
+      questXpTranslateY.setValue(20);
+      Animated.parallel([
+        Animated.timing(questXpOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(questXpTranslateY, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      setTimeout(() => {
+        Animated.timing(questXpOpacity, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+      }, 2500);
+    },
+    [questXpOpacity, questXpTranslateY],
+  );
+
+  const handlePlantIdentified = useCallback(
+    async (result: AiScanResult, imageUri: string) => {
+      const speciesName = result.plantName || result.species || "Unknown Plant";
+      const speciesId = result.species || result.id || speciesName.toLowerCase().replace(/\s+/g, "_");
+      const confidence = result.healthScore ?? 85;
+
+      try {
+        // Award identification XP
+        const idResult = await plantIdQuest.checkAndAwardIdentificationQuest(
+          speciesId,
+          speciesName,
+          confidence,
+        );
+
+        // Award photo XP
+        const photoResult = await plantIdQuest.checkAndAwardPhotoQuest(
+          imageUri,
+          speciesId,
+          speciesName,
+          confidence,
+        );
+
+        const totalXp = idResult.xpAwarded + photoResult.xpAwarded;
+        const speciesCount = await plantIdQuest.getSpeciesIdentifiedCount();
+
+        showQuestXpAnimation(
+          totalXp,
+          idResult.isNewSpecies,
+          idResult.isNewSpecies
+            ? `Species ${speciesCount} identified!`
+            : `Photo captured!`,
+        );
+
+        setShowPhotoPrompt(true);
+        await HapticFeedback.success();
+      } catch {
+        // Silent fail — quest tracking is non-critical
+      }
+    },
+    [showQuestXpAnimation],
+  );
+
   const handleCapture = async () => {
     if (!cameraRef.current) return;
     try {
@@ -46,7 +136,9 @@ export function AiScannerScreen() {
       });
       setCapturedImage(photo.uri);
       await scanImage(photo.uri);
-      setMode("result");
+      setShowPhotoPrompt(false);
+      // Plant-ID quest hook-in: after scan completes and we have a result,
+      // we'll trigger identification from the result mode
     } catch (e) {
       console.error('Capture failed:', e);
     }
@@ -126,13 +218,45 @@ export function AiScannerScreen() {
       )}
 
       {mode === "result" && currentResult && (
-        <ScrollView className="flex-1 bg-gray-50">
+        <ScrollView
+          className="flex-1 bg-gray-50"
+          onLayout={() => {
+            // Trigger plant identification when result view mounts with a result
+            if (capturedImage && currentResult) {
+              handlePlantIdentified(currentResult, capturedImage);
+            }
+          }}
+        >
           {capturedImage && (
-            <Image
-              source={{ uri: capturedImage }}
-              className="w-full h-64"
-              resizeMode="cover"
-            />
+            <View style={{ position: "relative" }}>
+              <Image
+                source={{ uri: capturedImage }}
+                className="w-full h-64"
+                resizeMode="cover"
+              />
+              {/* Quest XP overlay */}
+              {questXpEarned > 0 && (
+                <Animated.View
+                  style={[
+                    questStyles.xpOverlay,
+                    {
+                      opacity: questXpOpacity,
+                      transform: [{ translateY: questXpTranslateY }],
+                    },
+                  ]}
+                  pointerEvents="none"
+                >
+                  <Text style={questStyles.xpText}>
+                    +{questXpEarned} XP
+                  </Text>
+                  {questProgressText && (
+                    <Text style={questStyles.xpSubtext}>
+                      {isNewSpecies ? "🌟 " : ""}{questProgressText}
+                    </Text>
+                  )}
+                </Animated.View>
+              )}
+            </View>
           )}
 
           {isScanning ? (
@@ -143,6 +267,24 @@ export function AiScannerScreen() {
           ) : (
             <>
               <ScanResult result={currentResult} />
+
+              {/* Photo saved prompt */}
+              {showPhotoPrompt && !isScanning && (
+                <View className="px-4 mb-3">
+                  <View style={questStyles.photoPromptCard}>
+                    <Text style={questStyles.photoPromptEmoji}>📸</Text>
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <Text style={questStyles.photoPromptTitle}>
+                        Photo saved to collection!
+                      </Text>
+                      <Text style={questStyles.photoPromptSubtitle}>
+                        +3 XP for capturing a plant photo
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+
               <View className="px-4 pb-8">
                 <Button
                   title="Scan Another Plant"
@@ -178,3 +320,52 @@ export function AiScannerScreen() {
     </View>
   );
 }
+
+// ─── Quest Styles ───────────────────────────────────────────────────────────
+
+const questStyles = StyleSheet.create({
+  xpOverlay: {
+    position: "absolute",
+    bottom: 12,
+    right: 12,
+    backgroundColor: "rgba(13, 40, 24, 0.85)",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignItems: "flex-end",
+  },
+  xpText: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#fbbf24",
+  },
+  xpSubtext: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.8)",
+    marginTop: 2,
+  },
+  photoPromptCard: {
+    backgroundColor: "#ecfdf5",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#a7f3d0",
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  photoPromptEmoji: {
+    fontSize: 28,
+  },
+  photoPromptTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#065f46",
+  },
+  photoPromptSubtitle: {
+    fontSize: 12,
+    color: "#047857",
+    marginTop: 2,
+  },
+});
+
+export default AiScannerScreen;

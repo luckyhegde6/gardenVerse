@@ -6,6 +6,8 @@ import {
   RefreshControl,
   TouchableOpacity,
   StyleSheet,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -40,6 +42,12 @@ import api from '../../services/api';
 import { requestLocationPermission, requestNotificationPermission } from '../../utils/permissions';
 import HapticFeedback from '../../utils/haptics';
 import { useTheme } from '../../styles/ThemeContext';
+import { plantIdQuest } from '../../services/plantIdentificationQuest';
+import type { IdentifiedPlantPhoto } from '../../types';
+import { SyncStatusIndicator } from '../../components/SyncStatusIndicator';
+import { SaveGameButton } from '../../components/SaveGameButton';
+import { gameSaveSync } from '../../services/gameSaveSync';
+import { useToast } from '../../components/ui/Toast';
 
 export function GardenScreen() {
   const { theme } = useTheme();
@@ -79,6 +87,48 @@ export function GardenScreen() {
     completion: 0,
   });
 
+  // ─── Plant-ID quest state ──────────────────────────────────────────────
+  const [recentIdentifications, setRecentIdentifications] = useState<IdentifiedPlantPhoto[]>([]);
+  const [speciesIdentifiedCount, setSpeciesIdentifiedCount] = useState(0);
+
+  // ─── Save & Sync ────────────────────────────────────────────────────────
+  const { show: showToast, hide: hideToast, ToastComponent } = useToast();
+  const autoSaveDone = useRef(false);
+
+  // Auto-save on app background/resume
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // App going to background: save and sync
+        try {
+          await gameSaveSync.saveAndSyncOnBackground({
+            crops,
+            gardens: useGardenStore.getState().gardens,
+            questProgress: [],
+            collections: [],
+          });
+        } catch {
+          // Silent fail on background save
+        }
+      } else if (nextAppState === 'active') {
+        // App coming to foreground: sync
+        autoSaveDone.current = false;
+        try {
+          const result = await gameSaveSync.syncWithServer();
+          if (result.success && !autoSaveDone.current) {
+            autoSaveDone.current = true;
+            showToast({ message: 'Game saved', type: 'success', duration: 2000 });
+          }
+        } catch {
+          // Silent fail on resume sync
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [crops, showToast]);
+
   const animatedProgress = useSharedValue(0);
   const viewTransition = useSharedValue(0);
 
@@ -90,6 +140,19 @@ export function GardenScreen() {
     try {
       const stats = await GamificationService.getCollectionStats();
       setCollectionStats(stats);
+    } catch {
+      // Silent fail
+    }
+  }, []);
+
+  // ─── Fetch recent plant identifications ────────────────────────────────────
+
+  const fetchRecentIdentifications = useCallback(async () => {
+    try {
+      const photos = await plantIdQuest.getPlantPhotoCollection();
+      setRecentIdentifications(photos.slice(0, 5));
+      const count = await plantIdQuest.getSpeciesIdentifiedCount();
+      setSpeciesIdentifiedCount(count);
     } catch {
       // Silent fail
     }
@@ -120,7 +183,8 @@ export function GardenScreen() {
   useEffect(() => {
     fetchCollectionStats();
     fetchWeather();
-  }, [fetchCollectionStats, fetchWeather]);
+    fetchRecentIdentifications();
+  }, [fetchCollectionStats, fetchWeather, fetchRecentIdentifications]);
 
   // ─── Growth Engine Integration ──────────────────────────────────────────
   const engineStarted = useRef(false)
@@ -301,6 +365,7 @@ export function GardenScreen() {
             </Text>
           </View>
           <View style={styles.headerRight}>
+            <SyncStatusIndicator compact />
             <View style={styles.collectionBadge}>
               <Text style={styles.collectionBadgeText}>
                 🌿 {collectionStats.discovered}/{collectionStats.total}
@@ -760,6 +825,51 @@ export function GardenScreen() {
         engineState={engineState}
         isVirtual={isVirtual}
       />
+
+      {/* ─── Floating "Identify Plant" Button ──────────────────────────────── */}
+      <TouchableOpacity
+        style={styles.floatingIdentifyButton}
+        onPress={() => {
+          HapticFeedback.medium();
+          router.push("/ai-scanner" as any);
+        }}
+        activeOpacity={0.85}
+        accessibilityLabel="Identify a plant"
+        accessibilityRole="button"
+      >
+        <Text style={styles.floatingIdentifyIcon}>📸</Text>
+        <Text style={styles.floatingIdentifyText}>Identify Plant</Text>
+      </TouchableOpacity>
+
+      {/* ─── Recent Identification Badges ──────────────────────────────────── */}
+      {recentIdentifications.length > 0 && (
+        <View style={styles.idBadgeContainer}>
+          {recentIdentifications.slice(0, 3).map((photo, idx) => (
+            <View
+              key={photo.id}
+              style={[
+                styles.idBadge,
+                { right: 16 + idx * 44 },
+              ]}
+            >
+              <Text style={styles.idBadgeText}>
+                {photo.speciesName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          ))}
+          {speciesIdentifiedCount > 0 && (
+            <View style={[styles.idBadge, styles.idBadgeCount, { right: 16 + Math.min(recentIdentifications.length, 3) * 44 }]}>
+              <Text style={styles.idBadgeCountText}>+{speciesIdentifiedCount}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* ─── Save Game FAB ──────────────────────────────────────────────────── */}
+      <SaveGameButton />
+
+      {/* ─── Auto-save Toast ────────────────────────────────────────────────── */}
+      {ToastComponent}
     </View>
   );
 }
@@ -931,5 +1041,73 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#ffffff',
+  },
+
+  // ─── Floating Identify Button ────────────────────────────────────────────
+  floatingIdentifyButton: {
+    position: "absolute",
+    bottom: 24,
+    right: 16,
+    backgroundColor: "#0d2818",
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  floatingIdentifyIcon: {
+    fontSize: 18,
+  },
+  floatingIdentifyText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#ffffff",
+  },
+
+  // ─── Recent ID Badges ────────────────────────────────────────────────────
+  idBadgeContainer: {
+    position: "absolute",
+    top: 8,
+    right: 0,
+    flexDirection: "row",
+  },
+  idBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#10b981",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  idBadgeText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+  idBadgeCount: {
+    backgroundColor: "#6366f1",
+    width: "auto" as any,
+    paddingHorizontal: 8,
+    borderRadius: 18,
+  },
+  idBadgeCountText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#ffffff",
   },
 });

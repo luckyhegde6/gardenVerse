@@ -324,6 +324,36 @@ export interface PlantHybridData {
   discoveredAt: string;
 }
 
+export interface QuestProgress {
+  questId: string
+  questKey: string
+  progress: number
+  targetCount: number
+  isCompleted: boolean
+  claimed: boolean
+  claimedAt?: string
+}
+
+export interface CollectionEntry {
+  speciesId: string
+  discoveredAt: string
+  timesPlanted: number
+  timesHarvested: number
+}
+
+export interface IdentifiedPlantPhoto {
+  id: string
+  speciesId: string
+  speciesName: string
+  imageUrl: string
+  confidence: number
+  latitude?: number
+  longitude?: number
+  capturedAt: string
+  xpAwarded: number
+  usedForTraining: boolean
+}
+
 export interface RootStackParamList {
    [key: string]: undefined | object;
    Auth: undefined;

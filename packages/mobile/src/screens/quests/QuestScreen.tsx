@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   RefreshControl,
   ActivityIndicator,
   ViewStyle,
+  FlatList,
+  Animated,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Card } from "../../components/ui/Card";
@@ -20,6 +23,8 @@ import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
 import api from "../../services/api";
 import HapticFeedback from "../../utils/haptics";
+import { plantIdQuest } from "../../services/plantIdentificationQuest";
+import type { QuestProgress, IdentifiedPlantPhoto } from "../../types";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -80,6 +85,18 @@ const CATEGORY_CONFIG: Record<
 
 const TABS: QuestCategory[] = ["DAILY", "WEEKLY", "SEASONAL"];
 
+// ─── Plant-ID Quest keys (used to identify our quests) ─────────────────────
+const PLANT_ID_QUEST_KEYS = [
+  "identify_3_species",
+  "identify_5_species",
+  "identify_10_species",
+  "identify_25_species",
+  "capture_5_photos",
+  "capture_10_photos",
+  "capture_25_photos",
+  "capture_50_photos",
+];
+
 // ─── Quest Progress Update ──────────────────────────────────────────────────
 
 function questTypeDescription(type: string): string {
@@ -121,6 +138,15 @@ export function QuestScreen() {
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
+
+  // ─── Plant-ID Quest state ──────────────────────────────────────────────
+  const [plantIdProgress, setPlantIdProgress] = useState<QuestProgress[]>([]);
+  const [plantPhotos, setPlantPhotos] = useState<IdentifiedPlantPhoto[]>([]);
+  const [speciesIdentified, setSpeciesIdentified] = useState(0);
+  const [plantIdXp, setPlantIdXp] = useState(0);
+  const [celebratingQuest, setCelebratingQuest] = useState<QuestProgress | null>(null);
+  const celebrationOpacity = useRef(new Animated.Value(0)).current;
+  const celebrationScale = useRef(new Animated.Value(0.8)).current;
 
   const fetchData = useCallback(async (isRefresh = false) => {
     try {
@@ -173,6 +199,22 @@ export function QuestScreen() {
       }
 
       setData({ grouped, summary });
+
+      // Load plant-ID quest data in parallel
+      try {
+        const [progress, photos, speciesCount, xp] = await Promise.all([
+          plantIdQuest.getUserQuestProgress(),
+          plantIdQuest.getPlantPhotoCollection(),
+          plantIdQuest.getSpeciesIdentifiedCount(),
+          plantIdQuest.getTotalPhotoXp(),
+        ]);
+        setPlantIdProgress(progress);
+        setPlantPhotos(photos);
+        setSpeciesIdentified(speciesCount);
+        setPlantIdXp(xp);
+      } catch {
+        // Silent fail — plant-ID quests are non-critical
+      }
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to load quests";
@@ -220,10 +262,95 @@ export function QuestScreen() {
     [claimingId, fetchData]
   );
 
+  // ─── Plant-ID quest claim ──────────────────────────────────────────────
+
+  const handleClaimPlantIdQuest = useCallback(
+    async (questId: string) => {
+      try {
+        await HapticFeedback.light();
+        const result = await plantIdQuest.claimQuest(questId);
+        await HapticFeedback.success();
+        setClaimSuccess(
+          result.success
+            ? `+${result.xpAwarded} XP, +${result.creditsAwarded} Credits`
+            : "Reward claimed locally",
+        );
+        setTimeout(() => setClaimSuccess(null), 3000);
+        // Refresh plant-ID data
+        const progress = await plantIdQuest.getUserQuestProgress();
+        setPlantIdProgress(progress);
+      } catch {
+        await HapticFeedback.error();
+      }
+    },
+    [],
+  );
+
+  // ─── Celebration animation ─────────────────────────────────────────────
+
+  const triggerCelebration = useCallback(
+    (quest: QuestProgress) => {
+      setCelebratingQuest(quest);
+      celebrationOpacity.setValue(0);
+      celebrationScale.setValue(0.8);
+      Animated.parallel([
+        Animated.timing(celebrationOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(celebrationScale, {
+          toValue: 1,
+          damping: 10,
+          stiffness: 150,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      setTimeout(() => {
+        Animated.timing(celebrationOpacity, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start(() => setCelebratingQuest(null));
+      }, 2500);
+    },
+    [celebrationOpacity, celebrationScale],
+  );
+
+  // Check for newly completed plant-ID quests
+  const prevPlantIdRef = useRef<QuestProgress[]>([]);
+  useEffect(() => {
+    if (prevPlantIdRef.current.length === 0) {
+      prevPlantIdRef.current = plantIdProgress;
+      return;
+    }
+    const prev = prevPlantIdRef.current;
+    const newlyCompleted = plantIdProgress.find(
+      (q) =>
+        q.isCompleted &&
+        !q.claimed &&
+        !prev.find((p) => p.questId === q.questId)?.isCompleted,
+    );
+    if (newlyCompleted) {
+      triggerCelebration(newlyCompleted);
+    }
+    prevPlantIdRef.current = plantIdProgress;
+  }, [plantIdProgress, triggerCelebration]);
+
   // ─── Tab content ─────────────────────────────────────────────────────────
 
   const questsForTab = data?.grouped[tab] ?? [];
   const pendingClaimCount = data?.summary.pendingClaim ?? 0;
+
+  // ─── Plant-ID quest helpers ────────────────────────────────────────────
+
+  const identificationQuests = plantIdProgress.filter((q) =>
+    q.questKey.startsWith("identify_"),
+  );
+  const photoQuests = plantIdProgress.filter((q) =>
+    q.questKey.startsWith("capture_"),
+  );
+  const recentPhotos = plantPhotos.slice(0, 10);
 
   // ─── Loading ─────────────────────────────────────────────────────────────
 
@@ -354,6 +481,106 @@ export function QuestScreen() {
           );
         })}
       </View>
+
+      {/* ── Plant-ID Quest Section ──────────────────────────────────────── */}
+      {!loading && (
+        <View style={styles.plantIdSection}>
+          <View style={styles.plantIdHeader}>
+            <Text style={styles.plantIdTitle}>🌿 Plant Identification Quests</Text>
+            <View style={styles.plantIdStats}>
+              <Text style={styles.plantIdStatText}>
+                {speciesIdentified} species · {plantPhotos.length} photos · {plantIdXp} XP
+              </Text>
+            </View>
+          </View>
+
+          {/* Identification quests */}
+          {identificationQuests.length > 0 && (
+            <View style={styles.plantIdQuestGroup}>
+              <Text style={styles.plantIdGroupLabel}>Identify Species</Text>
+              {identificationQuests.map((q) => (
+                <PlantIdQuestCard
+                  key={q.questId}
+                  quest={q}
+                  onClaim={() => handleClaimPlantIdQuest(q.questId)}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* Photo quests */}
+          {photoQuests.length > 0 && (
+            <View style={styles.plantIdQuestGroup}>
+              <Text style={styles.plantIdGroupLabel}>Capture Photos</Text>
+              {photoQuests.map((q) => (
+                <PlantIdQuestCard
+                  key={q.questId}
+                  quest={q}
+                  onClaim={() => handleClaimPlantIdQuest(q.questId)}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* Recent photos gallery */}
+          {recentPhotos.length > 0 && (
+            <View style={styles.plantIdQuestGroup}>
+              <View style={styles.plantIdGalleryHeader}>
+                <Text style={styles.plantIdGroupLabel}>Recent Identifications</Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/photo-collection" as any)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.viewCollectionText}>View All →</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.photoGallery}
+              >
+                {recentPhotos.map((photo) => (
+                  <TouchableOpacity
+                    key={photo.id}
+                    style={styles.photoThumb}
+                    activeOpacity={0.8}
+                  >
+                    <Image
+                      source={{ uri: photo.imageUrl }}
+                      style={styles.photoThumbImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.photoThumbOverlay}>
+                      <Text style={styles.photoThumbName} numberOfLines={1}>
+                        {photo.speciesName}
+                      </Text>
+                      <Text style={styles.photoThumbXp}>+{photo.xpAwarded} XP</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* ── Celebration Overlay ──────────────────────────────────────────── */}
+      {celebratingQuest && (
+        <Animated.View
+          style={[
+            styles.celebrationOverlay,
+            {
+              opacity: celebrationOpacity,
+              transform: [{ scale: celebrationScale }],
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <Text style={styles.celebrationEmoji}>🎉</Text>
+          <Text style={styles.celebrationTitle}>Quest Complete!</Text>
+          <Text style={styles.celebrationSubtitle}>{celebratingQuest.questKey.replace(/_/g, " ")}</Text>
+        </Animated.View>
+      )}
 
       {/* ── Success Banner ──────────────────────────────────────────────── */}
       {claimSuccess && (
@@ -573,6 +800,73 @@ function RewardTag({
       <Text style={styles.rewardTagEmoji}>{emoji}</Text>
       <Text style={styles.rewardTagText}>{value}</Text>
     </View>
+  );
+}
+
+function PlantIdQuestCard({
+  quest,
+  onClaim,
+}: {
+  quest: QuestProgress;
+  onClaim: () => void;
+}) {
+  const isCompleted = quest.isCompleted;
+  const isClaimed = quest.claimed;
+  const isPendingClaim = isCompleted && !isClaimed;
+  const progressPct =
+    quest.targetCount > 0
+      ? Math.min((quest.progress / quest.targetCount) * 100, 100)
+      : 0;
+
+  const questLabel = quest.questKey
+    .replace(/_/g, " ")
+    .replace("identify", "Identify")
+    .replace("capture", "Capture")
+    .replace("species", "different species")
+    .replace("photos", "plant photos");
+
+  return (
+    <Card
+      style={[
+        styles.plantIdQuestCard,
+        isClaimed && styles.plantIdQuestCardClaimed,
+        isPendingClaim && styles.plantIdQuestCardPending,
+      ].filter(Boolean) as ViewStyle[]}
+    >
+      <View style={styles.plantIdQuestRow}>
+        <View style={styles.questContent}>
+          <Text style={styles.plantIdQuestLabel} numberOfLines={1}>
+            {questLabel}
+          </Text>
+          <Text style={styles.plantIdQuestProgress}>
+            {quest.progress}/{quest.targetCount}
+          </Text>
+        </View>
+        {isPendingClaim ? (
+          <TouchableOpacity
+            style={styles.claimButton}
+            onPress={onClaim}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.claimButtonLabel}>Claim</Text>
+            <Text style={styles.claimButtonEmoji}>🎁</Text>
+          </TouchableOpacity>
+        ) : isClaimed ? (
+          <View style={styles.claimedMark}>
+            <Text style={styles.claimedMarkText}>✓</Text>
+          </View>
+        ) : null}
+      </View>
+      {!isClaimed && (
+        <ProgressBar
+          value={quest.progress}
+          maxValue={quest.targetCount}
+          height={6}
+          showLabel
+          labelPosition="right"
+        />
+      )}
+    </Card>
   );
 }
 
@@ -869,6 +1163,143 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: spacing.xxl,
+  },
+
+  // ─── Plant-ID Quest Section ─────────────────────────────────────────────
+  plantIdSection: {
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  plantIdHeader: {
+    marginBottom: spacing.sm,
+  },
+  plantIdTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  plantIdStats: {
+    marginTop: 2,
+  },
+  plantIdStatText: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  plantIdQuestGroup: {
+    marginBottom: spacing.sm,
+  },
+  plantIdGroupLabel: {
+    ...typography.caption,
+    fontWeight: "600",
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  plantIdQuestCard: {
+    marginBottom: spacing.xs,
+    padding: spacing.sm,
+  },
+  plantIdQuestCardClaimed: {
+    opacity: 0.55,
+    backgroundColor: colors.surfaceSecondary,
+  },
+  plantIdQuestCardPending: {
+    borderWidth: 1.5,
+    borderColor: colors.warning,
+    backgroundColor: colors.warningBg,
+  },
+  plantIdQuestRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  plantIdQuestLabel: {
+    ...typography.label,
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  plantIdQuestProgress: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  plantIdGalleryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.xs,
+  },
+  viewCollectionText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: "600",
+  },
+  photoGallery: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    paddingRight: spacing.md,
+  },
+  photoThumb: {
+    width: 80,
+    height: 80,
+    borderRadius: borderRadius.md,
+    overflow: "hidden",
+    backgroundColor: colors.surfaceSecondary,
+  },
+  photoThumbImage: {
+    width: "100%",
+    height: "100%",
+  },
+  photoThumbOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  photoThumbName: {
+    fontSize: 9,
+    color: colors.white,
+    fontWeight: "600",
+  },
+  photoThumbXp: {
+    fontSize: 8,
+    color: "#fbbf24",
+    fontWeight: "700",
+  },
+
+  // ─── Celebration Overlay ────────────────────────────────────────────────
+  celebrationOverlay: {
+    position: "absolute",
+    top: "30%",
+    left: spacing.lg,
+    right: spacing.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(13, 40, 24, 0.92)",
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    ...shadows.lg,
+    zIndex: 100,
+  },
+  celebrationEmoji: {
+    fontSize: 48,
+    marginBottom: spacing.sm,
+  },
+  celebrationTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.white,
+    marginBottom: spacing.xs,
+  },
+  celebrationSubtitle: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.7)",
+    textTransform: "capitalize",
   },
 });
 
