@@ -74,7 +74,7 @@ describe('GardenVerse Mobile App', () => {
 
       // Type credentials
       await typeText('login-email-input', 'demo@gardenverse.vercel.app');
-      await typeText('login-password-input', 'password123');
+      await typeText('login-password-input', process.env.ADMIN_DEFAULT_PASSWORD || 'password123');
 
       // Hide keyboard and tap login
       await device.pressBack();

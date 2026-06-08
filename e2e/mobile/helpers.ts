@@ -9,20 +9,22 @@ import { device, element, by, expect, waitFor } from 'detox';
 /** Android emulator maps 10.0.2.2 to host localhost */
 export const API_URL = 'http://10.0.2.2:3000';
 
-/** Demo account credentials */
+/** Demo account credentials — password from ADMIN_DEFAULT_PASSWORD env var */
+const DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'password123'
+
 export const DEMO_USER = {
   email: 'demo@gardenverse.vercel.app',
-  password: 'password123',
+  password: DEFAULT_PASSWORD,
 };
 
 export const ADMIN_USER = {
   email: 'admin@gardenverse.vercel.app',
-  password: 'password123',
+  password: DEFAULT_PASSWORD,
 };
 
 export const SUPERADMIN_USER = {
   email: 'superadmin@gardenverse.vercel.app',
-  password: 'password123',
+  password: DEFAULT_PASSWORD,
 };
 
 /**

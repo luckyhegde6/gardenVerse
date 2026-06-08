@@ -215,9 +215,9 @@ API_URL = 'http://10.0.2.2:3000' // Emulator → host localhost
 ### Demo Credentials (used in tests)
 
 ```typescript
-DEMO_USER      = { email: 'demo@gardenverse.vercel.app',      password: 'password123' }
-ADMIN_USER     = { email: 'admin@gardenverse.vercel.app',     password: 'password123' }
-SUPERADMIN_USER = { email: 'superadmin@gardenverse.vercel.app', password: 'password123' }
+DEMO_USER      = { email: 'demo@gardenverse.vercel.app',      password: process.env.ADMIN_DEFAULT_PASSWORD || 'password123', }
+ADMIN_USER     = { email: 'admin@gardenverse.vercel.app',     password: process.env.ADMIN_DEFAULT_PASSWORD || 'password123', }
+SUPERADMIN_USER = { email: 'superadmin@gardenverse.vercel.app', password: process.env.ADMIN_DEFAULT_PASSWORD || 'password123', }
 ```
 
 ---

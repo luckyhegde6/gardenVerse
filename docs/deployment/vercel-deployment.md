@@ -161,7 +161,7 @@ curl https://your-app.vercel.app/api/v1/plants?limit=5
 # 3. Check login API
 curl -X POST https://your-app.vercel.app/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@gardenverse.vercel.app","password":"password123"}'
+  -d "{\"email\":\"admin@gardenverse.vercel.app\",\"password\":\"${ADMIN_DEFAULT_PASSWORD}\"}"
 
 # 4. Open admin dashboard
 # Navigate to https://your-app.vercel.app/login in browser

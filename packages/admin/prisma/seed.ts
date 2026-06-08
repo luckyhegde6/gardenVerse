@@ -26,7 +26,8 @@ async function main() {
     try { await (prisma as any)[t].deleteMany(); } catch { }
   }
 
-  const hash = await bcrypt.hash('password123', 12);
+  const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'password123'
+  const hash = await bcrypt.hash(defaultPassword, 12);
 
   const superadminId = uuidv4();
   const adminId = uuidv4();
@@ -72,7 +73,7 @@ async function main() {
     },
   });
 
-  console.log('Created 3 users: superadmin, admin, demo (password: password123)');
+  console.log(`Created 3 users: superadmin, admin, demo (password from ADMIN_DEFAULT_PASSWORD env var)`);
 
   // ─── Plant Species ──────────────────────────────────────────────────────
   const plants = [

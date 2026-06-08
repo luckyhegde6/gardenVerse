@@ -10,6 +10,7 @@ import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const API_URL = `${BASE_URL}/api/v1`;
+const DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || DEFAULT_PASSWORD;
 
 // ─── Helper: Login via API and return auth token ────────────────────────────
 async function login(request: any, email: string, password: string) {
@@ -50,7 +51,7 @@ test.describe('Admin API Integration', () => {
 
     test('login with demo account', async ({ request }) => {
       const res = await request.post(`${API_URL}/auth/login`, {
-        data: { email: 'demo@gardenverse.vercel.app', password: 'password123' }
+        data: { email: 'demo@gardenverse.vercel.app', password: DEFAULT_PASSWORD }
       });
       expect(res.status()).toBe(200);
       const body = await res.json();
@@ -105,7 +106,7 @@ test.describe('Admin API Integration', () => {
     let authToken: string;
 
     test.beforeAll(async ({ request }) => {
-      authToken = await login(request, 'admin@gardenverse.vercel.app', 'password123');
+      authToken = await login(request, 'admin@gardenverse.vercel.app', DEFAULT_PASSWORD);
     });
 
     test('gardens API returns gardens with auth', async ({ request }) => {
@@ -168,7 +169,7 @@ test.describe('Admin API Integration', () => {
 
   test.describe('Admin Dashboard Pages (UI)', () => {
     test.beforeEach(async ({ page }) => {
-      await authenticateUI(page, 'admin@gardenverse.vercel.app', 'password123');
+      await authenticateUI(page, 'admin@gardenverse.vercel.app', DEFAULT_PASSWORD);
     });
 
     test('dashboard loads with stats', async ({ page }) => {

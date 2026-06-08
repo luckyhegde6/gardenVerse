@@ -117,9 +117,9 @@ npm run typecheck:mobile   # Mobile only
 
 | Email | Password | Role |
 |-------|----------|------|
-| `admin@gardenverse.vercel.app` | `password123` | Admin |
-| `superadmin@gardenverse.vercel.app` | `password123` | Super Admin |
-| `demo@gardenverse.vercel.app` | `password123` | Demo User |
+| `admin@gardenverse.vercel.app` | _from env_ | Admin |
+| `superadmin@gardenverse.vercel.app` | _from env_ | Super Admin |
+| `demo@gardenverse.vercel.app` | _from env_ | Demo User |
 
 ---
 

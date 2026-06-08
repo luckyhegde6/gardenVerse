@@ -482,8 +482,8 @@ adb shell curl http://10.0.2.2:3000/api/v1/health
 
 | Email | Password | Role |
 |-------|----------|------|
-| `admin@gardenverse.vercel.app` | `password123` | Admin |
-| `superadmin@gardenverse.vercel.app` | `password123` | Super Admin |
-| `demo@gardenverse.vercel.app` | `password123` | Demo User |
+| `admin@gardenverse.vercel.app` | _from `ADMIN_DEFAULT_PASSWORD` env_ | Admin |
+| `superadmin@gardenverse.vercel.app` | _from `ADMIN_DEFAULT_PASSWORD` env_ | Super Admin |
+| `demo@gardenverse.vercel.app` | _from `ADMIN_DEFAULT_PASSWORD` env_ | Demo User |
 
 5 additional regional users are also seeded (IN-MH, IN-GJ, IN-TN, IN-RJ, IN-KL regions).

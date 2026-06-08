@@ -3,6 +3,7 @@ import path from 'path';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000/api/v1';
 const ADMIN_URL = process.env.ADMIN_URL || 'http://localhost:3000';
+const DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || DEFAULT_PASSWORD;
 
 export interface AuthSession {
   accessToken: string;
@@ -62,7 +63,7 @@ export const test = base.extend<TestFixtures>({
     const context = await browser.newContext({ storageState: undefined });
     const page = await context.newPage();
     try {
-      const session = await loginAs('admin@gardenverse.vercel.app', 'password123');
+      const session = await loginAs('admin@gardenverse.vercel.app', DEFAULT_PASSWORD);
       await setupAuthPage(page, session);
     } catch {
       // Fallback: navigate to login page
@@ -76,7 +77,7 @@ export const test = base.extend<TestFixtures>({
     const context = await browser.newContext({ storageState: undefined });
     const page = await context.newPage();
     try {
-      const session = await loginAs('admin@gardenverse.vercel.app', 'password123');
+      const session = await loginAs('admin@gardenverse.vercel.app', DEFAULT_PASSWORD);
       await setupAuthPage(page, session);
     } catch {
       await page.goto(`${ADMIN_URL}/login`);
