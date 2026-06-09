@@ -5,6 +5,32 @@ Behavioral guidelines + project reference for Claude Code.
 
 ---
 
+## Git Branching Policy
+
+**⚠️ Always follow these rules. No exceptions.**
+
+### Branch Structure
+- **`main`** — Production-ready. Only merged via PR. Never commit directly.
+- **`feature/<kebab-case>`** — New features, enhancements.
+- **`fix/<kebab-case>`** — Bug fixes.
+- **`release/<version>`** — Release preparation.
+
+### Rules
+1. **Never commit directly to `main`**. Always create a feature/fix branch.
+2. **Create a branch at the start of every new task** — even before writing code.
+3. **`main` must stay in sync** — Before starting a new branch, pull latest `main`: `git checkout main && git pull`.
+4. **Branch from `main`** — Always: `git checkout -b feature/my-feature main`.
+5. **Keep branches short-lived** — Merge via PR within the same session/day when possible.
+6. **Rebase before PR** — Before creating a PR: `git fetch origin && git rebase origin/main` to ensure clean history.
+7. **Push branch immediately** — After creating a branch: `git push -u origin feature/my-feature`.
+8. **PR review required** — No self-merging to `main` without review.
+
+### Commit Messages
+- Use Conventional Commits: `feat(scope): description`, `fix(scope): description`.
+- Scopes: `admin`, `mobile`, `backend`, `security`, `docs`, `infra`.
+
+---
+
 ## Clean Code Policy
 
 ### 1. Think Before Coding
