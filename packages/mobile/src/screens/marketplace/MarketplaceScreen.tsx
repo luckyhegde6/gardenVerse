@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { useMarketplace } from "../../hooks/useMarketplace";
 import { ListingCard } from "../../components/marketplace/ListingCard";
 import { CategoryFilter } from "../../components/marketplace/CategoryFilter";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+// import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 import { MarketplaceListing } from "../../types";
@@ -32,7 +32,7 @@ export function MarketplaceScreen() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { listings, isLoading, isRefreshing, error, refresh, loadMore } =
+  const { listings, isLoading, isRefreshing, error: _error, refresh, loadMore } =
     useMarketplace({
       category: selectedCategory === "all" ? undefined : selectedCategory,
       search: searchQuery || undefined,
@@ -138,7 +138,7 @@ export function MarketplaceScreen() {
       ) : (
         <FlatList
           data={filteredListings}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item: MarketplaceListing) => item.id}
           ListHeaderComponent={() => (
             <>
               {/* Featured Section */}
@@ -150,10 +150,10 @@ export function MarketplaceScreen() {
                   <FlatList
                     horizontal
                     data={featured}
-                    keyExtractor={(item) => `featured-${item.id}`}
+                    keyExtractor={(item: MarketplaceListing) => `featured-${item.id}`}
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ gap: 12 }}
-                    renderItem={({ item }) => (
+                    renderItem={({ item }: { item: MarketplaceListing }) => (
                       <TouchableOpacity
                         onPress={() => handleListingPress(item)}
                         activeOpacity={0.8}
@@ -195,7 +195,7 @@ export function MarketplaceScreen() {
               </View>
             </>
           )}
-          renderItem={({ item }) => (
+          renderItem={({ item }: { item: MarketplaceListing }) => (
             <View className="px-4">
               <ListingCard
                 listing={item}

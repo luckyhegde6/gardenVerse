@@ -45,7 +45,7 @@ function addToBuffer(entry: LogEntry): void {
     buffer = buffer.slice(buffer.length - MAX_BUFFER)
   }
   try {
-    ;(globalThis as any).__DEBUG_APP_LOGS = buffer
+    (globalThis as any).__DEBUG_APP_LOGS = buffer
   } catch {
     // silent
   }

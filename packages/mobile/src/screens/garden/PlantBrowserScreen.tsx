@@ -79,8 +79,8 @@ function PlantBrowserScreen() {
   };
 
   const debouncedSearch = useCallback(
-    debounce(async (query: string) => {
-      if (query.length < 2) {
+    debounce(async (query: unknown) => {
+      if ((query as string).length < 2) {
         fetchPopularPlants();
         return;
       }

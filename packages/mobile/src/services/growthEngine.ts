@@ -1,5 +1,5 @@
 import { Crop, CropStatus, GardenType } from "../types"
-import api from "./api"
+// import api from "./api"
 
 // A tick happens every TICK_INTERVAL_MS of real time.
 const TICK_INTERVAL_MS = 30_000
@@ -104,7 +104,7 @@ export class GrowthEngine {
   private tick() {
     if (this.paused) return
 
-    const gameMinutesPerTick = this.gardenType === GardenType.VIRTUAL
+    const _gameMinutesPerTick = this.gardenType === GardenType.VIRTUAL
       ? VIRTUAL_TICK_GAME_MINUTES
       : REAL_TICK_GAME_MINUTES
 

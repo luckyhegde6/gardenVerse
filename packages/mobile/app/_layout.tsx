@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, LogBox, Platform } from "react-native";
+import { View, Text, LogBox } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -13,9 +13,8 @@ import { initLogger } from "../src/services/logger";
 import {
   registerForPushNotifications,
   setupNotificationHandlers,
-  notifyGrowthReady,
 } from "../src/services/notifications";
-import { colors, typography } from "../src/styles/theme";
+import { typography } from "../src/styles/theme";
 import { ThemeProvider, useTheme } from "../src/styles/ThemeContext";
 
 initLogger();
@@ -52,7 +51,7 @@ function RootContent() {
 
     const cleanup = setupNotificationHandlers(
       // Foreground notification received
-      (notification) => {
+      (_notification) => {
         // Could update local state here (e.g., badge count)
       },
       // Notification tapped (background/killed)

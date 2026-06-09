@@ -6,7 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  Alert,
+  TextInput,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Button } from "../../components/ui/Button";
@@ -153,7 +153,6 @@ export function SupportScreen() {
   );
 }
 
-function TextInputStyled(props: { placeholder?: string; value: string; onChangeText: (text: string) => void; multiline?: boolean; numberOfLines?: number; className?: string; textAlignVertical?: string }) {
-  const { TextInput } = require("react-native");
+function TextInputStyled(props: { placeholder?: string; value: string; onChangeText: (text: string) => void; multiline?: boolean; numberOfLines?: number; className?: string; textAlignVertical?: "auto" | "top" | "bottom" | "center" }) {
   return <TextInput {...props} />;
 }

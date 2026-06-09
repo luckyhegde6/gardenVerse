@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { ScreenHeader } from "../../components/ui/ScreenHeader";
+// import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Card } from "../../components/ui/Card";
@@ -15,7 +15,7 @@ import { useToast } from "../../components/ui/Toast";
 import { getItem, removeItem } from "../../utils/storage";
 
 export function SettingsScreen() {
-  const router = useRouter();
+  const _router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { user, updateProfile, logout } = useAuthStore();
   const [displayName, setDisplayName] = useState(user?.displayName || "");
@@ -156,6 +156,7 @@ export function SettingsScreen() {
     try {
       await updateProfile({ displayName });
     } catch {
+      // noop
     } finally {
       setIsSaving(false);
     }

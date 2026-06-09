@@ -6,7 +6,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { useColorScheme, Appearance } from "react-native";
+import { useColorScheme } from "react-native";
 import { lightTheme, darkTheme, Theme } from "./theme";
 import { getItem, setItem, StorageKeys } from "../utils/storage";
 

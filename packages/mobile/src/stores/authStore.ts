@@ -98,7 +98,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (accessToken && userData) {
         try {
-          const user = JSON.parse(userData) as User;
+          const _user = JSON.parse(userData) as User;
           const freshProfile = await AuthService.getProfile();
           await setItem(StorageKeys.USER_DATA, JSON.stringify(freshProfile));
           set({

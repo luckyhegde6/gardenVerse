@@ -44,12 +44,12 @@ function detectCategory(name: string): string {
   return "vegetable";
 }
 
-const DIFFICULTY_COLORS: Record<string, string> = {
-  EASY: "bg-green-100 text-green-700",
-  MEDIUM: "bg-amber-100 text-amber-700",
-  HARD: "bg-red-100 text-red-700",
-  EXPERT: "bg-purple-100 text-purple-700",
-};
+// const DIFFICULTY_COLORS: Record<string, string> = {
+//   EASY: "bg-green-100 text-green-700",
+//   MEDIUM: "bg-amber-100 text-amber-700",
+//   HARD: "bg-red-100 text-red-700",
+//   EXPERT: "bg-purple-100 text-purple-700",
+// };
 
 const PLANT_EMOJIS: Record<string, string> = {
   tomato: "🍅", basil: "🌿", lettuce: "🥬", carrot: "🥕", spinach: "🥬",
@@ -86,7 +86,7 @@ export function PlantCropScreen() {
   const [loadingPlants, setLoadingPlants] = useState(true);
   const [season, setSeason] = useState("");
   const [category, setCategory] = useState("all");
-  const [showCoinsAnimation, setShowCoinsAnimation] = useState(false);
+  const [_showCoinsAnimation, setShowCoinsAnimation] = useState(false);
 
   const isVirtual = selectedGarden?.type === "VIRTUAL";
 
@@ -117,8 +117,8 @@ export function PlantCropScreen() {
   }, []);
 
   const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      if (query.length >= 2) fetchPlants(season, query);
+    debounce((query: unknown) => {
+      if ((query as string).length >= 2) fetchPlants(season, query as string);
       else fetchPlants(season);
     }, 400),
     [season, fetchPlants],
@@ -141,7 +141,9 @@ export function PlantCropScreen() {
         setShowCoinsAnimation(false);
         router.back();
       }, 1200);
-    } catch {}
+    } catch {
+      // noop
+    }
   };
 
   return (

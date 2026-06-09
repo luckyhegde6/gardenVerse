@@ -72,8 +72,6 @@ export function CropSprite({ crop, size = 32 }: CropSpriteProps) {
 
   const isUnhealthy =
     crop.status === CropStatus.WILTED || crop.status === CropStatus.DISEASED;
-  const isReady =
-    crop.status === CropStatus.MATURE || crop.status === CropStatus.HARVESTED;
 
   return (
     <View

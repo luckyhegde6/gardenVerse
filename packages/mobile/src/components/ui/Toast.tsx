@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Text, TouchableOpacity, View } from "react-native";
+import { Animated, Text, TouchableOpacity } from "react-native";
 
 type ToastType = "success" | "error" | "warning" | "info";
 

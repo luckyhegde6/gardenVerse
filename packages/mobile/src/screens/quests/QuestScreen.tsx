@@ -8,7 +8,6 @@ import {
   RefreshControl,
   ActivityIndicator,
   ViewStyle,
-  FlatList,
   Animated,
   Image,
 } from "react-native";
@@ -18,7 +17,7 @@ import { Badge } from "../../components/ui/Badge";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+// import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
 import api from "../../services/api";
@@ -86,16 +85,16 @@ const CATEGORY_CONFIG: Record<
 const TABS: QuestCategory[] = ["DAILY", "WEEKLY", "SEASONAL"];
 
 // ─── Plant-ID Quest keys (used to identify our quests) ─────────────────────
-const PLANT_ID_QUEST_KEYS = [
-  "identify_3_species",
-  "identify_5_species",
-  "identify_10_species",
-  "identify_25_species",
-  "capture_5_photos",
-  "capture_10_photos",
-  "capture_25_photos",
-  "capture_50_photos",
-];
+// const PLANT_ID_QUEST_KEYS = [
+//   "identify_3_species",
+//   "identify_5_species",
+//   "identify_10_species",
+//   "identify_25_species",
+//   "capture_5_photos",
+//   "capture_10_photos",
+//   "capture_25_photos",
+//   "capture_50_photos",
+// ];
 
 // ─── Quest Progress Update ──────────────────────────────────────────────────
 
@@ -679,7 +678,7 @@ function QuestCard({
   const isClaimed = up?.claimedAt != null && up.claimedAt !== "";
   const isPendingClaim = isCompleted && !isClaimed;
 
-  const progressPct = quest.targetCount > 0
+  const _progressPct = quest.targetCount > 0
     ? Math.min((progress / quest.targetCount) * 100, 100)
     : 0;
 
@@ -813,7 +812,7 @@ function PlantIdQuestCard({
   const isCompleted = quest.isCompleted;
   const isClaimed = quest.claimed;
   const isPendingClaim = isCompleted && !isClaimed;
-  const progressPct =
+  const _progressPct =
     quest.targetCount > 0
       ? Math.min((quest.progress / quest.targetCount) * 100, 100)
       : 0;

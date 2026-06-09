@@ -23,8 +23,8 @@ export function ScanHistory({ scans, onScanPress }: ScanHistoryProps) {
   return (
     <FlatList
       data={scans}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
+      keyExtractor={(item: AiScanResult) => item.id}
+      renderItem={({ item }: { item: AiScanResult }) => (
         <Card className="mb-2" onPress={() => onScanPress?.(item)}>
           <View className="flex-row items-center justify-between">
             <View className="flex-1">

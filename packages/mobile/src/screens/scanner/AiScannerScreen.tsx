@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { launchImageLibraryAsync, MediaTypeOptions } from "expo-image-picker";
 import { requestCameraPermission } from "../../utils/permissions";
 import { Button } from "../../components/ui/Button";
 import { CameraOverlay } from "../../components/scanner/CameraOverlay";
@@ -35,7 +36,7 @@ export function AiScannerScreen() {
     isScanning,
     currentResult,
     scanHistory,
-    error,
+    error: _error,
     scanImage,
     fetchScanHistory,
     setCurrentResult,
@@ -145,9 +146,8 @@ export function AiScannerScreen() {
   };
 
   const handleGalleryPick = async () => {
-    const { launchImageLibraryAsync } = require("expo-image-picker");
     const result = await launchImageLibraryAsync({
-      mediaTypes: ["images"],
+      mediaTypes: MediaTypeOptions.Images,
       quality: 0.7,
       base64: true,
     });

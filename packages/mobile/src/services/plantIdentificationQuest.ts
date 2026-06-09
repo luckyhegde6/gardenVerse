@@ -1,5 +1,5 @@
 import { api } from "./api";
-import { getItem, setItem, StorageKeys } from "../utils/storage";
+import { getItem, setItem } from "../utils/storage";
 import { logger } from "./logger";
 import type {
   QuestProgress,
@@ -89,7 +89,7 @@ export const plantIdQuest = {
   async checkAndAwardIdentificationQuest(
     speciesId: string,
     speciesName: string,
-    confidence: number,
+    _confidence: number,
   ): Promise<{ xpAwarded: number; isNewSpecies: boolean; questProgress: QuestProgress[] }> {
     const speciesSet = new Set<string>(await loadJson<string[]>(STORAGE_KEYS.SPECIES_SET, []));
     const progress = await loadJson<QuestProgress[]>(
@@ -272,7 +272,7 @@ export const plantIdQuest = {
       await saveJson(STORAGE_KEYS.QUEST_PROGRESS, updated);
 
       return { success: true, xpAwarded, creditsAwarded };
-    } catch (err) {
+    } catch {
       logger.warn("[PlantIdQuest] Failed to claim quest on server", {
         source: "plantIdQuest",
         context: "claim",

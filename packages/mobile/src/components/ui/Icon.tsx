@@ -1,6 +1,5 @@
 import React from "react";
 import { Text, TextStyle, StyleSheet } from "react-native";
-import { colors } from "../../styles/theme";
 
 type IconSize = "sm" | "md" | "lg" | "xl";
 

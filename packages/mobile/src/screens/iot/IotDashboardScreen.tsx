@@ -11,15 +11,12 @@ import { DeviceCard } from "../../components/iot/DeviceCard";
 import { SensorGauge } from "../../components/iot/SensorGauge";
 import { SensorChart } from "../../components/iot/SensorChart";
 import { Card } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 
 export function IotDashboardScreen() {
   const { devices, readings, isLoading, error, refresh } = useIot();
   const [refreshing, setRefreshing] = useState(false);
-  const [expandedSensor, setExpandedSensor] = useState<string | null>(null);
 
   const onRefresh = async () => {
     setRefreshing(true);

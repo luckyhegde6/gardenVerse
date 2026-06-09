@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { GroupCard } from "../../components/community/GroupCard";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 import { Group } from "../../types";
 import api from "../../services/api";

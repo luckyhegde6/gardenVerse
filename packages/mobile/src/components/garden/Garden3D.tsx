@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo, useCallback, useState } from 'react'
+import React, { useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, StyleSheet, PanResponder, LayoutChangeEvent, Platform, Text } from 'react-native'
 import { GLView } from 'expo-gl'
 import * as THREE from 'three'
@@ -79,7 +79,7 @@ function buildHerb(group: THREE.Group, data: typeof PLANT_DATA[string], gs: numb
   c.position.y = h * 0.55; c.scale.set(1, 0.5, 1); group.add(c)
 }
 
-function buildTree(group: THREE.Group, data: typeof PLANT_DATA[string], gs: number, health: number) {
+function buildTree(group: THREE.Group, data: typeof PLANT_DATA[string], gs: number, _health: number) {
   const s = 0.2 + gs * 0.008; const h = 1.5 * s
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, h * 0.5, 6),
     new THREE.MeshStandardMaterial({ color: 0x8b4513 }))
@@ -130,7 +130,7 @@ function buildBerry(group: THREE.Group, data: typeof PLANT_DATA[string], gs: num
   l.position.y = h * 0.2; l.scale.set(1.2, 0.2, 0.8); group.add(l)
 }
 
-function buildGrain(group: THREE.Group, data: typeof PLANT_DATA[string], gs: number, health: number) {
+function buildGrain(group: THREE.Group, data: typeof PLANT_DATA[string], gs: number, _health: number) {
   const s = 0.2 + gs * 0.008; const h = data.height * s
   for (let i = 0; i < 3; i++) {
     const st = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, h * 0.85, 4),
@@ -501,7 +501,7 @@ export function Garden3D({ selectedCropId, onTilePress, onPlantPress }: Garden3D
   }), [crops, onTilePress])
 
   const soilQuality = selectedGarden?.soilQuality ?? 50
-  const irrigationLevel = selectedGarden?.irrigationLevel ?? 50
+  const _irrigationLevel = selectedGarden?.irrigationLevel ?? 50
 
   if (Platform.OS === 'web') {
     return (
@@ -595,7 +595,6 @@ export function Garden3D({ selectedCropId, onTilePress, onPlantPress }: Garden3D
               const crop = crops.find((c: any) => c.id === cropId)
               if (!crop) return
               const cgs = crop.growthStage ?? gs
-              const scale = 0.3 + cgs * 0.007
               const bob = Math.sin(time * 0.6 + (cropId?.charCodeAt(0) || 0)) * 0.015 * (0.3 + cgs * 0.005)
               group.position.y = bob
               group.rotation.y = Math.sin(time * 0.1 + (cropId?.charCodeAt(0) || 0)) * 0.03

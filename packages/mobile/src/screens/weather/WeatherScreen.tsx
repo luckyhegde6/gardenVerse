@@ -5,7 +5,7 @@ import { WeatherCard } from "../../components/weather/WeatherCard";
 import { ForecastCard } from "../../components/weather/ForecastCard";
 import { WeatherAlert } from "../../components/weather/WeatherAlert";
 import { Card } from "../../components/ui/Card";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+// import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 
