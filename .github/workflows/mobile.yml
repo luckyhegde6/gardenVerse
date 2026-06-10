@@ -57,7 +57,7 @@ jobs:
   eas-build:
     runs-on: ubuntu-latest
     needs: [lint, typecheck, test]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && secrets.EXPO_TOKEN != '' && secrets.EAS_PROJECT_ID != ''
     defaults:
       run:
         working-directory: packages/mobile
@@ -67,6 +67,8 @@ jobs:
         with:
           node-version: 24
       - run: npm install
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
       - name: EAS Build (production)
         run: npx eas build --profile production --platform all --non-interactive
         env:
