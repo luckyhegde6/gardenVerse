@@ -47,7 +47,7 @@
     "prisma:generate": "npm run prisma:generate -w packages/admin",
     "prisma:migrate": "npm run prisma:migrate -w packages/admin",
     "prisma:seed": "npm run prisma:seed -w packages/admin",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "script:docker-local": "powershell -ExecutionPolicy Bypass -File scripts/docker-local.ps1",
     "script:docker-prod-debug": "powershell -ExecutionPolicy Bypass -File scripts/docker-prod-debug.ps1",
     "script:health-check": "powershell -ExecutionPolicy Bypass -File scripts/health-check.ps1",

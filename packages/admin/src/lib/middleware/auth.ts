@@ -2,7 +2,11 @@ import jwt from 'jsonwebtoken'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const JWT_SECRET: string = process.env.NEXTAUTH_SECRET ?? (() => { throw new Error('NEXTAUTH_SECRET environment variable is required') })()
+function getJwtSecret(): string {
+  const secret = process.env.NEXTAUTH_SECRET
+  if (!secret) throw new Error('NEXTAUTH_SECRET environment variable is required')
+  return secret
+}
 
 export interface JwtPayload {
   userId: string
@@ -11,11 +15,11 @@ export interface JwtPayload {
 }
 
 export function signToken(payload: JwtPayload, expiresIn = '15m'): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn })
+  return jwt.sign(payload, getJwtSecret(), { expiresIn })
 }
 
 export function verifyToken(token: string): JwtPayload {
-  return jwt.verify(token, JWT_SECRET) as unknown as JwtPayload
+  return jwt.verify(token, getJwtSecret()) as unknown as JwtPayload
 }
 
 export function getTokenFromRequest(request: NextRequest): string | null {
