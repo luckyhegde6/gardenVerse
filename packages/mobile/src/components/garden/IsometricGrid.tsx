@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState, useRef, useCallback } from "react";
-import { View, Text, Pressable, LayoutChangeEvent } from "react-native";
+import { Pressable, LayoutChangeEvent } from "react-native";
 import Svg, {
   G,
   Polygon,
@@ -17,6 +17,7 @@ import Animated, {
   withDelay,
 } from "react-native-reanimated";
 import { Crop, CropStatus } from "../../types";
+import HapticFeedback from "../../utils/haptics";
 import { CropSpriteSVG } from "./CropSpriteSVG";
 
 interface IsometricGridProps {
@@ -126,7 +127,7 @@ function PlantShadow({ sx, sy, size, halfH }: { sx: number; sy: number; size: nu
   );
 }
 
-function GrowthStageDots({ sx, sy, gs, size, halfH }: { sx: number; sy: number; gs: number; size: number; halfH: number }) {
+function GrowthStageDots({ sx, sy, gs, size: _size, halfH }: { sx: number; sy: number; gs: number; size: number; halfH: number }) {
   const stageCount = 4;
   const dotSize = 3;
   const gap = 1.5;
@@ -184,7 +185,7 @@ interface AnimatedTileProps {
   delay: number;
 }
 
-function AnimatedTile({ children, index, delay }: AnimatedTileProps) {
+function _AnimatedTile({ children, index, delay }: AnimatedTileProps) {
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.8);
 
@@ -208,7 +209,7 @@ export function IsometricGrid({
   selectedCropId,
   onTilePress,
   onWaterCrop,
-  onFertilizeCrop,
+  onFertilizeCrop: _onFertilizeCrop,
   soilQuality = 50,
   irrigationLevel = 50,
 }: IsometricGridProps) {
@@ -255,11 +256,13 @@ export function IsometricGrid({
 
     if (crop && lastTap && now - lastTap < 300) {
       lastTapRef.current.set(key, 0);
+      HapticFeedback.medium();
       onWaterCrop?.(crop.id);
       return;
     }
 
     lastTapRef.current.set(key, now);
+    HapticFeedback.light();
     onTilePress?.(col, row, crop);
   }, [onTilePress, onWaterCrop]);
 
@@ -300,8 +303,6 @@ export function IsometricGrid({
         const isSelected = selectedCropId === crop?.id;
         const { sx, sy } = getTileCenter(col, row);
         const hasIrrigation = irrigationLevel > 30;
-        const delay = (row + col) * 30;
-
         const soilColor = getSoilColor(soilQuality, isEmpty, hasIrrigation);
         const borderColor = getTileBorderColor(isSelected, crop);
 

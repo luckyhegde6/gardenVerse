@@ -7,7 +7,6 @@ import Animated, {
   withSequence,
   withDelay,
   interpolate,
-  Easing,
 } from 'react-native-reanimated'
 import { Crop, CropStatus } from '../../types'
 import { CropSprite } from './CropSprite'

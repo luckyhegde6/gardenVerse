@@ -1,129 +1,109 @@
-import React from "react";
-import { View, Text, ScrollView } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { ProgressBar } from "../../components/ui/ProgressBar";
+import GamificationService, {
+  AchievementData,
+} from "../../services/gamification";
 
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  progress: number;
-  maxProgress: number;
-  unlocked: boolean;
-  unlockedAt?: string;
-  xpReward: number;
-}
-
-const MOCK_ACHIEVEMENTS: Achievement[] = [
-  {
-    id: "1",
-    title: "Green Thumb",
-    description: "Plant your first crop",
-    icon: "🌱",
-    progress: 1,
-    maxProgress: 1,
-    unlocked: true,
-    xpReward: 100,
-  },
-  {
-    id: "2",
-    title: "Master Farmer",
-    description: "Harvest 100 crops",
-    icon: "🌾",
-    progress: 45,
-    maxProgress: 100,
-    unlocked: false,
-    xpReward: 500,
-  },
-  {
-    id: "3",
-    title: "Water Wizard",
-    description: "Water crops 500 times",
-    icon: "💧",
-    progress: 234,
-    maxProgress: 500,
-    unlocked: false,
-    xpReward: 300,
-  },
-  {
-    id: "4",
-    title: "Eco Champion",
-    description: "Achieve 1000 sustainability score",
-    icon: "♻️",
-    progress: 750,
-    maxProgress: 1000,
-    unlocked: false,
-    xpReward: 1000,
-  },
-  {
-    id: "5",
-    title: "Social Gardener",
-    description: "Join 5 community groups",
-    icon: "👥",
-    progress: 3,
-    maxProgress: 5,
-    unlocked: false,
-    xpReward: 200,
-  },
-  {
-    id: "6",
-    title: "Streak Master",
-    description: "Maintain a 30-day login streak",
-    icon: "🔥",
-    progress: 12,
-    maxProgress: 30,
-    unlocked: false,
-    xpReward: 750,
-  },
-  {
-    id: "7",
-    title: "Seed Collector",
-    description: "Collect 20 different seed types",
-    icon: "🌰",
-    progress: 14,
-    maxProgress: 20,
-    unlocked: false,
-    xpReward: 400,
-  },
-  {
-    id: "8",
-    title: "IoT Pioneer",
-    description: "Connect 5 IoT devices",
-    icon: "📡",
-    progress: 2,
-    maxProgress: 5,
-    unlocked: false,
-    xpReward: 300,
-  },
-];
+type Achievement = AchievementData;
 
 export function AchievementsScreen() {
-  const unlocked = MOCK_ACHIEVEMENTS.filter((a) => a.unlocked);
-  const inProgress = MOCK_ACHIEVEMENTS.filter((a) => !a.unlocked);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAchievements = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+      const data = await GamificationService.getAchievements();
+      setAchievements(data);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load achievements";
+      setError(message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAchievements();
+  }, [fetchAchievements]);
+
+  const unlocked = achievements.filter((a) => a.completed);
+  const inProgress = achievements.filter((a) => !a.completed);
+  const totalXp = achievements.reduce((s, a) => s + a.xpReward, 0);
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-gray-50 items-center justify-center">
+        <ActivityIndicator size="large" color="#059669" />
+        <Text className="text-sm text-gray-500 mt-3">
+          Loading achievements…
+        </Text>
+      </View>
+    );
+  }
+
+  if (error && achievements.length === 0) {
+    return (
+      <View className="flex-1 bg-gray-50 items-center justify-center px-6">
+        <Text className="text-4xl mb-3">⚠️</Text>
+        <Text className="text-base font-semibold text-gray-900 mb-1">
+          Couldn't load achievements
+        </Text>
+        <Text className="text-sm text-gray-500 text-center mb-4">
+          {error}
+        </Text>
+        <Text
+          className="text-sm font-semibold text-primary-700"
+          onPress={() => fetchAchievements()}
+        >
+          Tap to retry
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
       className="flex-1 bg-gray-50"
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => fetchAchievements(true)}
+          tintColor="#059669"
+        />
+      }
     >
       <View className="px-4 py-4">
         {/* Summary */}
         <Card className="mb-4 items-center py-6 bg-primary-800">
           <Text className="text-4xl mb-2">🏆</Text>
           <Text className="text-white text-2xl font-bold">
-            {unlocked.length}/{MOCK_ACHIEVEMENTS.length}
+            {unlocked.length}/{achievements.length}
           </Text>
           <Text className="text-primary-200 text-sm">
             Achievements Unlocked
           </Text>
           <Text className="text-white/60 text-xs mt-2">
-            {MOCK_ACHIEVEMENTS.reduce(
-              (s, a) => s + a.xpReward,
-              0,
-            ).toLocaleString()}{" "}
-            Total XP Available
+            {totalXp.toLocaleString()} Total XP Available
           </Text>
         </Card>
 
@@ -141,7 +121,7 @@ export function AchievementsScreen() {
                 <Text className="text-3xl mr-3">{achievement.icon}</Text>
                 <View className="flex-1">
                   <Text className="text-sm font-semibold text-gray-900">
-                    {achievement.title}
+                    {achievement.name}
                   </Text>
                   <Text className="text-xs text-gray-500">
                     {achievement.description}
@@ -158,39 +138,52 @@ export function AchievementsScreen() {
         )}
 
         {/* In Progress */}
-        <Text className="text-base font-bold text-gray-900 mb-3">
-          In Progress
-        </Text>
-        {inProgress.map((achievement) => (
-          <Card key={achievement.id} className="mb-3">
-            <View className="flex-row items-start">
-              <Text className="text-2xl mr-3">{achievement.icon}</Text>
-              <View className="flex-1">
-                <Text className="text-sm font-semibold text-gray-900">
-                  {achievement.title}
-                </Text>
-                <Text className="text-xs text-gray-500 mb-2">
-                  {achievement.description}
-                </Text>
-                <ProgressBar
-                  value={achievement.progress}
-                  maxValue={achievement.maxProgress}
-                  height={6}
-                  showLabel
-                  labelPosition="right"
-                />
-                <View className="flex-row justify-between mt-1">
-                  <Text className="text-xs text-gray-400">
-                    {achievement.progress}/{achievement.maxProgress}
-                  </Text>
-                  <Text className="text-xs text-amber-600">
-                    +{achievement.xpReward} XP
-                  </Text>
+        {inProgress.length > 0 && (
+          <>
+            <Text className="text-base font-bold text-gray-900 mb-3">
+              In Progress
+            </Text>
+            {inProgress.map((achievement) => (
+              <Card key={achievement.id} className="mb-3">
+                <View className="flex-row items-start">
+                  <Text className="text-2xl mr-3">{achievement.icon}</Text>
+                  <View className="flex-1">
+                    <Text className="text-sm font-semibold text-gray-900">
+                      {achievement.name}
+                    </Text>
+                    <Text className="text-xs text-gray-500 mb-2">
+                      {achievement.description}
+                    </Text>
+                    <ProgressBar
+                      value={achievement.progress}
+                      maxValue={achievement.maxProgress}
+                      height={6}
+                      showLabel
+                      labelPosition="right"
+                    />
+                    <View className="flex-row justify-between mt-1">
+                      <Text className="text-xs text-gray-400">
+                        {achievement.progress}/{achievement.maxProgress}
+                      </Text>
+                      <Text className="text-xs text-amber-600">
+                        +{achievement.xpReward} XP
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </View>
+              </Card>
+            ))}
+          </>
+        )}
+
+        {achievements.length === 0 && !loading && (
+          <Card className="items-center py-8">
+            <Text className="text-3xl mb-2">🎯</Text>
+            <Text className="text-sm text-gray-500">
+              No achievements yet — start gardening to unlock them!
+            </Text>
           </Card>
-        ))}
+        )}
 
         <View className="h-8" />
       </View>

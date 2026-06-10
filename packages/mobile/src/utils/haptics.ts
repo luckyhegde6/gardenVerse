@@ -8,59 +8,22 @@ type HapticType =
   | "warning"
   | "error";
 
-const HapticFeedback = {
-  light: async () => {
-    if (Platform.OS === "web") return;
-    try {
-      const Haptics = require("expo-haptics");
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
-  },
+// expo-haptics is not installed; provide no-op fallbacks.
+const noop = async () => {};
 
-  medium: async () => {
-    if (Platform.OS === "web") return;
-    try {
-      const Haptics = require("expo-haptics");
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-  },
-
-  heavy: async () => {
-    if (Platform.OS === "web") return;
-    try {
-      const Haptics = require("expo-haptics");
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    } catch {}
-  },
-
-  success: async () => {
-    if (Platform.OS === "web") return;
-    try {
-      const Haptics = require("expo-haptics");
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
-  },
-
-  warning: async () => {
-    if (Platform.OS === "web") return;
-    try {
-      const Haptics = require("expo-haptics");
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    } catch {}
-  },
-
-  error: async () => {
-    if (Platform.OS === "web") return;
-    try {
-      const Haptics = require("expo-haptics");
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } catch {}
-  },
+export const HapticFeedback: Record<string, () => Promise<void>> = {
+  light: noop,
+  medium: noop,
+  heavy: noop,
+  success: noop,
+  warning: noop,
+  error: noop,
 };
 
 export async function triggerHaptic(
   type: HapticType = "medium",
 ): Promise<void> {
+  if (Platform.OS === "web") return;
   await HapticFeedback[type]();
 }
 

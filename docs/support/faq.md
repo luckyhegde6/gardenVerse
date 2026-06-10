@@ -24,9 +24,11 @@ npm run admin:dev              # Start unified app (API + UI on port 3000)
 ```
 
 ### Q: What's the default test credentials?
-- **Admin**: `admin@gardenverse.vercel.app` / `Admin@123456`
-- **Super Admin**: `superadmin@gardenverse.vercel.app` / `password123`
-- **Regular User**: `demo@gardenverse.vercel.app` / `password123`
+- **Admin**: `admin@gardenverse.vercel.app` / _from `ADMIN_DEFAULT_PASSWORD` env var_
+- **Super Admin**: `superadmin@gardenverse.vercel.app` / _from `ADMIN_DEFAULT_PASSWORD` env var_
+- **Regular User**: `demo@gardenverse.vercel.app` / _from `ADMIN_DEFAULT_PASSWORD` env var_
+
+> Passwords are configured via the `ADMIN_DEFAULT_PASSWORD` environment variable. All E2E tests and agents read from `.env` files at runtime.
 
 ---
 

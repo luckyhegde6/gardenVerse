@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import { UserRole, type Prisma } from '@prisma/client'
 import { requireRole, paginated, serverError } from '@/lib/middleware/auth'
 
 export async function GET(request: NextRequest) {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'createdAt'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
 
-    const where: Record<string, unknown> = {}
+    const where: Prisma.UserWhereInput = {}
 
     if (query) {
       where.OR = [
@@ -33,14 +34,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (role) {
-      const roleMap: Record<string, string> = {
-        'user': 'USER',
-        'moderator': 'MODERATOR',
-        'regional_moderator': 'REGIONAL_MODERATOR',
-        'admin': 'ADMIN',
-        'super_admin': 'SUPER_ADMIN',
+      const roleMap: Record<string, UserRole> = {
+        'user': UserRole.USER,
+        'moderator': UserRole.MODERATOR,
+        'regional_moderator': UserRole.REGIONAL_MODERATOR,
+        'admin': UserRole.ADMIN,
+        'super_admin': UserRole.SUPER_ADMIN,
       }
-      where.role = roleMap[role.toLowerCase()] || role.toUpperCase()
+      const mappedRole = roleMap[role.toLowerCase()]
+      if (mappedRole) where.role = mappedRole
     }
 
     if (status === 'blocked') {
@@ -55,22 +57,21 @@ export async function GET(request: NextRequest) {
       where.deletedAt = null
     }
 
-    const orderBy: Record<string, string> = {}
-    const sortFieldMap: Record<string, string> = {
-      'createdAt': 'createdAt',
-      'email': 'email',
-      'username': 'username',
-      'level': 'level',
-      'experience': 'experience',
-      'lastActiveAt': 'lastActiveAt',
-      'sustainabilityScore': 'sustainabilityScore',
+    const sortFieldMap: Record<string, Prisma.UserOrderByWithRelationInput> = {
+      'createdAt': { createdAt: sortOrder === 'asc' ? 'asc' : 'desc' },
+      'email': { email: sortOrder === 'asc' ? 'asc' : 'desc' },
+      'username': { username: sortOrder === 'asc' ? 'asc' : 'desc' },
+      'level': { level: sortOrder === 'asc' ? 'asc' : 'desc' },
+      'experience': { experience: sortOrder === 'asc' ? 'asc' : 'desc' },
+      'lastActiveAt': { lastActiveAt: sortOrder === 'asc' ? 'asc' : 'desc' },
+      'sustainabilityScore': { sustainabilityScore: sortOrder === 'asc' ? 'asc' : 'desc' },
     }
-    orderBy[sortFieldMap[sortBy] || 'createdAt'] = sortOrder === 'asc' ? 'asc' : 'desc'
+    const orderBy: Prisma.UserOrderByWithRelationInput = sortFieldMap[sortBy] || { createdAt: 'desc' }
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
-        where: where as any,
-        orderBy: orderBy as any,
+        where,
+        orderBy,
         take: limit,
         skip: offset,
         select: {
@@ -96,7 +97,7 @@ export async function GET(request: NextRequest) {
           _count: { select: { crops: true } },
         },
       }),
-      prisma.user.count({ where: where as any }),
+      prisma.user.count({ where }),
     ])
 
     return paginated(users, total, page, limit)

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
 import { requireRole, success, badRequest, serverError, paginated } from '@/lib/middleware/auth'
 
 export async function GET(request: NextRequest) {
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || ''
     const contractType = searchParams.get('contractType') || ''
 
-    const where: Record<string, unknown> = {}
+    const where: Prisma.BlockchainTransactionWhereInput = {}
 
     if (status) {
       where.status = status.toUpperCase()
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const [transactions, total] = await Promise.all([
       prisma.blockchainTransaction.findMany({
-        where: where as any,
+        where,
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
           user: { select: { id: true, username: true, displayName: true } },
         },
       }),
-      prisma.blockchainTransaction.count({ where: where as any }),
+      prisma.blockchainTransaction.count({ where }),
     ])
 
     return paginated(transactions, total, page, limit)

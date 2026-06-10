@@ -1,0 +1,35 @@
+# Exclude symlinked skill directories that EAS cannot archive
+.claude/
+.agents/
+claude/
+AGENTS.md
+CLAUDE.md
+
+# Exclude non-essential project files from EAS build
+contracts/
+services/
+docs/
+e2e/
+scripts/
+*.md
+!README.md
+
+# Exclude local development files
+docker-compose*.yml
+.env*
+!.env.example
+.vercel/
+
+# Exclude git files
+.git/
+.gitignore
+.husky/
+
+# Exclude IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Exclude turbo config (not needed for mobile build)
+turbo.json

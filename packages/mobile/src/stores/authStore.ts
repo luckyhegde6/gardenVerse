@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { User } from "../types";
 import AuthService, { LoginRequest, RegisterRequest } from "../services/auth";
-import { getItem, setItem, removeItem, StorageKeys } from "../utils/storage";
+import { getItem, setItem, removeItem, StorageKeys } from "../services/storage";
 
 interface AuthState {
   user: User | null;
@@ -98,7 +98,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (accessToken && userData) {
         try {
-          const user = JSON.parse(userData) as User;
+          const _user = JSON.parse(userData) as User;
           const freshProfile = await AuthService.getProfile();
           await setItem(StorageKeys.USER_DATA, JSON.stringify(freshProfile));
           set({

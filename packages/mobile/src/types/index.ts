@@ -239,6 +239,8 @@ export interface ProfileStackParamList {
    Achievements: undefined;
    Inventory: undefined;
    Invites: undefined;
+   DailyRewards: undefined;
+   Quests: undefined;
  }
 
 export interface PlantSpecies {
@@ -320,6 +322,36 @@ export interface PlantHybridData {
   parent2Name: string;
   resultName: string;
   discoveredAt: string;
+}
+
+export interface QuestProgress {
+  questId: string
+  questKey: string
+  progress: number
+  targetCount: number
+  isCompleted: boolean
+  claimed: boolean
+  claimedAt?: string
+}
+
+export interface CollectionEntry {
+  speciesId: string
+  discoveredAt: string
+  timesPlanted: number
+  timesHarvested: number
+}
+
+export interface IdentifiedPlantPhoto {
+  id: string
+  speciesId: string
+  speciesName: string
+  imageUrl: string
+  confidence: number
+  latitude?: number
+  longitude?: number
+  capturedAt: string
+  xpAwarded: number
+  usedForTraining: boolean
 }
 
 export interface RootStackParamList {

@@ -12,7 +12,7 @@ import { Button } from "../../src/components/ui/Button";
 import { Input } from "../../src/components/ui/Input";
 import { validateEmail } from "../../src/utils/validation";
 import AuthService from "../../src/services/auth";
-import { colors, spacing, borderRadius, typography, globalStyles } from "../../src/styles/theme";
+import { colors, spacing, typography, globalStyles } from "../../src/styles/theme";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();

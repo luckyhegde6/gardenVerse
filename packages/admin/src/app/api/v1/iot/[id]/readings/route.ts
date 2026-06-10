@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
+import { SensorType } from '@prisma/client'
 import { requireAuth, success, badRequest, notFound, serverError, paginated } from '@/lib/middleware/auth'
 import { startRequestLog, finishRequestLog, logApiError } from '@/lib/middleware/logging'
 
@@ -21,17 +23,17 @@ export async function GET(
     const offset = (page - 1) * limit
     const sensorType = searchParams.get('sensorType')
 
-    const where: Record<string, unknown> = { deviceId: params.id }
-    if (sensorType) where.sensorType = sensorType.toUpperCase()
+    const where: Prisma.SensorReadingWhereInput = { deviceId: params.id }
+    if (sensorType) where.sensorType = sensorType.toUpperCase() as SensorType
 
     const [readings, total] = await Promise.all([
       prisma.sensorReading.findMany({
-        where: where as any,
+        where,
         orderBy: { timestamp: 'desc' },
         take: limit,
         skip: offset,
       }),
-      prisma.sensorReading.count({ where: where as any }),
+      prisma.sensorReading.count({ where }),
     ])
 
     finishRequestLog(ctx, request, 200)
@@ -79,7 +81,7 @@ export async function POST(
 
     const reading = await prisma.sensorReading.create({
       data: {
-        sensorType: normalizedType as any,
+        sensorType: normalizedType as SensorType,
         value: Number(value),
         unit: unit as string,
         deviceId: params.id,

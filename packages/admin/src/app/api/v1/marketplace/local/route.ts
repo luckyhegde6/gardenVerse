@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
 import { requireAuth, success, badRequest, serverError, paginated } from '@/lib/middleware/auth'
 import { startRequestLog, finishRequestLog, logApiError } from '@/lib/middleware/logging'
 
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause: active listings from same region, excluding user's own
-    const where: Record<string, unknown> = {
+    const where: Prisma.MarketplaceListingWhereInput = {
       status: 'ACTIVE',
       sellerId: { not: auth.payload.userId },
     }
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     const [items, total] = await Promise.all([
       prisma.marketplaceListing.findMany({
-        where: where as any,
+        where,
         include: {
           seller: {
             select: {
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         skip: offset,
       }),
-      prisma.marketplaceListing.count({ where: where as any }),
+      prisma.marketplaceListing.count({ where }),
     ])
 
     finishRequestLog(ctx, request, 200)

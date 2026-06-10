@@ -5,8 +5,9 @@ import { WeatherCard } from "../../components/weather/WeatherCard";
 import { ForecastCard } from "../../components/weather/ForecastCard";
 import { WeatherAlert } from "../../components/weather/WeatherAlert";
 import { Card } from "../../components/ui/Card";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+// import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 
 export function WeatherScreen() {
   const { weather, isLoading, error, refresh } = useWeather();
@@ -19,7 +20,14 @@ export function WeatherScreen() {
   };
 
   if (isLoading && !weather) {
-    return <LoadingSpinner fullScreen message="Fetching weather data..." />;
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: "#f9fafb" }} contentContainerStyle={{ padding: 16 }}>
+        <SkeletonLoader height={180} style={{ marginBottom: 16, borderRadius: 16 }} />
+        <SkeletonLoader height={60} style={{ marginBottom: 16, borderRadius: 12 }} />
+        <SkeletonLoader height={200} style={{ marginBottom: 16, borderRadius: 16 }} />
+        <SkeletonLoader height={120} style={{ borderRadius: 16 }} />
+      </ScrollView>
+    );
   }
 
   if (error && !weather) {

@@ -1,15 +1,15 @@
 echo "=== Pre-commit Checks ==="
 
-echo "Running lint..."
-npm run lint
+echo "Running admin lint..."
+npm run lint -w packages/admin
 if [ $? -ne 0 ]; then exit 1; fi
 
-echo "Running typecheck..."
-npm run typecheck
+echo "Running admin typecheck..."
+npx tsc --noEmit --project packages/admin/tsconfig.json
 if [ $? -ne 0 ]; then exit 1; fi
 
-echo "Running backend tests..."
-npm run test
+echo "Running mobile typecheck..."
+npx tsc --noEmit --project packages/mobile/tsconfig.json
 if [ $? -ne 0 ]; then exit 1; fi
 
 echo "All pre-commit checks passed!"

@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
 import { success, serverError } from '@/lib/middleware/auth'
 import { listTasks, recordTaskRun } from '@/lib/cron'
 
-const CRON_SECRET = process.env.CRON_SECRET || ''
+const CRON_SECRET = process.env.CRON_SECRET
 
 const REGIONS = [
   'IN-KA', 'IN-MH', 'IN-DL', 'IN-TG', 'IN-TN', 'IN-WB', 'IN-GJ', 'IN-UP', 'IN-RJ', 'IN-PB',
@@ -25,6 +26,10 @@ function randomWeather() {
 }
 
 export async function GET(request: NextRequest) {
+  if (!CRON_SECRET) {
+    return new Response(JSON.stringify({ error: 'CRON_SECRET not configured' }), { status: 500 })
+  }
+
   const authHeader = request.headers.get('authorization') || ''
   const cronSecret = request.headers.get('x-cron-secret') || ''
 
@@ -60,7 +65,7 @@ export async function GET(request: NextRequest) {
               windSpeed: Math.round(weather.windSpeed * 10) / 10,
               sunlightHours: Math.round(weather.sunlightHours * 10) / 10,
               condition: weather.condition,
-              forecast: forecast as any,
+              forecast: forecast as Prisma.InputJsonValue,
               expiresAt: new Date(Date.now() + 3 * 60 * 60 * 1000),
             },
           })
@@ -75,7 +80,7 @@ export async function GET(request: NextRequest) {
               windSpeed: Math.round(weather.windSpeed * 10) / 10,
               sunlightHours: Math.round(weather.sunlightHours * 10) / 10,
               condition: weather.condition,
-              forecast: forecast as any,
+              forecast: forecast as Prisma.InputJsonValue,
               expiresAt: new Date(Date.now() + 3 * 60 * 60 * 1000),
             },
           })

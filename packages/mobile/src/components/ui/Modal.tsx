@@ -5,7 +5,6 @@ import {
   Animated,
   Dimensions,
   TouchableWithoutFeedback,
-  StyleSheet,
 } from "react-native";
 
 interface ModalProps {

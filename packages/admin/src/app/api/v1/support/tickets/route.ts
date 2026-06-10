@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
 import { requireRole, success, serverError } from '@/lib/middleware/auth'
 
 export async function GET(request: NextRequest) {
@@ -13,12 +14,12 @@ export async function GET(request: NextRequest) {
     const page = Math.max(parseInt(searchParams.get('page') || '1'), 1)
     const offset = (page - 1) * limit
 
-    const where: Record<string, unknown> = {}
+    const where: Prisma.SupportTicketWhereInput = {}
     if (status) where.status = status
 
     const [tickets, total] = await Promise.all([
       prisma.supportTicket.findMany({
-        where: where as any,
+        where,
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
           assignedTo: { select: { id: true, username: true } },
         },
       }),
-      prisma.supportTicket.count({ where: where as any }),
+      prisma.supportTicket.count({ where }),
     ])
 
     return success({ tickets, total, page, limit })

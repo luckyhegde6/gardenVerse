@@ -1,8 +1,12 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { signToken, success, badRequest, unauthorized, serverError } from '@/lib/middleware/auth'
+import { authRateLimit } from '@/lib/middleware/rate-limit'
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = authRateLimit(request)
+  if (rateLimitResult) return rateLimitResult
+
   try {
     const body = await request.json()
     const { refreshToken } = body as { refreshToken?: string }
@@ -11,7 +15,10 @@ export async function POST(request: NextRequest) {
       return badRequest('Refresh token is required')
     }
 
-    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.NEXTAUTH_SECRET || 'fallback'
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.NEXTAUTH_SECRET
+    if (!refreshSecret) {
+      return serverError('JWT_REFRESH_SECRET environment variable is required')
+    }
     let payload: { userId: string; email: string; role: string }
 
     try {

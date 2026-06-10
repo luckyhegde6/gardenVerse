@@ -6,6 +6,8 @@ import {
   RefreshControl,
   TouchableOpacity,
   StyleSheet,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -26,19 +28,29 @@ import { WaterButton } from '../../components/garden/WaterButton';
 import { FertilizeButton } from '../../components/garden/FertilizeButton';
 import { HarvestButton } from '../../components/garden/HarvestButton';
 import { Badge } from '../../components/ui/Badge';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { EmptyState } from '../../components/ui/EmptyState';
+// import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+// import { EmptyState } from '../../components/ui/EmptyState';
 import { GrowthOverlay } from '../../components/garden/GrowthOverlay';
 import { WeatherBar } from '../../components/garden/WeatherBar';
 import { WalkthroughOverlay, useWalkthrough } from '../../components/garden/WalkthroughOverlay';
 import { Crop, CollectionStats, GardenType, WeatherData } from '../../types';
 import GamificationService from '../../services/gamification';
-import { growthEngine, GrowthState } from '../../services/growthEngine';
+import { growthEngine, GrowthState, WeatherCondition } from '../../services/growthEngine';
 import { useGardenStore } from '../../stores/gardenStore';
+import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import api from '../../services/api';
 import { requestLocationPermission, requestNotificationPermission } from '../../utils/permissions';
+import HapticFeedback from '../../utils/haptics';
+import { useTheme } from '../../styles/ThemeContext';
+import { plantIdQuest } from '../../services/plantIdentificationQuest';
+import type { IdentifiedPlantPhoto } from '../../types';
+import { SyncStatusIndicator } from '../../components/SyncStatusIndicator';
+import { SaveGameButton } from '../../components/SaveGameButton';
+import { gameSaveSync } from '../../services/gameSaveSync';
+import { useToast } from '../../components/ui/Toast';
 
 export function GardenScreen() {
+  const { theme } = useTheme();
   const router = useRouter();
   const {
     crops,
@@ -67,13 +79,55 @@ export function GardenScreen() {
   } = useWalkthrough();
 
   const [locationPermission, setLocationPermission] = useState<boolean>(false);
-  const [notificationPermission, setNotificationPermission] = useState<boolean>(false);
+  const [, setNotificationPermission] = useState<boolean>(false);
 
   const [collectionStats, setCollectionStats] = useState<CollectionStats>({
     discovered: 0,
     total: 0,
     completion: 0,
   });
+
+  // ─── Plant-ID quest state ──────────────────────────────────────────────
+  const [recentIdentifications, setRecentIdentifications] = useState<IdentifiedPlantPhoto[]>([]);
+  const [speciesIdentifiedCount, setSpeciesIdentifiedCount] = useState(0);
+
+  // ─── Save & Sync ────────────────────────────────────────────────────────
+  const { show: showToast, hide: _hideToast, ToastComponent } = useToast();
+  const autoSaveDone = useRef(false);
+
+  // Auto-save on app background/resume
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // App going to background: save and sync
+        try {
+          await gameSaveSync.saveAndSyncOnBackground({
+            crops,
+            gardens: useGardenStore.getState().gardens,
+            questProgress: [],
+            collections: [],
+          });
+        } catch {
+          // Silent fail on background save
+        }
+      } else if (nextAppState === 'active') {
+        // App coming to foreground: sync
+        autoSaveDone.current = false;
+        try {
+          const result = await gameSaveSync.syncWithServer();
+          if (result.success && !autoSaveDone.current) {
+            autoSaveDone.current = true;
+            showToast({ message: 'Game saved', type: 'success', duration: 2000 });
+          }
+        } catch {
+          // Silent fail on resume sync
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [crops, showToast]);
 
   const animatedProgress = useSharedValue(0);
   const viewTransition = useSharedValue(0);
@@ -86,6 +140,19 @@ export function GardenScreen() {
     try {
       const stats = await GamificationService.getCollectionStats();
       setCollectionStats(stats);
+    } catch {
+      // Silent fail
+    }
+  }, []);
+
+  // ─── Fetch recent plant identifications ────────────────────────────────────
+
+  const fetchRecentIdentifications = useCallback(async () => {
+    try {
+      const photos = await plantIdQuest.getPlantPhotoCollection();
+      setRecentIdentifications(photos.slice(0, 5));
+      const count = await plantIdQuest.getSpeciesIdentifiedCount();
+      setSpeciesIdentifiedCount(count);
     } catch {
       // Silent fail
     }
@@ -116,7 +183,8 @@ export function GardenScreen() {
   useEffect(() => {
     fetchCollectionStats();
     fetchWeather();
-  }, [fetchCollectionStats, fetchWeather]);
+    fetchRecentIdentifications();
+  }, [fetchCollectionStats, fetchWeather, fetchRecentIdentifications]);
 
   // ─── Growth Engine Integration ──────────────────────────────────────────
   const engineStarted = useRef(false)
@@ -142,6 +210,24 @@ export function GardenScreen() {
       growthEngine.updateCrops(crops)
     }
   }, [crops])
+
+  // ─── Feed weather data to growth engine ─────────────────────────────────
+  useEffect(() => {
+    if (!weather || !engineStarted.current) return
+    const conditionMap: Record<string, WeatherCondition> = {
+      Clear: "clear", Clouds: "cloudy", Rain: "rain", Drizzle: "rain",
+      Thunderstorm: "heavy_rain", Snow: "frost", Mist: "cloudy",
+      Fog: "cloudy", Haze: "cloudy", Wind: "wind",
+    }
+    const condition = conditionMap[weather.condition] || "clear"
+    const isHeatwave = weather.temperature > 38 && condition === "clear"
+    growthEngine.setWeather({
+      condition: isHeatwave ? "heatwave" : condition,
+      temperature: weather.temperature,
+      humidity: weather.humidity,
+      rainfall: weather.rainfall,
+    })
+  }, [weather])
 
   // ─── Engine state polling ───────────────────────────────────────────────
   useEffect(() => {
@@ -169,6 +255,7 @@ export function GardenScreen() {
   }, [refreshGardens, fetchCollectionStats, fetchWeather]);
 
   const switchView = useCallback((mode: '2d' | '3d') => {
+    HapticFeedback.light();
     viewTransition.value = withSpring(0, { damping: 15 });
     setTimeout(() => {
       setViewMode(mode);
@@ -191,6 +278,7 @@ export function GardenScreen() {
 
   const handleTilePress = useCallback(
     (col: number, row: number, crop?: Crop) => {
+      HapticFeedback.light();
       if (crop) {
         if (selectedCropId === crop.id) {
           router.push({ pathname: '/crop-detail/[cropId]', params: { cropId: crop.id } });
@@ -223,6 +311,7 @@ export function GardenScreen() {
 
   const handleWater = useCallback(
     async (cropId: string) => {
+      HapticFeedback.medium();
       try {
         await waterCrop(cropId);
         growthEngine.onCropAction(cropId, 'water');
@@ -235,6 +324,7 @@ export function GardenScreen() {
 
   const handleFertilize = useCallback(
     async (cropId: string) => {
+      HapticFeedback.medium();
       try {
         await fertilizeCrop(cropId);
         growthEngine.onCropAction(cropId, 'fertilize');
@@ -247,6 +337,7 @@ export function GardenScreen() {
 
   const handleHarvest = useCallback(
     async (cropId: string) => {
+      HapticFeedback.success();
       try {
         await harvestCrop(cropId);
       } catch {
@@ -261,7 +352,7 @@ export function GardenScreen() {
     : null;
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* ─── Plant-Centric Header ──────────────────────────────────────────── */}
       <View style={styles.plantHeader}>
         <View style={styles.headerRow}>
@@ -274,6 +365,7 @@ export function GardenScreen() {
             </Text>
           </View>
           <View style={styles.headerRight}>
+            <SyncStatusIndicator compact />
             <View style={styles.collectionBadge}>
               <Text style={styles.collectionBadgeText}>
                 🌿 {collectionStats.discovered}/{collectionStats.total}
@@ -471,8 +563,62 @@ export function GardenScreen() {
           </View>
         )}
 
+        {/* ─── Loading Skeletons (while data loads) ─────────────────────────── */}
+        {isLoading && (
+          <View className="px-4 mb-4">
+            <View style={styles.sectionCard}>
+              <SkeletonLoader width="50%" height={20} borderRadius={6} style={{ marginBottom: 12 }} />
+              <SkeletonLoader width={60} height={22} borderRadius={11} style={{ marginBottom: 12 }} />
+              <View style={{ marginBottom: 8 }}>
+                <SkeletonLoader width="100%" height={8} borderRadius={4} />
+              </View>
+              <SkeletonLoader width="70%" height={12} borderRadius={4} />
+            </View>
+          </View>
+        )}
+
+        {isLoading && (
+          <View className="px-4 mb-4">
+            <View style={styles.sectionCard}>
+              <SkeletonLoader width="40%" height={20} borderRadius={6} style={{ marginBottom: 12 }} />
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={[styles.streakRow, { borderBottomColor: '#f3f4f6', borderBottomWidth: 1 }]}>
+                  <View style={styles.streakLeft}>
+                    <SkeletonLoader width={20} height={20} borderRadius={10} />
+                    <View style={{ marginLeft: 10, flex: 1 }}>
+                      <SkeletonLoader width="80%" height={14} borderRadius={4} style={{ marginBottom: 4 }} />
+                      <SkeletonLoader width="50%" height={10} borderRadius={4} />
+                    </View>
+                  </View>
+                  <SkeletonLoader width={30} height={20} borderRadius={6} />
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {isLoading && (
+          <View className="px-4 mb-6">
+            <View style={styles.sectionCard}>
+              <View className="flex-row items-center justify-between mb-2">
+                <SkeletonLoader width="45%" height={20} borderRadius={6} />
+                <SkeletonLoader width={50} height={22} borderRadius={11} />
+              </View>
+              <View className="flex-row items-center justify-between mb-2">
+                <SkeletonLoader width={60} height={28} borderRadius={6} />
+                <SkeletonLoader width={60} height={28} borderRadius={6} />
+                <SkeletonLoader width={60} height={28} borderRadius={6} />
+              </View>
+              <SkeletonLoader width="100%" height={8} borderRadius={4} style={{ marginTop: 12 }} />
+              <SkeletonLoader width={80} height={28} borderRadius={10} style={{ marginTop: 16 }} />
+            </View>
+          </View>
+        )}
+
         {/* ─── Collections Section ─────────────────────────────────────────── */}
-        <View className="px-4 mb-4">
+        {!isLoading && (
+          <>
+          <View className="px-4 mb-4">
           <View style={styles.sectionCard}>
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-base font-bold text-gray-900">
@@ -546,7 +692,7 @@ export function GardenScreen() {
                   streakColor = '#16a34a';
                 } else if (streak >= 3) {
                   streakLabel += ' 👍';
-                  streakColor = '#6366f1';
+                  // streakColor = '#6366f1';
                 }
                 return (
                   <TouchableOpacity
@@ -574,7 +720,7 @@ export function GardenScreen() {
                       >
                         {streak}
                       </Text>
-                      <Text style={styles.streakLabel}>days</Text>
+                      <Text style={styles.streakLabel}>{streakLabel}</Text>
                     </View>
                   </TouchableOpacity>
                 );
@@ -655,6 +801,8 @@ export function GardenScreen() {
             </TouchableOpacity>
           </View>
         </View>
+          </>
+        )}
 
         {/* Bottom padding for overlay */}
         <View className="h-96" />
@@ -677,6 +825,51 @@ export function GardenScreen() {
         engineState={engineState}
         isVirtual={isVirtual}
       />
+
+      {/* ─── Floating "Identify Plant" Button ──────────────────────────────── */}
+      <TouchableOpacity
+        style={styles.floatingIdentifyButton}
+        onPress={() => {
+          HapticFeedback.medium();
+          router.push("/ai-scanner" as any);
+        }}
+        activeOpacity={0.85}
+        accessibilityLabel="Identify a plant"
+        accessibilityRole="button"
+      >
+        <Text style={styles.floatingIdentifyIcon}>📸</Text>
+        <Text style={styles.floatingIdentifyText}>Identify Plant</Text>
+      </TouchableOpacity>
+
+      {/* ─── Recent Identification Badges ──────────────────────────────────── */}
+      {recentIdentifications.length > 0 && (
+        <View style={styles.idBadgeContainer}>
+          {recentIdentifications.slice(0, 3).map((photo, idx) => (
+            <View
+              key={photo.id}
+              style={[
+                styles.idBadge,
+                { right: 16 + idx * 44 },
+              ]}
+            >
+              <Text style={styles.idBadgeText}>
+                {photo.speciesName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          ))}
+          {speciesIdentifiedCount > 0 && (
+            <View style={[styles.idBadge, styles.idBadgeCount, { right: 16 + Math.min(recentIdentifications.length, 3) * 44 }]}>
+              <Text style={styles.idBadgeCountText}>+{speciesIdentifiedCount}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* ─── Save Game FAB ──────────────────────────────────────────────────── */}
+      <SaveGameButton />
+
+      {/* ─── Auto-save Toast ────────────────────────────────────────────────── */}
+      {ToastComponent}
     </View>
   );
 }
@@ -848,5 +1041,73 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#ffffff',
+  },
+
+  // ─── Floating Identify Button ────────────────────────────────────────────
+  floatingIdentifyButton: {
+    position: "absolute",
+    bottom: 24,
+    right: 16,
+    backgroundColor: "#0d2818",
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  floatingIdentifyIcon: {
+    fontSize: 18,
+  },
+  floatingIdentifyText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#ffffff",
+  },
+
+  // ─── Recent ID Badges ────────────────────────────────────────────────────
+  idBadgeContainer: {
+    position: "absolute",
+    top: 8,
+    right: 0,
+    flexDirection: "row",
+  },
+  idBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#10b981",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  idBadgeText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+  idBadgeCount: {
+    backgroundColor: "#6366f1",
+    width: "auto" as any,
+    paddingHorizontal: 8,
+    borderRadius: 18,
+  },
+  idBadgeCountText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#ffffff",
   },
 });

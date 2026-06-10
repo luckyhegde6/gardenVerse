@@ -15,6 +15,7 @@ import { useGarden } from "../../hooks/useGarden";
 import { PlantSpecies } from "../../types";
 import api from "../../services/api";
 import debounce from "../../utils/debounce";
+import HapticFeedback from "../../utils/haptics";
 
 const CATEGORIES = [
   { key: "all", label: "All", icon: "🌱" },
@@ -43,12 +44,12 @@ function detectCategory(name: string): string {
   return "vegetable";
 }
 
-const DIFFICULTY_COLORS: Record<string, string> = {
-  EASY: "bg-green-100 text-green-700",
-  MEDIUM: "bg-amber-100 text-amber-700",
-  HARD: "bg-red-100 text-red-700",
-  EXPERT: "bg-purple-100 text-purple-700",
-};
+// const DIFFICULTY_COLORS: Record<string, string> = {
+//   EASY: "bg-green-100 text-green-700",
+//   MEDIUM: "bg-amber-100 text-amber-700",
+//   HARD: "bg-red-100 text-red-700",
+//   EXPERT: "bg-purple-100 text-purple-700",
+// };
 
 const PLANT_EMOJIS: Record<string, string> = {
   tomato: "🍅", basil: "🌿", lettuce: "🥬", carrot: "🥕", spinach: "🥬",
@@ -85,7 +86,7 @@ export function PlantCropScreen() {
   const [loadingPlants, setLoadingPlants] = useState(true);
   const [season, setSeason] = useState("");
   const [category, setCategory] = useState("all");
-  const [showCoinsAnimation, setShowCoinsAnimation] = useState(false);
+  const [_showCoinsAnimation, setShowCoinsAnimation] = useState(false);
 
   const isVirtual = selectedGarden?.type === "VIRTUAL";
 
@@ -116,8 +117,8 @@ export function PlantCropScreen() {
   }, []);
 
   const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      if (query.length >= 2) fetchPlants(season, query);
+    debounce((query: unknown) => {
+      if ((query as string).length >= 2) fetchPlants(season, query as string);
       else fetchPlants(season);
     }, 400),
     [season, fetchPlants],
@@ -132,6 +133,7 @@ export function PlantCropScreen() {
 
   const handlePlant = async () => {
     if (!selectedSeed || !selectedPlot) return;
+    HapticFeedback.success();
     try {
       await plantCrop(selectedSeed.commonName, selectedSeed.scientificName, selectedPlot.x, selectedPlot.y);
       setShowCoinsAnimation(true);
@@ -139,7 +141,9 @@ export function PlantCropScreen() {
         setShowCoinsAnimation(false);
         router.back();
       }, 1200);
-    } catch {}
+    } catch {
+      // noop
+    }
   };
 
   return (
@@ -175,7 +179,7 @@ export function PlantCropScreen() {
                   return (
                     <TouchableOpacity
                       key={`${row}-${col}`}
-                      onPress={() => !existingCrop && setSelectedPlot({ x: col, y: row })}
+                      onPress={() => { if (!existingCrop) { HapticFeedback.light(); setSelectedPlot({ x: col, y: row }); } }}
                       disabled={!!existingCrop}
                       className={`flex-1 aspect-square rounded-lg items-center justify-center border-2 ${
                         isSelected
@@ -220,7 +224,7 @@ export function PlantCropScreen() {
             {CATEGORIES.map(cat => (
               <TouchableOpacity
                 key={cat.key}
-                onPress={() => setCategory(cat.key)}
+                onPress={() => { HapticFeedback.light(); setCategory(cat.key); }}
                 className={`flex-row items-center px-3 py-2 rounded-full border ${
                   category === cat.key ? "bg-primary-600 border-primary-600" : "bg-white border-gray-200"
                 }`}
@@ -259,7 +263,7 @@ export function PlantCropScreen() {
               return (
                 <TouchableOpacity
                   key={plant.id}
-                  onPress={() => setSelectedSeed(plant)}
+                  onPress={() => { HapticFeedback.light(); setSelectedSeed(plant); }}
                   activeOpacity={0.7}
                   className={`bg-white rounded-2xl p-4 border-2 w-[48%] ${isSelected ? "border-primary-500" : "border-gray-100"}`}
                 >

@@ -5,7 +5,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  TouchableOpacity,
   StyleSheet,
 } from "react-native";
 import { useRouter, Link } from "expo-router";
@@ -13,7 +12,7 @@ import { Button } from "../../src/components/ui/Button";
 import { Input } from "../../src/components/ui/Input";
 import { useAuthStore } from "../../src/stores/authStore";
 import { validateEmail, validatePassword } from "../../src/utils/validation";
-import { colors, spacing, borderRadius, typography, globalStyles } from "../../src/styles/theme";
+import { colors, spacing, typography, globalStyles } from "../../src/styles/theme";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -38,7 +37,9 @@ export default function LoginScreen() {
     try {
       await login({ email, password });
       router.replace("/(tabs)/garden");
-    } catch {}
+    } catch {
+      // noop
+    }
   };
 
   return (

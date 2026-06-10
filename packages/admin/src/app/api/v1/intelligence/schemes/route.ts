@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
 import { success, serverError, paginated } from '@/lib/middleware/auth'
 import { startRequestLog, finishRequestLog, logApiError } from '@/lib/middleware/logging'
 
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)))
     const region = searchParams.get('region')
 
-    const where: Record<string, unknown> = { type: 'SCHEME' }
+    const where: Prisma.GovernmentAdvisoryWhereInput = { type: 'SCHEME' }
 
     if (region) {
       where.region = { contains: region, mode: 'insensitive' }
@@ -22,12 +23,12 @@ export async function GET(request: NextRequest) {
 
     const [schemes, total] = await Promise.all([
       prisma.governmentAdvisory.findMany({
-        where: where as any,
+        where,
         orderBy: { publishedAt: 'desc' },
         take: limit,
         skip: offset,
       }),
-      prisma.governmentAdvisory.count({ where: where as any }),
+      prisma.governmentAdvisory.count({ where }),
     ])
 
     finishRequestLog(ctx, request, 200)

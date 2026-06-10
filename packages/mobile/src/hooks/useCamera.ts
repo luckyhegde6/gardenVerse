@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { Camera } from "expo-camera";
 import { ensurePermission } from "../utils/permissions";
 
 interface UseCameraReturn {

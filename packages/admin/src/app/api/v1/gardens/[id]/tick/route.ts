@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import { CropStatus } from '@prisma/client'
 import { requireAuth } from '@/lib/middleware/auth'
 import { success, badRequest, notFound, serverError } from '@/lib/middleware/auth'
 
@@ -47,12 +48,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
             stressFactor = Math.max(0, stressFactor - 2)
           }
 
-          if (growthStage <= 0) status = 'SEED' as any
-          else if (growthStage <= 25) status = 'SPROUTING' as any
-          else if (growthStage <= 75) status = 'GROWING' as any
-          else if (growthStage >= 100) status = 'MATURE' as any
+          if (growthStage <= 0) status = CropStatus.SEED
+          else if (growthStage <= 25) status = CropStatus.SPROUTING
+          else if (growthStage <= 75) status = CropStatus.GROWING
+          else if (growthStage >= 100) status = CropStatus.MATURE
 
-          if (health <= 0) status = 'WILTED' as any
+          if (health <= 0) status = CropStatus.WILTED
 
           changed = true
         }

@@ -2,8 +2,12 @@ import { NextRequest } from 'next/server'
 import bcrypt from 'bcrypt'
 import { prisma } from '@/lib/prisma/client'
 import { signToken, success, badRequest, unauthorized, serverError } from '@/lib/middleware/auth'
+import { authRateLimit } from '@/lib/middleware/rate-limit'
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = authRateLimit(request)
+  if (rateLimitResult) return rateLimitResult
+
   try {
     const body = await request.json()
     const { email, password } = body as { email?: string; password?: string }
@@ -61,7 +65,10 @@ export async function POST(request: NextRequest) {
       '15m'
     )
 
-    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.NEXTAUTH_SECRET || 'fallback'
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.NEXTAUTH_SECRET
+    if (!refreshSecret) {
+      return serverError('JWT_REFRESH_SECRET environment variable is required')
+    }
     const jwt = await import('jsonwebtoken')
     const refreshToken = jwt.default.sign(
       { userId: user.id, email: user.email, role: user.role.toLowerCase() },

@@ -6,7 +6,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  Linking,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -43,7 +42,9 @@ export function LoginScreen() {
     if (!validate()) return;
     try {
       await login({ email, password });
-    } catch {}
+    } catch {
+      // noop
+    }
   };
 
   return (
@@ -84,6 +85,7 @@ export function LoginScreen() {
           )}
 
           <Input
+            testID="login-email"
             label="Email or Username"
             placeholder="Enter your email or username"
             value={email}
@@ -98,6 +100,7 @@ export function LoginScreen() {
           />
 
           <Input
+            testID="login-password"
             label="Password"
             placeholder="Enter your password"
             value={password}
@@ -120,6 +123,7 @@ export function LoginScreen() {
           </TouchableOpacity>
 
           <Button
+            testID="login-button"
             title="Login"
             onPress={handleLogin}
             isLoading={isLoading}

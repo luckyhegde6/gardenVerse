@@ -50,7 +50,7 @@ export function OTPVerifyScreen() {
     setIsLoading(true);
     setError("");
     try {
-      const response = await AuthService.verifyOTP({ email, otp: code });
+      const _response = await AuthService.verifyOTP({ email, otp: code });
       navigation.goBack();
     } catch (err: any) {
       setError(err.response?.data?.message || "Invalid verification code");
@@ -64,6 +64,7 @@ export function OTPVerifyScreen() {
     try {
       await AuthService.requestPasswordReset({ email });
     } catch {
+      // noop
     } finally {
       setIsLoading(false);
     }

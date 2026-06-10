@@ -1,14 +1,13 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { success, badRequest, serverError } from '@/lib/middleware/auth'
-
-const otpStore = new Map<string, { otp: string; expiresAt: number }>()
-
-function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
-}
+import { strictRateLimit } from '@/lib/middleware/rate-limit'
+import { generateOtp, storeOtp } from '@/lib/otp'
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = strictRateLimit(request)
+  if (rateLimitResult) return rateLimitResult
+
   try {
     const body = await request.json()
     const { email } = body as { email?: string }
@@ -22,12 +21,15 @@ export async function POST(request: NextRequest) {
       select: { id: true },
     })
 
+    // Always return success to prevent email enumeration
     if (!user) {
       return success({ message: 'If the email exists, a reset OTP has been sent.' })
     }
 
     const otp = generateOtp()
-    otpStore.set(`reset:${email}`, { otp, expiresAt: Date.now() + 10 * 60 * 1000 })
+    storeOtp(`reset:${email}`, otp)
+
+    // TODO: Send OTP via email service
 
     return success({ message: 'If the email exists, a reset OTP has been sent.' })
   } catch (error) {

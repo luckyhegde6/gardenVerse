@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { getItem, setItem, StorageKeys } from "../../utils/storage";
 import { colors, spacing, borderRadius, typography } from "../../styles/theme";
+import HapticFeedback from "../../utils/haptics";
 
 interface WalkthroughStep {
   title: string;
@@ -72,19 +73,23 @@ export function WalkthroughOverlay({
   const totalSteps = STEPS.length;
 
   const handleNext = useCallback(() => {
+    HapticFeedback.light();
     if (currentStep < STEPS.length - 1) {
       setCurrentStep((s) => s + 1);
     } else {
+      HapticFeedback.success();
       onComplete();
     }
   }, [currentStep, onComplete]);
 
   const handleSkip = useCallback(() => {
+    HapticFeedback.light();
     onSkip();
   }, [onSkip]);
 
   const handleStepTap = useCallback(
     (index: number) => {
+      HapticFeedback.light();
       setCurrentStep(index);
     },
     [],

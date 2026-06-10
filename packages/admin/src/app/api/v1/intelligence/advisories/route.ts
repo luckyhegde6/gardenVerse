@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
 import { success, serverError, paginated } from '@/lib/middleware/auth'
 
 export async function GET(request: NextRequest) {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)))
     const offset = (page - 1) * limit
 
-    const where: Record<string, unknown> = {}
+    const where: Prisma.GovernmentAdvisoryWhereInput = {}
 
     if (region) {
       where.region = { contains: region, mode: 'insensitive' }
@@ -31,12 +32,12 @@ export async function GET(request: NextRequest) {
 
     const [advisories, total] = await Promise.all([
       prisma.governmentAdvisory.findMany({
-        where: where as any,
+        where,
         orderBy: { publishedAt: 'desc' },
         take: limit,
         skip: offset,
       }),
-      prisma.governmentAdvisory.count({ where: where as any }),
+      prisma.governmentAdvisory.count({ where }),
     ])
 
     return paginated(advisories, total, page, limit)

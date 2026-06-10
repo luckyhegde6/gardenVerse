@@ -9,7 +9,7 @@ interface CardProps {
   children: React.ReactNode;
   variant?: CardVariant;
   padding?: CardPadding;
-  style?: ViewStyle;
+  style?: ViewStyle | ViewStyle[];
   /** @deprecated Use StyleSheet instead of className */
   className?: string;
   onPress?: () => void;

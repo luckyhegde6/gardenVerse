@@ -3,11 +3,12 @@ import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGarden } from '../../hooks/useGarden';
 import { Crop } from '../../types';
+import HapticFeedback from '../../utils/haptics';
 
 const GRID = 6;
 const CELL = 24;
 const GAP = 2;
-const PANEL_W = CELL * GRID + GAP * (GRID - 1) + 24;
+const _PANEL_W = CELL * GRID + GAP * (GRID - 1) + 24;
 
 const CROP_COLORS: Record<string, string> = {
   Tomato: '#ef4444', Basil: '#22c55e', Lettuce: '#a3e635', Carrot: '#f97316',
@@ -28,12 +29,13 @@ export function Minimap() {
   const { crops, selectedGarden } = useGarden();
   const router = useRouter();
   const soilQuality = selectedGarden?.soilQuality ?? 50;
-  const irrigationLevel = selectedGarden?.irrigationLevel ?? 50;
+  const _irrigationLevel = selectedGarden?.irrigationLevel ?? 50;
 
   const healthyCount = crops.filter((c: Crop) => (c.health ?? 100) >= 70).length;
   const wiltingCount = crops.filter((c: Crop) => (c.health ?? 100) < 40).length;
 
   const handleCellPress = useCallback((col: number, row: number, crop?: Crop) => {
+    HapticFeedback.light();
     if (crop) {
       router.push({ pathname: '/crop-detail/[cropId]', params: { cropId: crop.id } });
     }
@@ -75,7 +77,7 @@ export function Minimap() {
               const health = crop?.health ?? 100;
               const isHydrated = (crop?.hydration ?? 0) > 40;
 
-              let bgColor = isEmpty
+              const bgColor = isEmpty
                 ? `hsl(33, ${30 + soilQuality * 0.3}%, ${48 - soilQuality * 0.15}%)`
                 : getCropColor(crop.name);
 

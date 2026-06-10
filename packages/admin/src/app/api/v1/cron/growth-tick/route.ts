@@ -12,6 +12,7 @@
 
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import { CropStatus } from '@prisma/client'
 import { success, unauthorized, serverError } from '@/lib/middleware/auth'
 import { getTask, registerTask, recordTaskRun } from '@/lib/cron'
 import logFn from '@/lib/logger'
@@ -27,13 +28,14 @@ const NUTRIENT_THRESHOLD = 25
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify CRON_SECRET
+    // Verify CRON_SECRET — fail closed if not configured
     const cronSecret = process.env.CRON_SECRET
-    if (cronSecret) {
-      const headerSecret = request.headers.get('x-cron-secret') ?? request.headers.get('authorization')?.replace('Bearer ', '')
-      if (headerSecret !== cronSecret) {
-        return unauthorized('Invalid CRON_SECRET')
-      }
+    if (!cronSecret) {
+      return serverError('CRON_SECRET environment variable is required')
+    }
+    const headerSecret = request.headers.get('x-cron-secret') ?? request.headers.get('authorization')?.replace('Bearer ', '')
+    if (headerSecret !== cronSecret) {
+      return unauthorized('Invalid CRON_SECRET')
     }
 
     logFn.info('Cron: growth-tick started')
@@ -90,12 +92,12 @@ export async function GET(request: NextRequest) {
         }
 
         // Determine status based on growth stage and health
-        if (growthStage <= 0) status = 'SEED' as any
-        else if (growthStage <= 25) status = 'SPROUTING' as any
-        else if (growthStage <= 75) status = 'GROWING' as any
-        else if (growthStage >= 100) status = 'MATURE' as any
+        if (growthStage <= 0) status = CropStatus.SEED
+        else if (growthStage <= 25) status = CropStatus.SPROUTING
+        else if (growthStage <= 75) status = CropStatus.GROWING
+        else if (growthStage >= 100) status = CropStatus.MATURE
 
-        if (health <= 0) status = 'WILTED' as any
+        if (health <= 0) status = CropStatus.WILTED
 
         await prisma.crop.update({
           where: { id: crop.id },

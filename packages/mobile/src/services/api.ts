@@ -6,9 +6,10 @@ import axios, {
 import { getItem, setItem, removeItem, StorageKeys } from "../utils/storage";
 import { logger } from "./logger";
 
-const BASE_URL = __DEV__
-  ? "http://localhost:3000/api/v1"
-  : "https://gardenverse.vercel.app/api/v1";
+const BASE_URL =
+  process.env.API_URL || (__DEV__
+    ? "http://localhost:3000/api/v1"
+    : "https://gardenverse.vercel.app/api/v1");
 
 export const api = axios.create({
   baseURL: BASE_URL,

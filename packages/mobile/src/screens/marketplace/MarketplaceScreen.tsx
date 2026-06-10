@@ -12,8 +12,9 @@ import { useRouter } from "expo-router";
 import { useMarketplace } from "../../hooks/useMarketplace";
 import { ListingCard } from "../../components/marketplace/ListingCard";
 import { CategoryFilter } from "../../components/marketplace/CategoryFilter";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+// import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 import { MarketplaceListing } from "../../types";
 
 const { width } = Dimensions.get("window");
@@ -31,7 +32,7 @@ export function MarketplaceScreen() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { listings, isLoading, isRefreshing, error, refresh, loadMore } =
+  const { listings, isLoading, isRefreshing, error: _error, refresh, loadMore } =
     useMarketplace({
       category: selectedCategory === "all" ? undefined : selectedCategory,
       search: searchQuery || undefined,
@@ -83,7 +84,47 @@ export function MarketplaceScreen() {
 
       {/* Main Content */}
       {isLoading && listings.length === 0 ? (
-        <LoadingSpinner fullScreen message="Loading listings..." />
+        <View className="flex-1 px-4 pt-4">
+          {/* Featured skeleton */}
+          <View className="mb-4">
+            <SkeletonLoader width="45%" height={20} borderRadius={6} style={{ marginBottom: 12 }} />
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              {[0, 1].map((i) => (
+                <View
+                  key={i}
+                  className="bg-white rounded-2xl overflow-hidden border border-gray-100"
+                  style={{ width: width * 0.7 }}
+                >
+                  <SkeletonLoader width="100%" height={112} borderRadius={0} />
+                  <View className="p-3">
+                    <SkeletonLoader width="80%" height={14} borderRadius={4} style={{ marginBottom: 8 }} />
+                    <View className="flex-row items-center justify-between">
+                      <SkeletonLoader width="40%" height={12} borderRadius={4} />
+                      <SkeletonLoader width={50} height={14} borderRadius={4} />
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+          {/* Section header skeleton */}
+          <SkeletonLoader width="35%" height={18} borderRadius={6} style={{ marginBottom: 4 }} />
+          <SkeletonLoader width="50%" height={12} borderRadius={4} style={{ marginBottom: 16 }} />
+          {/* Listing card skeletons */}
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} className="bg-white rounded-2xl p-4 mb-3 border border-gray-100 flex-row">
+              <SkeletonLoader width={80} height={80} borderRadius={12} />
+              <View className="flex-1 ml-3 justify-center">
+                <SkeletonLoader width="90%" height={16} borderRadius={4} style={{ marginBottom: 8 }} />
+                <SkeletonLoader width="60%" height={12} borderRadius={4} style={{ marginBottom: 8 }} />
+                <View className="flex-row items-center justify-between">
+                  <SkeletonLoader width="30%" height={12} borderRadius={4} />
+                  <SkeletonLoader width={60} height={16} borderRadius={4} />
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
       ) : filteredListings.length === 0 ? (
         <EmptyState
           title="No listings found"
@@ -97,7 +138,7 @@ export function MarketplaceScreen() {
       ) : (
         <FlatList
           data={filteredListings}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item: MarketplaceListing) => item.id}
           ListHeaderComponent={() => (
             <>
               {/* Featured Section */}
@@ -109,10 +150,10 @@ export function MarketplaceScreen() {
                   <FlatList
                     horizontal
                     data={featured}
-                    keyExtractor={(item) => `featured-${item.id}`}
+                    keyExtractor={(item: MarketplaceListing) => `featured-${item.id}`}
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ gap: 12 }}
-                    renderItem={({ item }) => (
+                    renderItem={({ item }: { item: MarketplaceListing }) => (
                       <TouchableOpacity
                         onPress={() => handleListingPress(item)}
                         activeOpacity={0.8}
@@ -154,7 +195,7 @@ export function MarketplaceScreen() {
               </View>
             </>
           )}
-          renderItem={({ item }) => (
+          renderItem={({ item }: { item: MarketplaceListing }) => (
             <View className="px-4">
               <ListingCard
                 listing={item}

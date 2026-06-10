@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import type { Prisma } from '@prisma/client'
 import { requireAuth, requireRole } from '@/lib/middleware/auth'
 import { success, badRequest, serverError, paginated } from '@/lib/middleware/auth'
 
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)))
     const offset = (page - 1) * limit
 
-    const where: Record<string, unknown> = {}
+    const where: Prisma.ModerationReportWhereInput = {}
 
     if (status) {
       where.status = status.toUpperCase()
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     const [reports, total] = await Promise.all([
       prisma.moderationReport.findMany({
-        where: where as any,
+        where,
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
           actionedBy: { select: { id: true, username: true, displayName: true } },
         },
       }),
-      prisma.moderationReport.count({ where: where as any }),
+      prisma.moderationReport.count({ where }),
     ])
 
     return paginated(reports, total, page, limit)
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       data: {
         type,
         description: description as string | undefined,
-        evidence: Object.keys(evidenceData).length > 0 ? evidenceData as any : undefined,
+        evidence: Object.keys(evidenceData).length > 0 ? evidenceData as Prisma.InputJsonValue : undefined,
         reporterId: auth.payload.userId,
       },
       include: {

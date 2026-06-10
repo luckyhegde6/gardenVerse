@@ -7,4 +7,5 @@ export { EmptyState } from "./EmptyState";
 export { ScreenHeader } from "./ScreenHeader";
 export { Divider } from "./Divider";
 export { Icon } from "./Icon";
+export { SkeletonLoader } from "./SkeletonLoader";
 export { DebugOverlay, onDebugModeTrigger } from "./DebugOverlay";

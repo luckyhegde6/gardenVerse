@@ -1,5 +1,6 @@
 import React from 'react'
 import { AnimatedActionButton } from './AnimatedActionButton'
+import { HapticFeedback } from '../../utils/haptics'
 
 interface FertilizeButtonProps {
   onPress: () => void
@@ -9,9 +10,14 @@ interface FertilizeButtonProps {
 }
 
 export function FertilizeButton({ onPress, isLoading = false, disabled = false, className = '' }: FertilizeButtonProps) {
+  const handlePress = () => {
+    HapticFeedback.action()
+    onPress()
+  }
+
   return (
     <AnimatedActionButton
-      onPress={onPress}
+      onPress={handlePress}
       isLoading={isLoading}
       disabled={disabled}
       icon="🌿"

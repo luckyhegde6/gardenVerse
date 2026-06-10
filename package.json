@@ -12,6 +12,7 @@
     "mobile:build": "npm run build -w packages/mobile",
     "admin:dev": "npm run dev -w packages/admin",
     "admin:build": "npm run build -w packages/admin",
+    "vercel-build": "npm run prisma:generate -w packages/admin && npm run admin:build",
     "ai:dev": "npm run dev -w services/ai",
     "docker:up": "docker compose -f docker-compose.local.yml up -d",
     "docker:down": "docker compose -f docker-compose.local.yml down",
@@ -46,7 +47,7 @@
     "prisma:generate": "npm run prisma:generate -w packages/admin",
     "prisma:migrate": "npm run prisma:migrate -w packages/admin",
     "prisma:seed": "npm run prisma:seed -w packages/admin",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "script:docker-local": "powershell -ExecutionPolicy Bypass -File scripts/docker-local.ps1",
     "script:docker-prod-debug": "powershell -ExecutionPolicy Bypass -File scripts/docker-prod-debug.ps1",
     "script:health-check": "powershell -ExecutionPolicy Bypass -File scripts/health-check.ps1",
@@ -54,7 +55,11 @@
     "script:reset-db": "powershell -ExecutionPolicy Bypass -File scripts/reset-db.ps1",
     "script:run-migrations": "powershell -ExecutionPolicy Bypass -File scripts/run-migrations.ps1",
     "script:stop-all": "powershell -ExecutionPolicy Bypass -File scripts/stop-all.ps1",
-    "script:docker-cleanup": "powershell -ExecutionPolicy Bypass -File scripts/docker-cleanup.ps1"
+    "script:docker-cleanup": "powershell -ExecutionPolicy Bypass -File scripts/docker-cleanup.ps1",
+    "test:e2e:mobile": "powershell -ExecutionPolicy Bypass -File e2e/mobile/run-mobile-e2e.ps1",
+    "test:e2e:mobile:build": "powershell -ExecutionPolicy Bypass -File e2e/mobile/run-mobile-e2e.ps1 -Build",
+    "test:e2e:integration": "npx playwright test --config=e2e/playwright.config.ts e2e/tests/integration.spec.ts",
+    "test:e2e:all": "npm run test:e2e && npm run test:e2e:integration"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -62,6 +67,7 @@
   "dependencies": {
     "@playwright/test": "^1.60.0",
     "@react-native/js-polyfills": "^0.85.3",
+    "@vercel/analytics": "^2.0.1",
     "metro": "^0.80.12",
     "metro-babel-transformer": "^0.80.12",
     "metro-cache": "^0.80.12",
@@ -82,9 +88,15 @@
   },
   "devDependencies": {
     "@babel/plugin-transform-class-static-block": "^7.29.7",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "@typescript-eslint/eslint-plugin": "^8.60.0",
     "@typescript-eslint/parser": "^8.60.0",
+    "detox": "^20.51.3",
+    "typescript": "~5.3.3",
     "husky": "^9.1.7",
+    "jest": "^30.4.2",
+    "prisma": "^7.8.0",
     "turbo": "^2.9.16"
   },
   "overrides": {

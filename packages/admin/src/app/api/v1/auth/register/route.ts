@@ -2,8 +2,12 @@ import { NextRequest } from 'next/server'
 import bcrypt from 'bcrypt'
 import { prisma } from '@/lib/prisma/client'
 import { success, badRequest, serverError } from '@/lib/middleware/auth'
+import { strictRateLimit } from '@/lib/middleware/rate-limit'
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = strictRateLimit(request)
+  if (rateLimitResult) return rateLimitResult
+
   try {
     const body = await request.json()
     const { email, password, username, displayName, phone } = body as {

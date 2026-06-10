@@ -75,7 +75,7 @@ Error responses return:
         required: ['email', 'password'],
         properties: {
           email: { type: 'string', format: 'email', example: 'demo@gardenverse.vercel.app' },
-          password: { type: 'string', format: 'password', example: 'password123' },
+          password: { type: 'string', format: 'password', example: '<your-password>' },
         },
       },
       LoginResponse: {

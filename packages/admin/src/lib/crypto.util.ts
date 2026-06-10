@@ -5,7 +5,10 @@ const IV_LENGTH = 16;
 
 export class CryptoUtil {
   private static getKey(secretKey?: string): Buffer {
-    const key = secretKey || process.env.ENCRYPTION_KEY || 'default-32-byte-encryption-key!!';
+    const key = secretKey || process.env.ENCRYPTION_KEY
+    if (!key) {
+      throw new Error('ENCRYPTION_KEY environment variable is required')
+    }
     return crypto.scryptSync(key, 'gardenverse-salt', 32);
   }
 
@@ -39,9 +42,8 @@ export class CryptoUtil {
   static generateInviteCode(length: number = 8): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let code = '';
-    const bytes = crypto.randomBytes(length);
     for (let i = 0; i < length; i++) {
-      code += chars[bytes[i] % chars.length];
+      code += chars[crypto.randomInt(0, chars.length)];
     }
     return code;
   }
