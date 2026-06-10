@@ -76,7 +76,9 @@ export function useLocation(): UseLocationReturn {
             .filter(Boolean)
             .join(", ");
         }
-      } catch {}
+      } catch {
+        // noop
+      }
 
       setLocation({
         latitude,

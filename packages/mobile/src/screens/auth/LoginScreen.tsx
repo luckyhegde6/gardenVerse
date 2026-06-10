@@ -6,7 +6,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  Linking,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -43,7 +42,9 @@ export function LoginScreen() {
     if (!validate()) return;
     try {
       await login({ email, password });
-    } catch {}
+    } catch {
+      // noop
+    }
   };
 
   return (

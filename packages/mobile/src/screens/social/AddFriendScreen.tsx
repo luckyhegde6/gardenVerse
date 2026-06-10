@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Keyboard,
@@ -112,7 +111,7 @@ export function AddFriendScreen() {
             : r,
         ),
       );
-    } catch (err: unknown) {
+    } catch {
       await triggerHaptic("error");
       // If the requests endpoint needs a toUserId but we only have a username,
       // fall back to the direct friends endpoint

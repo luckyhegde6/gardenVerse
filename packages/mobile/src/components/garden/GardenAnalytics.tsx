@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from "react"
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native"
+import { View, Text, ScrollView, TouchableOpacity } from "react-native"
 import Svg, { Rect } from "react-native-svg"
 import { Crop, CropStatus } from "../../types"
-import { colors, spacing, borderRadius } from "../../styles/theme"
 import HapticFeedback from "../../utils/haptics"
 
 type AnalyticsTab = "overview" | "hydration" | "health"
@@ -30,18 +29,6 @@ function getHealthColor(h: number): string {
   if (h >= 40) return "#eab308"
   if (h >= 20) return "#f97316"
   return "#ef4444"
-}
-
-function statusLabel(s: CropStatus): string {
-  switch (s) {
-    case CropStatus.SEED: return "Seed"
-    case CropStatus.SPROUTING: return "Sprouting"
-    case CropStatus.GROWING: return "Growing"
-    case CropStatus.MATURE: return "Mature"
-    case CropStatus.HARVESTED: return "Harvested"
-    case CropStatus.WILTED: return "Wilted"
-    case CropStatus.DISEASED: return "Diseased"
-  }
 }
 
 export function GardenAnalytics({
@@ -86,7 +73,7 @@ export function GardenAnalytics({
         const x = col * (cellSize + gap)
         const y = row * (cellSize + gap)
         const color = crop ? getColor(getVal(crop)) : "#e5e7eb"
-        const label = crop ? `${getVal(crop)}%` : ""
+        const _label = crop ? `${getVal(crop)}%` : ""
         cells.push(
           <Rect key={`${row}-${col}`} x={x} y={y} width={cellSize} height={cellSize} rx={4} fill={color} />
         )

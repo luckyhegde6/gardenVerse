@@ -19,7 +19,7 @@ import {
   validateConfirmPassword,
   validateInviteCode,
 } from "../../src/utils/validation";
-import { colors, spacing, borderRadius, typography, globalStyles } from "../../src/styles/theme";
+import { colors, spacing, typography, globalStyles } from "../../src/styles/theme";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -60,7 +60,9 @@ export default function RegisterScreen() {
       // TODO: Re-enable OTP verify redirect when SMTP/email service is configured
       // router.push({ pathname: "/(auth)/otp-verify", params: { email } });
       router.replace("/(auth)/login");
-    } catch {}
+    } catch {
+      // noop
+    }
   };
 
   const updateField = (field: string, value: string) => {

@@ -63,6 +63,7 @@ export default function OTPVerifyScreen() {
     try {
       await AuthService.requestPasswordReset({ email });
     } catch {
+      // noop
     } finally {
       setIsLoading(false);
     }

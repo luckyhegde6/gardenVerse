@@ -8,7 +8,6 @@ import { useGardenStore } from "../../src/stores/gardenStore";
 
 function TabIcon({
   icon,
-  focused,
   color,
 }: {
   icon: keyof typeof Ionicons.glyphMap;

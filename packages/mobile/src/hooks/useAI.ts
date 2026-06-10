@@ -59,7 +59,9 @@ export function useAI(): UseAIReturn {
     try {
       const response = await api.get<AiScanResult[]>("/ai/history");
       setScanHistory(response.data);
-    } catch {}
+    } catch {
+      // noop
+    }
   }, []);
 
   const resetResult = useCallback(() => {

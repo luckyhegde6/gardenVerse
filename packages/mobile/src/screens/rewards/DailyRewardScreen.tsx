@@ -11,8 +11,8 @@ import { useRouter } from "expo-router";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { ScreenHeader } from "../../components/ui/ScreenHeader";
-import { EmptyState } from "../../components/ui/EmptyState";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+// import { EmptyState } from "../../components/ui/EmptyState";
+// import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
 import api from "../../services/api";
@@ -46,7 +46,7 @@ type ClaimResponse = {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function defaultRewardDays(currentStreak: number): DailyRewardDay[] {
+function defaultRewardDays(_currentStreak: number): DailyRewardDay[] {
   return [
     { day: 1, rewardAmount: 10, rewardType: "GREEN_CREDITS", status: "locked", icon: "🪙" },
     { day: 2, rewardAmount: 20, rewardType: "GREEN_CREDITS", status: "locked", icon: "🪙" },
@@ -138,7 +138,7 @@ export function DailyRewardScreen() {
         : Boolean(d.claimedToday);
 
       const days = defaultRewardDays(streak).map((day) => {
-        const isPast = day.day < cycleDay && !claimedToday;
+        const _isPast = day.day < cycleDay && !claimedToday;
         const isPastOrClaimed = day.day < cycleDay || (day.day === cycleDay && claimedToday);
         let status: DailyRewardDay["status"];
         if (isPastOrClaimed) {
@@ -387,7 +387,7 @@ export function DailyRewardScreen() {
 
 function DayCell({
   day,
-  claiming,
+  claiming: _claiming,
 }: {
   day: DailyRewardDay;
   claiming: boolean;

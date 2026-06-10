@@ -60,7 +60,9 @@ export function RegisterScreen() {
         inviteCode: inviteCode || undefined,
       });
       navigation.navigate('OTPVerify', { email });
-    } catch {}
+    } catch {
+      // noop
+    }
   };
 
   const updateField = (field: string, value: string) => {

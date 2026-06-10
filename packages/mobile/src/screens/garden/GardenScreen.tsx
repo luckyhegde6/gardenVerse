@@ -28,8 +28,8 @@ import { WaterButton } from '../../components/garden/WaterButton';
 import { FertilizeButton } from '../../components/garden/FertilizeButton';
 import { HarvestButton } from '../../components/garden/HarvestButton';
 import { Badge } from '../../components/ui/Badge';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { EmptyState } from '../../components/ui/EmptyState';
+// import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+// import { EmptyState } from '../../components/ui/EmptyState';
 import { GrowthOverlay } from '../../components/garden/GrowthOverlay';
 import { WeatherBar } from '../../components/garden/WeatherBar';
 import { WalkthroughOverlay, useWalkthrough } from '../../components/garden/WalkthroughOverlay';
@@ -79,7 +79,7 @@ export function GardenScreen() {
   } = useWalkthrough();
 
   const [locationPermission, setLocationPermission] = useState<boolean>(false);
-  const [notificationPermission, setNotificationPermission] = useState<boolean>(false);
+  const [, setNotificationPermission] = useState<boolean>(false);
 
   const [collectionStats, setCollectionStats] = useState<CollectionStats>({
     discovered: 0,
@@ -92,7 +92,7 @@ export function GardenScreen() {
   const [speciesIdentifiedCount, setSpeciesIdentifiedCount] = useState(0);
 
   // ─── Save & Sync ────────────────────────────────────────────────────────
-  const { show: showToast, hide: hideToast, ToastComponent } = useToast();
+  const { show: showToast, hide: _hideToast, ToastComponent } = useToast();
   const autoSaveDone = useRef(false);
 
   // Auto-save on app background/resume
@@ -692,7 +692,7 @@ export function GardenScreen() {
                   streakColor = '#16a34a';
                 } else if (streak >= 3) {
                   streakLabel += ' 👍';
-                  streakColor = '#6366f1';
+                  // streakColor = '#6366f1';
                 }
                 return (
                   <TouchableOpacity
@@ -720,7 +720,7 @@ export function GardenScreen() {
                       >
                         {streak}
                       </Text>
-                      <Text style={styles.streakLabel}>days</Text>
+                      <Text style={styles.streakLabel}>{streakLabel}</Text>
                     </View>
                   </TouchableOpacity>
                 );

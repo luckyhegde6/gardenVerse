@@ -34,7 +34,7 @@ export function SensorChart({
   const maxVal = Math.max(...recentReadings.map((r) => r.value));
   const minVal = Math.min(...recentReadings.map((r) => r.value));
   const range = maxVal - minVal || 1;
-  const barWidth = Math.max(
+  const _barWidth = Math.max(
     4,
     Math.floor((Dimensions.get("window").width - 80) / recentReadings.length),
   );

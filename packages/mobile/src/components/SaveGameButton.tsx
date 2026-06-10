@@ -12,7 +12,6 @@ import Animated, {
   withTiming,
   withRepeat,
   withSequence,
-  runOnJS,
 } from 'react-native-reanimated';
 import { gameSaveSync } from '../services/gameSaveSync';
 import { useGardenStore } from '../stores/gardenStore';

@@ -1,4 +1,4 @@
-import { getItem, setItem, removeItem, StorageKeys } from '../utils/storage'
+import { getItem, setItem, removeItem } from '../utils/storage'
 import { logger } from './logger'
 import api from './api'
 import { Crop, Garden, QuestProgress, CollectionEntry } from '../types'
@@ -44,7 +44,7 @@ class GameSaveSyncService {
       await setItem(GAME_STATE_KEY, JSON.stringify(merged))
       await setItem(LAST_SYNC_KEY, merged.timestamp)
       logger.info('[GameSave] Local save complete', { source: 'gameSave' })
-    } catch (error) {
+    } catch {
       logger.error('[GameSave] Local save failed', { source: 'gameSave', context: 'error' })
     }
   }

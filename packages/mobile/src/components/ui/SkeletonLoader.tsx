@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,7 +8,6 @@ import Animated, {
   interpolate,
   Easing,
 } from "react-native-reanimated";
-import { colors } from "../../styles/theme";
 
 interface SkeletonLoaderProps {
   width?: number | string;

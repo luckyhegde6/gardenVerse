@@ -7,7 +7,7 @@ import {
   TextStyle,
   StyleSheet,
 } from "react-native";
-import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
+import { colors, spacing, borderRadius, typography } from "../../styles/theme";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";

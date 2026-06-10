@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Crop, Garden, WeatherData, CropStatus } from "../../types";
 import { GrowthState } from "../../services/growthEngine";
-import { colors, spacing, borderRadius } from "../../styles/theme";
+import { spacing, borderRadius } from "../../styles/theme";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -125,12 +125,13 @@ function formatDate(isoString: string): string {
 function ProgressBar({
   value,
   color,
-  backgroundColor = "rgba(255,255,255,0.15)",
+  backgroundColor: _bgColor = "rgba(255,255,255,0.15)",
 }: {
   value: number;
   color: string;
   backgroundColor?: string;
 }) {
+  void _bgColor;
   const clamped = Math.max(0, Math.min(100, value));
   return (
     <View style={styles.progressBarTrack}>

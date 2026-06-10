@@ -88,11 +88,14 @@
   },
   "devDependencies": {
     "@babel/plugin-transform-class-static-block": "^7.29.7",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "@typescript-eslint/eslint-plugin": "^8.60.0",
     "@typescript-eslint/parser": "^8.60.0",
     "detox": "^20.51.3",
     "husky": "^9.1.7",
     "jest": "^30.4.2",
+    "prisma": "^7.8.0",
     "turbo": "^2.9.16"
   },
   "overrides": {

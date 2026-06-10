@@ -17,7 +17,7 @@ import { Card } from "../../components/ui/Card";
 import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 import api from "../../services/api";
 import { HapticFeedback } from "../../utils/haptics";
-import { colors, spacing, typography, borderRadius } from "../../styles/theme";
+import { colors, spacing, typography } from "../../styles/theme";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -53,6 +53,13 @@ interface OutgoingRequest {
 }
 
 type TabKey = "friends" | "requests";
+
+interface SectionHeader {
+  __section: "incoming" | "outgoing";
+  count: number;
+}
+
+type RequestListItem = SectionHeader | IncomingRequest | OutgoingRequest;
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
@@ -109,7 +116,7 @@ export function FriendsScreen() {
 
   // ─── Actions ────────────────────────────────────────────────────────────
 
-  const handleAcceptRequest = async (requestId: string, friendName: string) => {
+  const handleAcceptRequest = async (requestId: string, _friendName: string) => {
     setActionLoading(requestId);
     try {
       HapticFeedback.success();
@@ -149,7 +156,7 @@ export function FriendsScreen() {
     }
   };
 
-  const handleVisitGarden = async (friendId: string, friendName: string) => {
+  const handleVisitGarden = async (friendId: string, _friendName: string) => {
     HapticFeedback.light();
     router.push({ pathname: "/garden-visit/[friendId]", params: { friendId } });
   };
@@ -300,7 +307,7 @@ export function FriendsScreen() {
     return (
       <FlatList
         data={friends}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: FriendItem) => item.id}
         renderItem={renderFriendItem}
         contentContainerStyle={styles.listContent}
         refreshControl={
@@ -350,18 +357,18 @@ export function FriendsScreen() {
 
     return (
       <FlatList
-        data={[
+        data={([
           ...(hasIncoming ? [{ __section: "incoming" as const, count: incomingRequests.length }] : []),
           ...incomingRequests,
           ...(hasOutgoing ? [{ __section: "outgoing" as const, count: outgoingRequests.length }] : []),
           ...outgoingRequests,
-        ]}
-        keyExtractor={(item, index) => {
-          if ("__section" in item && item.__section) return `section-${item.__section}`;
+        ] as RequestListItem[])}
+        keyExtractor={(item: RequestListItem, index: number) => {
+          if ("__section" in item) return `section-${item.__section}`;
           if ("fromUser" in item) return `incoming-${item.id}`;
-          return `outgoing-${item.id}-${index}`;
+          return `outgoing-${(item as OutgoingRequest).id}-${index}`;
         }}
-        renderItem={({ item }) => {
+        renderItem={({ item }: { item: RequestListItem }) => {
           if ("__section" in item && item.__section === "incoming") {
             return (
               <Text style={styles.sectionHeader}>
@@ -379,7 +386,7 @@ export function FriendsScreen() {
           if ("fromUser" in item) {
             return renderIncomingRequest({ item });
           }
-          return renderOutgoingRequest({ item });
+          return renderOutgoingRequest({ item: item as OutgoingRequest });
         }}
         contentContainerStyle={styles.listContent}
         refreshControl={

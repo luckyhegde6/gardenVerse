@@ -24,7 +24,7 @@ declare module "react-native" {
     contentContainerClassName?: string;
     indicatorClassName?: string;
   }
-  interface FlatListProps<ItemT> {
+  interface FlatListProps<_ItemT> {
     columnWrapperClassName?: string;
   }
   interface ImageBackgroundProps extends ImagePropsBase {

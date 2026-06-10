@@ -1,6 +1,6 @@
 const BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
 
-function encodeBase32(value: number): string {
+function _encodeBase32(value: number): string {
   let binary = value.toString(2);
   while (binary.length < 5) binary = "0" + binary;
   return BASE32[parseInt(binary, 2)];

@@ -10,7 +10,7 @@ import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 import { UserRole } from "../../types";
 import api from "../../services/api";
 import {
-  ensurePermission,
+  // ensurePermission,
   requestCameraPermission,
   requestLocationPermission,
   requestNotificationPermission,

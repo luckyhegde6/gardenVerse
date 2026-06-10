@@ -5,12 +5,12 @@ import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import HapticFeedback from "../../utils/haptics";
 import { NearbyGardener } from "../../types";
 
-const { width } = Dimensions.get("window");
+const { width: _width } = Dimensions.get("window");
 
 function GardenMapScreen() {
   const [gardeners, setGardeners] = useState<NearbyGardener[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState<{
+  const [_userLocation, _setUserLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);

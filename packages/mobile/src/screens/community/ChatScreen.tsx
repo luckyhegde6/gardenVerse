@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -55,7 +55,7 @@ export function ChatScreen() {
     },
   ]);
   const [inputText, setInputText] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping] = useState(false);
 
   const handleSend = () => {
     if (!inputText.trim() || !user) return;
@@ -81,8 +81,8 @@ export function ChatScreen() {
         ref={flatListRef}
         className="flex-1 px-4"
         data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+        keyExtractor={(item: Message) => item.id}
+        renderItem={({ item }: { item: Message }) => (
           <MessageBubble
             message={item}
             isOwnMessage={item.senderId === user?.id}
