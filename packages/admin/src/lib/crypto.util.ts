@@ -42,9 +42,8 @@ export class CryptoUtil {
   static generateInviteCode(length: number = 8): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let code = '';
-    const bytes = crypto.randomBytes(length);
     for (let i = 0; i < length; i++) {
-      code += chars[bytes[i] % chars.length];
+      code += chars[crypto.randomInt(0, chars.length)];
     }
     return code;
   }
