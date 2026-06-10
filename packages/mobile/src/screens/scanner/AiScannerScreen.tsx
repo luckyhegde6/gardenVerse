@@ -22,7 +22,8 @@ import { plantIdQuest } from "../../services/plantIdentificationQuest";
 import HapticFeedback from "../../utils/haptics";
 
 // expo-camera CameraView has a type incompatibility with React 18 JSX types
-const CameraView = ExpoCameraView as unknown as React.FC<React.ComponentProps<typeof ExpoCameraView>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CameraView = ExpoCameraView as any;
 
 export function AiScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
