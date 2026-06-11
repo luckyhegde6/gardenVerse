@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireAuth, success, serverError } from '@/lib/middleware/auth'
+import { sanitizeLike } from '@/lib/sanitize'
 
 export async function POST(request: NextRequest) {
   const auth = requireAuth(request)
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
       select: { id: true, region: true, level: true, trustScore: true, sustainabilityScore: true },
     })
 
-    const effectiveRegion = (region as string) || currentUser?.region || ''
+    const effectiveRegion = sanitizeLike((region as string) || currentUser?.region || '')
 
     const [garden, crops, weather, advisories] = await Promise.all([
       gardenId

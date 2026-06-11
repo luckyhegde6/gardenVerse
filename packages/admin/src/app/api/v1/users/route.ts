@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { UserRole, type Prisma } from '@prisma/client'
 import { requireRole, paginated, serverError } from '@/lib/middleware/auth'
+import { sanitizeLike } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'super_admin'])
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const query = searchParams.get('query') || ''
+    const query = sanitizeLike(searchParams.get('query') || '')
     const region = searchParams.get('region') || ''
     const role = searchParams.get('role') || ''
     const status = searchParams.get('status') || ''

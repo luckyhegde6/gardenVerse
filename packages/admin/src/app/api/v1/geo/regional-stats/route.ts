@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireAuth, success, serverError, badRequest } from '@/lib/middleware/auth'
 import { startRequestLog, finishRequestLog, logApiError } from '@/lib/middleware/logging'
+import { sanitizeLike } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest) {
   const ctx = startRequestLog(request)
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const region = searchParams.get('region')
+    const region = sanitizeLike(searchParams.get('region') || '')
 
     if (!region) {
       // Return stats for all regions (summary)

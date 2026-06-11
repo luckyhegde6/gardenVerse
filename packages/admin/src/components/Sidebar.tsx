@@ -21,7 +21,6 @@ import {
   MessageCircle,
   Scan,
   Settings,
-  GraduationCap,
   TicketCheck,
   Gamepad2,
   BookOpen,
@@ -38,7 +37,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/onboarding', label: 'Onboarding', icon: GraduationCap },
   { href: '/users', label: 'Users', icon: Users },
   { href: '/monitoring', label: 'Monitoring', icon: Activity },
   { href: '/garden', label: 'Gardens', icon: Trees },
@@ -54,7 +52,7 @@ const navItems: NavItem[] = [
   { href: '/marketplace', label: 'Marketplace', icon: Store },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/features', label: 'Feature Flags', icon: Flag },
-  { href: '/support', label: 'Support', icon: TicketCheck },
+  { href: '/admin/support', label: 'Support', icon: TicketCheck },
   { href: '/invites', label: 'Invites', icon: Mail },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
   { href: '/settings', label: 'Settings', icon: Settings },

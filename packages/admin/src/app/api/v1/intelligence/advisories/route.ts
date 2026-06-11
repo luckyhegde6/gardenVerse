@@ -2,13 +2,14 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import type { Prisma } from '@prisma/client'
 import { success, serverError, paginated } from '@/lib/middleware/auth'
+import { sanitizeLike } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const region = searchParams.get('region') || ''
+    const region = sanitizeLike(searchParams.get('region') || '')
     const type = searchParams.get('type') || ''
-    const search = searchParams.get('search') || ''
+    const search = sanitizeLike(searchParams.get('search') || '')
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)))
     const offset = (page - 1) * limit

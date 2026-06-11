@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireAuth, success, serverError } from '@/lib/middleware/auth'
 import { startRequestLog, finishRequestLog, logApiError } from '@/lib/middleware/logging'
+import { sanitizeLike } from '@/lib/sanitize'
 
 function getCurrentSeason(): string {
   const month = new Date().getMonth()
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     const season = seasonParam || getCurrentSeason()
 
     // Determine effective region from user if not specified
-    let effectiveRegion = region || ''
+    let effectiveRegion = sanitizeLike(region || '')
     if (!effectiveRegion) {
       const user = await prisma.user.findUnique({
         where: { id: auth.payload.userId },

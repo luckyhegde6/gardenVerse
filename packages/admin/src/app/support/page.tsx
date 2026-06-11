@@ -1,259 +1,258 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Loader2, AlertCircle, CheckCircle, MessageSquare, UserCheck, Clock, TicketCheck } from 'lucide-react'
+import { useState } from 'react'
+import { Send, CheckCircle, AlertCircle, TicketCheck, Mail, MessageSquare, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/Button'
-import { Badge } from '@/components/Badge'
-import { DataTable } from '@/components/DataTable'
-import { Modal, ModalFooter } from '@/components/Modal'
 import { Input } from '@/components/Input'
-import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/Tabs'
-import api, { type SupportTicket } from '@/lib/api'
+import { cn } from '@/lib/utils'
 
-const statusVariant: Record<string, 'pending' | 'resolved' | 'dismissed' | 'warning' | 'info'> = {
-  OPEN: 'pending',
-  IN_PROGRESS: 'warning',
-  RESOLVED: 'resolved',
-  CLOSED: 'dismissed',
-}
+const PRIORITIES = [
+  { value: 'LOW', label: 'Low — General question', color: 'text-sky-400' },
+  { value: 'MEDIUM', label: 'Medium — Issue affecting me', color: 'text-amber-400' },
+  { value: 'HIGH', label: 'High — Urgent / blocking', color: 'text-red-400' },
+]
 
-const priorityVariant: Record<string, 'error' | 'warning' | 'info' | 'default'> = {
-  HIGH: 'error',
-  MEDIUM: 'warning',
-  LOW: 'info',
-}
+const CATEGORIES = [
+  'Bug Report',
+  'Feature Request',
+  'Account Issue',
+  'Payment / Billing',
+  'Garden / Gameplay',
+  'Marketplace',
+  'Community',
+  'Other',
+]
 
-export default function AdminSupportPage() {
-  const [tickets, setTickets] = useState<SupportTicket[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+export default function PublicSupportPage() {
+  const [subject, setSubject] = useState('')
+  const [message, setMessage] = useState('')
+  const [email, setEmail] = useState('')
+  const [category, setCategory] = useState('')
+  const [priority, setPriority] = useState('MEDIUM')
+  const [submitting, setSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
-  const [tab, setTab] = useState('open')
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null)
-  const [showDetail, setShowDetail] = useState(false)
-  const [adminNotes, setAdminNotes] = useState('')
-  const [actionLoading, setActionLoading] = useState(false)
+  const [ticketId, setTicketId] = useState<string | null>(null)
 
-  const fetchTickets = useCallback(async () => {
-    setIsLoading(true)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setError(null)
+    setSubmitting(true)
+
     try {
-      const params: Record<string, string> = {}
-      if (tab !== 'all') params.status = tab === 'open' ? 'OPEN' : tab === 'in_progress' ? 'IN_PROGRESS' : tab === 'resolved' ? 'RESOLVED' : 'CLOSED'
-      const res = await api.get('/support/tickets', { params })
-      setTickets(res.data.tickets || [])
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load support tickets')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [tab])
-
-  useEffect(() => { fetchTickets() }, [fetchTickets])
-
-  useEffect(() => {
-    if (successMsg) {
-      const t = setTimeout(() => setSuccessMsg(null), 4000)
-      return () => clearTimeout(t)
-    }
-  }, [successMsg])
-
-  const updateStatus = async (newStatus: string) => {
-    if (!selectedTicket) return
-    setActionLoading(true)
-    try {
-      await api.put(`/support/tickets/${selectedTicket.id}/status`, {
-        status: newStatus,
-        adminNotes: adminNotes || undefined,
+      const res = await fetch('/api/v1/support/tickets/public', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: subject.trim(),
+          message: message.trim(),
+          email: email.trim(),
+          category,
+          priority,
+        }),
       })
-      setSuccessMsg(`Ticket #${selectedTicket.id.slice(0, 8)} updated to ${newStatus}`)
-      setShowDetail(false)
-      setSelectedTicket(null)
-      setAdminNotes('')
-      fetchTickets()
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update ticket')
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to submit ticket')
+      }
+
+      setTicketId(data.id)
+      setSuccess(true)
+      setSubject('')
+      setMessage('')
+      setEmail('')
+      setCategory('')
+      setPriority('MEDIUM')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to submit ticket. Please try again.')
     } finally {
-      setActionLoading(false)
+      setSubmitting(false)
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <TicketCheck className="w-6 h-6 text-admin-400" />
-        <h2 className="text-lg font-semibold text-slate-100">Support Tickets</h2>
-      </div>
-
-      {successMsg && (
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-400/10 border border-emerald-400/20">
-          <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
-          <p className="text-sm text-emerald-300 flex-1">{successMsg}</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-400/10 border border-amber-400/20">
-          <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
-          <p className="text-sm text-amber-300 flex-1">{error}</p>
-          <Button variant="ghost" size="sm" onClick={() => setError(null)}>Dismiss</Button>
-        </div>
-      )}
-
-      <TabsRoot value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="open">Open</TabsTrigger>
-          <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-          <TabsTrigger value="resolved">Resolved</TabsTrigger>
-          <TabsTrigger value="all">All Tickets</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={tab}>
-          {isLoading ? (
-            <div className="flex items-center justify-center min-h-[300px]">
-              <Loader2 className="w-8 h-8 text-admin-400 animate-spin" />
+  if (success) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-emerald-400" />
             </div>
-          ) : tickets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[300px] gap-3 text-slate-500">
-              <MessageSquare className="w-12 h-12" />
-              <p className="text-sm">No support tickets found</p>
-            </div>
-          ) : (
-            <div className="card">
-              <DataTable
-                columns={[
-                  {
-                    key: 'subject', header: 'Subject', sortable: true,
-                    render: t => <span className="font-medium text-slate-200">{(t as any).subject}</span>,
-                  },
-                  {
-                    key: 'user', header: 'User', width: '150px',
-                    render: t => {
-                      const ticket = t as any
-                      return <span className="text-sm text-slate-300">@{ticket.user?.username || ticket.userId?.slice(0, 8)}</span>
-                    },
-                  },
-                  {
-                    key: 'status', header: 'Status', width: '110px',
-                    render: t => {
-                      const s = (t as any).status
-                      return <Badge variant={statusVariant[s] || 'default'}>{s}</Badge>
-                    },
-                  },
-                  {
-                    key: 'priority', header: 'Priority', width: '90px',
-                    render: t => {
-                      const p = (t as any).priority
-                      return <Badge variant={priorityVariant[p] || 'default'}>{p}</Badge>
-                    },
-                  },
-                  {
-                    key: 'assignedTo', header: 'Assigned', width: '120px',
-                    render: t => {
-                      const a = (t as any).assignedTo
-                      return <span className="text-sm text-slate-400">{a ? `@${a.username}` : '-'}</span>
-                    },
-                  },
-                  { key: 'createdAt', header: 'Created', sortable: true, width: '160px' },
-                ]}
-                data={tickets as unknown as Record<string, unknown>[]}
-                keyExtractor={t => String((t as any).id)}
-                searchable
-                searchPlaceholder="Search tickets..."
-                onRowClick={t => {
-                  setSelectedTicket(t as unknown as SupportTicket)
-                  setAdminNotes((t as any).adminNotes || '')
-                  setShowDetail(true)
-                }}
-                pageSize={20}
-              />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-100 mb-2">Ticket Submitted!</h2>
+            <p className="text-slate-400">
+              Your support request has been received. Our team will review it and respond via email.
+            </p>
+          </div>
+          {ticketId && (
+            <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+              <p className="text-xs text-slate-500 mb-1">Ticket Reference</p>
+              <p className="text-sm font-mono text-emerald-400">#{ticketId.slice(0, 8).toUpperCase()}</p>
             </div>
           )}
-        </TabsContent>
-      </TabsRoot>
-
-      {selectedTicket && showDetail && (
-        <Modal
-          open={showDetail}
-          onOpenChange={o => { if (!o) { setShowDetail(false); setSelectedTicket(null) } }}
-          title={selectedTicket.subject}
-          description={`by @${selectedTicket.user?.username} — ${new Date(selectedTicket.createdAt).toLocaleString()}`}
-          className="max-w-2xl"
-        >
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
-              <p className="text-sm text-slate-300 whitespace-pre-wrap">{selectedTicket.message}</p>
-            </div>
-
-            <div className="flex gap-3 text-sm">
-              <div>
-                <span className="text-slate-500">Status: </span>
-                <Badge variant={statusVariant[selectedTicket.status] || 'default'}>{selectedTicket.status}</Badge>
-              </div>
-              <div>
-                <span className="text-slate-500">Priority: </span>
-                <Badge variant={priorityVariant[selectedTicket.priority] || 'default'}>{selectedTicket.priority}</Badge>
-              </div>
-              <div>
-                <span className="text-slate-500">Contact: </span>
-                <span className="text-slate-300">{selectedTicket.user?.email}</span>
-              </div>
-            </div>
-
-            {selectedTicket.assignedTo && (
-              <div className="flex items-center gap-2 text-sm text-slate-400">
-                <UserCheck className="w-4 h-4" />
-                Assigned to @{selectedTicket.assignedTo.username}
-              </div>
-            )}
-
-            {selectedTicket.createdAt && (
-              <div className="flex items-center gap-2 text-sm text-slate-400">
-                <Clock className="w-4 h-4" />
-                Created {new Date(selectedTicket.createdAt).toLocaleString()}
-              </div>
-            )}
-
-            <Input
-              label="Admin Notes"
-              id="adminNotes"
-              value={adminNotes}
-              onChange={e => setAdminNotes(e.target.value)}
-              placeholder="Add internal notes or response..."
-            />
-
-            <ModalFooter>
-              <Button variant="ghost" onClick={() => { setShowDetail(false); setSelectedTicket(null) }}>
-                Close
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => updateStatus('IN_PROGRESS')}
-                loading={actionLoading}
-                disabled={selectedTicket.status === 'IN_PROGRESS'}
-              >
-                <Clock className="w-4 h-4" /> Mark In Progress
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => updateStatus('RESOLVED')}
-                loading={actionLoading}
-                disabled={selectedTicket.status === 'RESOLVED'}
-              >
-                <CheckCircle className="w-4 h-4" /> Resolve
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => updateStatus('CLOSED')}
-                loading={actionLoading}
-                disabled={selectedTicket.status === 'CLOSED'}
-              >
-                Close
-              </Button>
-            </ModalFooter>
+          <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
+            <Mail className="w-4 h-4" />
+            <span>Confirmation sent to {email || 'your email'}</span>
           </div>
-        </Modal>
-      )}
+          <Button variant="secondary" onClick={() => { setSuccess(false); setTicketId(null) }}>
+            Submit Another Ticket
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-8 md:py-12">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
+            <TicketCheck className="w-7 h-7 text-emerald-400" />
+          </div>
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-100 mb-2">Contact Support</h1>
+        <p className="text-slate-400 max-w-md mx-auto">
+          Having trouble? Found a bug? Send us a message and we&apos;ll get back to you as soon as possible.
+        </p>
+      </div>
+
+      {/* Form Card */}
+      <div className="rounded-2xl border border-slate-800/60 bg-slate-900/50 p-6 md:p-8">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Error */}
+          {error && (
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+              <p className="text-sm text-red-300">{error}</p>
+            </div>
+          )}
+
+          {/* Email */}
+          <div>
+            <label htmlFor="support-email" className="block text-sm font-medium text-slate-300 mb-1.5">
+              Email Address <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                id="support-email"
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                maxLength={254}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/40 transition-colors"
+              />
+            </div>
+            <p className="mt-1 text-xs text-slate-500">We&apos;ll respond to this address</p>
+          </div>
+
+          {/* Category */}
+          <div>
+            <label htmlFor="support-category" className="block text-sm font-medium text-slate-300 mb-1.5">
+              Category
+            </label>
+            <select
+              id="support-category"
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/40 transition-colors appearance-none"
+            >
+              <option value="">Select a category...</option>
+              {CATEGORIES.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Priority */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Priority
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {PRIORITIES.map(p => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setPriority(p.value)}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all',
+                    priority === p.value
+                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
+                      : 'border-slate-700/50 bg-slate-800/30 text-slate-400 hover:border-slate-600/50'
+                  )}
+                >
+                  <AlertTriangle className={cn('w-3.5 h-3.5', p.color)} />
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Subject */}
+          <div>
+            <label htmlFor="support-subject" className="block text-sm font-medium text-slate-300 mb-1.5">
+              Subject <span className="text-red-400">*</span>
+            </label>
+            <input
+              id="support-subject"
+              type="text"
+              required
+              value={subject}
+              onChange={e => setSubject(e.target.value)}
+              placeholder="Brief description of your issue"
+              maxLength={200}
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/40 transition-colors"
+            />
+            <p className="mt-1 text-xs text-slate-500">{subject.length}/200 characters</p>
+          </div>
+
+          {/* Message */}
+          <div>
+            <label htmlFor="support-message" className="block text-sm font-medium text-slate-300 mb-1.5">
+              Message <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+              <textarea
+                id="support-message"
+                required
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                placeholder="Describe your issue in detail. Include steps to reproduce if it's a bug."
+                rows={5}
+                maxLength={5000}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/40 transition-colors resize-none"
+              />
+            </div>
+            <p className="mt-1 text-xs text-slate-500">{message.length}/5000 characters</p>
+          </div>
+
+          {/* Submit */}
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            className="w-full"
+            loading={submitting}
+            disabled={submitting}
+          >
+            <Send className="w-4 h-4" />
+            {submitting ? 'Submitting...' : 'Submit Ticket'}
+          </Button>
+        </form>
+      </div>
+
+      {/* Info footer */}
+      <div className="mt-6 text-center text-xs text-slate-500">
+        <p>Typical response time: 24–48 hours • For urgent issues, mark as High priority</p>
+      </div>
     </div>
   )
 }
