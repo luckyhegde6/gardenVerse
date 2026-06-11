@@ -2,13 +2,14 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireAuth, requireRole } from '@/lib/middleware/auth'
 import { success, badRequest, serverError, paginated } from '@/lib/middleware/auth'
+import { sanitizeLike } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
-    const q = searchParams.get('q')
+    const q = sanitizeLike(searchParams.get('q') || '')
     const difficulty = searchParams.get('difficulty')
     const season = searchParams.get('season')
     const edible = searchParams.get('edible')

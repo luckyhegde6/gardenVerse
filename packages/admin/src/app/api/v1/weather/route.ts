@@ -2,11 +2,12 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireRole } from '@/lib/middleware/auth'
 import { success, badRequest, serverError } from '@/lib/middleware/auth'
+import { sanitizeLike } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const region = searchParams.get('region') || 'default'
+    const region = sanitizeLike(searchParams.get('region') || 'default')
     const lat = searchParams.get('lat') ? parseFloat(searchParams.get('lat')!) : undefined
     const lng = searchParams.get('lng') ? parseFloat(searchParams.get('lng')!) : undefined
 

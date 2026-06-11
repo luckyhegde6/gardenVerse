@@ -13,6 +13,7 @@ const publicLinks = [
   { href: '/onboarding', label: 'Getting Started' },
   { href: '/about', label: 'About' },
   { href: '/support', label: 'Support' },
+  { href: '/mobile', label: 'Mobile App' },
 ]
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -126,6 +127,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 <Link href="/onboarding" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">Getting Started</Link>
                 <Link href="/about" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">About</Link>
                 <Link href="/support" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">Support</Link>
+                <Link href="/mobile" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">Mobile App</Link>
               </div>
             </div>
             <div>

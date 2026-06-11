@@ -55,8 +55,8 @@ export default function MobileDownloadPage() {
             'Marketplace for trading seeds and tools',
             'Community features with chat and groups',
           ],
-          downloadUrl: '/downloads/gardenverse-latest.apk',
-          qrCodeData: `${typeof window !== 'undefined' ? window.location.origin : 'https://gardenverse.vercel.app'}/downloads/gardenverse-latest.apk`,
+          downloadUrl: '/api/v1/mobile/download',
+          qrCodeData: `${typeof window !== 'undefined' ? window.location.origin : 'https://gardenverse.vercel.app'}/api/v1/mobile/download`,
         })
       })
 

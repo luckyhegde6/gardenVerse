@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma/client'
 import type { Prisma } from '@prisma/client'
 import { success, serverError, paginated } from '@/lib/middleware/auth'
 import { startRequestLog, finishRequestLog, logApiError } from '@/lib/middleware/logging'
+import { sanitizeLike } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest) {
   const ctx = startRequestLog(request)
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)))
-    const region = searchParams.get('region')
+    const region = sanitizeLike(searchParams.get('region') || '')
 
     const where: Prisma.GovernmentAdvisoryWhereInput = { type: 'SCHEME' }
 

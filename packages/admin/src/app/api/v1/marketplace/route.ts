@@ -2,13 +2,14 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireAuth, success, badRequest, serverError, paginated } from '@/lib/middleware/auth'
 import type { Prisma, ListingStatus } from '@prisma/client'
+import { sanitizeLike } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const category = searchParams.get('category')
   const status = searchParams.get('status') || 'ACTIVE'
-  const search = searchParams.get('search')
-  const location = searchParams.get('location')
+  const search = sanitizeLike(searchParams.get('search') || '')
+  const location = sanitizeLike(searchParams.get('location') || '')
   const minPrice = searchParams.get('minPrice')
   const maxPrice = searchParams.get('maxPrice')
   const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
