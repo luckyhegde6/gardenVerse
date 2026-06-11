@@ -3,13 +3,12 @@ import { readdirSync, statSync, existsSync } from 'fs'
 import { join } from 'path'
 
 export async function GET() {
-  const downloadsDir = join(process.cwd(), '..', '..', 'public', 'downloads')
+  const downloadsDir = join(process.cwd(), 'public', 'downloads')
 
   let version = '1.0.0'
   let buildNumber = 1
   let size = 'N/A'
   let releaseDate = new Date().toISOString().split('T')[0]
-  let downloadUrl = '/downloads/gardenverse-latest.apk'
 
   // Check if APK exists in public/downloads
   if (existsSync(downloadsDir)) {
@@ -57,9 +56,9 @@ export async function GET() {
       buildNumber,
       size,
       releaseDate,
-      downloadUrl,
       changelog,
-      qrCodeData: `https://gardenverse.vercel.app${downloadUrl}`,
+      downloadUrl: '/api/v1/mobile/download',
+      qrCodeData: `https://gardenverse.vercel.app/api/v1/mobile/download`,
       minAndroidVersion: '8.0 (API 26)',
       supportedArchitectures: ['arm64-v8a', 'armeabi-v7a', 'x86_64'],
     },
