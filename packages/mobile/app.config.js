@@ -1,10 +1,19 @@
 const IS_DEV = process.env.APP_ENV === 'development';
+const DEV_API_URL =
+  process.env.API_URL ||
+  (IS_DEV
+    ? 'http://localhost:3000/api/v1'
+    : 'http://10.0.2.2:3000/api/v1');
+const DEV_WS_URL =
+  process.env.WS_URL ||
+  (IS_DEV ? 'ws://localhost:3001' : 'ws://10.0.2.2:3001');
 
 export default {
   expo: {
     name: 'GardenVerse',
     slug: 'gardenverse',
     version: '1.0.0',
+    owner: 'luckyhegdedev',
     scheme: 'gardenverse',
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -104,12 +113,10 @@ export default {
     extra: {
       apiUrl:
         process.env.API_URL ||
-        (IS_DEV
-          ? 'http://localhost:3000/api/v1'
-          : 'https://gardenverse.vercel.app/api/v1'),
+        (IS_DEV ? DEV_API_URL : 'https://gardenverse.vercel.app/api/v1'),
       wsUrl:
         process.env.WS_URL ||
-        (IS_DEV ? 'ws://localhost:3001' : 'wss://ws.gardenverse.app'),
+        (IS_DEV ? DEV_WS_URL : 'wss://ws.gardenverse.app'),
       eas: {
         projectId:
           process.env.EAS_PROJECT_ID ||
