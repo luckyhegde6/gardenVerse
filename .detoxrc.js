@@ -2,7 +2,7 @@
 module.exports = {
   testRunner: {
     args: {
-      '$0': 'jest',
+      '$0': 'node_modules/.bin/jest.cmd',
       config: 'e2e/jest.config.js'
     },
     jest: {
@@ -22,8 +22,8 @@ module.exports = {
     },
     'android.debug': {
       type: 'android.apk',
-      binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
-      build: 'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug',
+      binaryPath: 'packages/mobile/android/app/build/outputs/apk/debug/app-debug.apk',
+      build: 'cd packages/mobile/android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug',
       reversePorts: [
         8081
       ]
