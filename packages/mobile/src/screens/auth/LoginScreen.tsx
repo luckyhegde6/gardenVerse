@@ -50,7 +50,7 @@ export function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-white"
+      testID="login-screen" className="flex-1 bg-white"
     >
       <ScrollView
         className="flex-1"

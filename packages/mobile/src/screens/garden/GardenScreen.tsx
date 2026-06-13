@@ -352,7 +352,7 @@ export function GardenScreen() {
     : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
+    <View testID="garden-screen" style={{ flex: 1, backgroundColor: theme.background }}>
       {/* ─── Plant-Centric Header ──────────────────────────────────────────── */}
       <View style={styles.plantHeader}>
         <View style={styles.headerRow}>

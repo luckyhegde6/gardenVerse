@@ -90,3 +90,4 @@ gamification-final-verify.png
 login-page-snapshot.yml
 
 .vercel
+packages/admin/public/downloads/*.apk

@@ -1,35 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { readFileSync, existsSync, statSync } from 'fs'
-import { join } from 'path'
 
 export async function GET(request: NextRequest) {
-  const downloadsDir = join(process.cwd(), 'public', 'downloads')
-  const apkPath = join(downloadsDir, 'gardenverse-latest.apk')
+  // Serve APK from static public/downloads/ folder
+  // Files in public/ are served by Vercel's CDN (not serverless), so no 50MB limit
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gardenverse.vercel.app'
+  const apkUrl = `${baseUrl}/downloads/gardenverse-latest.apk`
 
-  if (!existsSync(apkPath)) {
-    return NextResponse.json(
-      { error: 'APK not available. Please build the app first or contact support.' },
-      { status: 404 }
-    )
-  }
-
-  try {
-    const stat = statSync(apkPath)
-    const fileBuffer = readFileSync(apkPath)
-
-    return new NextResponse(fileBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/vnd.android.package-archive',
-        'Content-Disposition': 'attachment; filename="gardenverse-latest.apk"',
-        'Content-Length': stat.size.toString(),
-        'Cache-Control': 'public, max-age=3600',
-      },
-    })
-  } catch {
-    return NextResponse.json(
-      { error: 'Failed to read APK file.' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.redirect(apkUrl, 307)
 }
