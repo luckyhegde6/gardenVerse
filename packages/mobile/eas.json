@@ -53,10 +53,6 @@
         "appleId": "@my-apple-id",
         "ascAppId": "@my-asc-app-id",
         "appleTeamId": "@my-apple-team-id"
-      },
-      "android": {
-        "track": "production",
-        "releaseStatus": "completed"
       }
     }
   }
