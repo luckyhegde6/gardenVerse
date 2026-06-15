@@ -16,7 +16,7 @@ const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID
 
 function runCmd(cmd, args, opts = {}) {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, { encoding: 'utf8', timeout: 60_000, ...opts }, (err, stdout, stderr) => {
+    execFile(cmd, args, { encoding: 'utf8', timeout: 120_000, ...opts }, (err, stdout, stderr) => {
       if (err) reject(new Error(stderr || err.message))
       else resolve(stdout)
     })
@@ -40,7 +40,7 @@ async function fetchApk() {
 
   console.log('Fetching latest APK from EAS...')
 
-  // --- Strategy 1: EAS REST API v2 ---
+  // --- Strategy 1: EAS REST API ---
   try {
     const url = `https://api.expo.dev/v2/projects/${EAS_PROJECT_ID}/builds?limit=1&platform=android`
     const res = await fetch(url, { headers: { Authorization: `Bearer ${EXPO_TOKEN}` } })
@@ -66,29 +66,34 @@ async function fetchApk() {
     console.log(`REST API error: ${err.message}`)
   }
 
-  // --- Strategy 2: Install EAS CLI and use build:download ---
+  // --- Strategy 2: Install EAS CLI and use it ---
   try {
     console.log('Installing EAS CLI...')
-    await runCmd('npm', ['install', '-g', 'eas-cli'], { timeout: 120_000 })
-    console.log('EAS CLI installed.')
+    await runCmd('npm', ['install', '-g', 'eas-cli'])
+
+    // Find the eas binary path
+    const npmRoot = (await runCmd('npm', ['root', '-g'])).trim()
+    const easBin = join(npmRoot, 'eas')
+    const easCmd = process.platform === 'win32' ? 'eas.cmd' : 'eas'
+    const easPath = join(npmRoot, easCmd)
+
+    console.log(`EAS binary: ${easPath}`)
 
     // Try eas build:download
-    const cwd = join(projectRoot, 'packages', 'mobile')
-    const output = await runCmd('eas', ['build:download', '--platform', 'android', '--output', apkPath, '--project', EAS_PROJECT_ID], { cwd })
-    console.log('build:download output:', output.slice(0, 500))
-
-    if (statSync(apkPath).size > 1_000_000) {
-      console.log(`APK saved via CLI: ${(statSync(apkPath).size / 1024 / 1024).toFixed(1)} MB`)
-      return
+    try {
+      const cwd = join(projectRoot, 'packages', 'mobile')
+      const output = await runCmd(easPath, ['build:download', '--platform', 'android', '--output', apkPath, '--project', EAS_PROJECT_ID], { cwd })
+      console.log('build:download output:', output.slice(0, 500))
+      if (statSync(apkPath).size > 1_000_000) {
+        console.log(`APK saved via CLI download: ${(statSync(apkPath).size / 1024 / 1024).toFixed(1)} MB`)
+        return
+      }
+    } catch (err) {
+      console.log(`build:download failed: ${err.message}`)
     }
-  } catch (err) {
-    console.log(`CLI strategy failed: ${err.message}`)
-  }
 
-  // --- Strategy 3: Use eas build:list + download artifact ---
-  try {
-    const cwd = join(projectRoot, 'packages', 'mobile')
-    const json = await runCmd('eas', ['build:list', '--json', '--limit', '3', '--platform', 'android', '--project', EAS_PROJECT_ID], { cwd })
+    // Fallback: list builds and download artifact
+    const json = await runCmd(easPath, ['build:list', '--json', '--limit', '3', '--platform', 'android', '--project', EAS_PROJECT_ID])
     const builds = JSON.parse(json)
     const latest = Array.isArray(builds) ? builds[0] : builds
     const artifactUrl = latest?.android?.artifactUrl || latest?.artifacts?.buildUrl
@@ -106,7 +111,7 @@ async function fetchApk() {
     writeFileSync(apkPath, Buffer.from(await apk.arrayBuffer()))
     console.log(`APK saved via CLI list: ${(statSync(apkPath).size / 1024 / 1024).toFixed(1)} MB`)
   } catch (err) {
-    console.log(`CLI list strategy failed: ${err.message}`)
+    console.log(`CLI strategy failed: ${err.message}`)
   }
 }
 
