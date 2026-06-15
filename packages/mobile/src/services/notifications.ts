@@ -42,9 +42,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
 async function registerTokenWithBackend(token: string) {
   try {
+    const devBaseUrl = Platform.OS === 'android'
+      ? 'http://10.0.2.2:3000'
+      : 'http://localhost:3000';
     const baseUrl =
       process.env.API_URL ||
-      (__DEV__ ? "http://localhost:3000" : "https://gardenverse.vercel.app");
+      (__DEV__ ? devBaseUrl : 'https://gardenverse.vercel.app');
     await fetch(
       `${baseUrl}/api/v1/notifications/register-token`,
       {

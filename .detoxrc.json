@@ -1,0 +1,38 @@
+{
+  "testRunner": {
+    "args": {
+      "$0": "node",
+      "_": [
+        "/f/Local_git/gardenVerse/node_modules/jest/bin/jest.js",
+        "--config",
+        "/f/Local_git/gardenVerse/e2e/mobile/jest.config.js"
+      ]
+    },
+    "jest": {
+      "setupTimeout": 120000
+    },
+    "forwardEnv": true
+  },
+  "apps": {
+    "android.debug": {
+      "type": "android.apk",
+      "binaryPath": "packages/mobile/android/app/build/outputs/apk/debug/app-debug.apk",
+      "build": "cd packages/mobile/android && JAVA_HOME='C:\\Program Files\\Android\\Android Studio\\jbr' ANDROID_SDK_ROOT='C:\\Users\\lucky\\AppData\\Local\\Android\\Sdk' bash gradlew assembleDebug assembleAndroidTest",
+      "reversePorts": [8081, 3000]
+    }
+  },
+  "devices": {
+    "emulator": {
+      "type": "android.emulator",
+      "device": {
+        "avdName": "Pixel_7_API_34"
+      }
+    }
+  },
+  "configurations": {
+    "android.emu.debug": {
+      "device": "emulator",
+      "app": "android.debug"
+    }
+  }
+}
