@@ -1,0 +1,8 @@
+// Temporary build config to add x86_64 support for emulator testing
+android {
+    defaultConfig {
+        ndk {
+            abiFilters 'x86_64', 'arm64-v8a'
+        }
+    }
+}
