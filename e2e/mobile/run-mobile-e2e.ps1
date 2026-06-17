@@ -70,17 +70,15 @@ if ($Build -and -not $NoBuild) {
 
 # Run Detox tests
 Write-Log "Running Detox E2E tests..." "Cyan"
-$detoxArgs = @("test", "--configuration", "android.emu.debug", "--loglevel", "info")
-if ($TestFilter) {
-  $detoxArgs += "--testNamePattern=$TestFilter"
-}
-if ($Verbose) {
-  $detoxArgs += "--loglevel=verbose"
-}
+$loglevel = if ($Verbose) { "verbose" } else { "info" }
 
 Push-Location $ROOT_DIR
 try {
-  npx detox @detoxArgs 2>&1 | ForEach-Object { Write-Log $_ }
+  $detoxCmd = "npx detox test --configuration android.emu.debug --loglevel $loglevel --no-color --config detox.config.js"
+  if ($TestFilter) {
+    $detoxCmd = "$detoxCmd --testNamePattern='$TestFilter'"
+  }
+  cmd /c "$detoxCmd 2>&1"
   $exitCode = $LASTEXITCODE
 } finally {
   Pop-Location

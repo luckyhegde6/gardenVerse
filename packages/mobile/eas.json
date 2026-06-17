@@ -30,11 +30,11 @@
       "env": {
         "API_URL": "https://gardenverse.vercel.app/api/v1",
         "WS_URL": "wss://ws.gardenverse.app"
-      },
-      "channel": "preview"
+      }
     },
     "production": {
       "channel": "production",
+      "credentialsSource": "remote",
       "ios": {
         "image": "latest"
       },

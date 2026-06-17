@@ -1,10 +1,10 @@
 // Fetch the latest APK from EAS and place it in public/downloads/
+// Falls back to local APK if EAS is unavailable
 // This runs during `vercel-build` to include the APK in the Vercel deployment
 
-import { writeFileSync, mkdirSync, statSync } from 'fs'
+import { writeFileSync, mkdirSync, statSync, existsSync, copyFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { execFile } from 'child_process'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const projectRoot = join(__dirname, '..')
@@ -13,15 +13,7 @@ const apkPath = join(apkDir, 'gardenverse-latest.apk')
 
 const EXPO_TOKEN = process.env.EXPO_TOKEN
 const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID
-
-function runCmd(cmd, args, opts = {}) {
-  return new Promise((resolve, reject) => {
-    execFile(cmd, args, { encoding: 'utf8', timeout: 120_000, ...opts }, (err, stdout, stderr) => {
-      if (err) reject(new Error(stderr || err.message))
-      else resolve(stdout)
-    })
-  })
-}
+const LOCAL_APK = join(projectRoot, 'packages', 'admin', 'public', 'downloads', 'gardenverse-latest.apk')
 
 async function fetchApk() {
   // If APK already exists and is real (>1MB), skip
@@ -33,86 +25,47 @@ async function fetchApk() {
     }
   } catch {}
 
-  if (!EXPO_TOKEN || !EAS_PROJECT_ID) {
-    console.log('EXPO_TOKEN or EAS_PROJECT_ID not set. APK will not be fetched.')
-    return
-  }
+  console.log('APK placeholder detected. Trying EAS...')
 
-  console.log('Fetching latest APK from EAS...')
-
-  // --- Strategy 1: EAS REST API ---
-  try {
-    const url = `https://api.expo.dev/v2/projects/${EAS_PROJECT_ID}/builds?limit=1&platform=android`
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${EXPO_TOKEN}` } })
-
-    if (res.ok) {
-      const data = await res.json()
-      const latest = (data.data || data)[0]
-      if (latest?.android?.artifactUrl) {
-        const apk = await fetch(latest.android.artifactUrl)
-        if (apk.ok) {
-          mkdirSync(apkDir, { recursive: true })
-          writeFileSync(apkPath, Buffer.from(await apk.arrayBuffer()))
-          console.log(`APK saved via REST API: ${(statSync(apkPath).size / 1024 / 1024).toFixed(1)} MB`)
-          return
-        }
-      }
-      console.log(`REST API: latest build has no artifact yet (status: ${latest?.status}).`)
-    } else {
-      const body = await res.text()
-      console.log(`REST API returned ${res.status}: ${body.slice(0, 300)}`)
-    }
-  } catch (err) {
-    console.log(`REST API error: ${err.message}`)
-  }
-
-  // --- Strategy 2: Install EAS CLI and use it ---
-  try {
-    console.log('Installing EAS CLI...')
-    await runCmd('npm', ['install', '-g', 'eas-cli'])
-
-    // Find the eas binary path
-    const npmRoot = (await runCmd('npm', ['root', '-g'])).trim()
-    const easBin = join(npmRoot, 'eas')
-    const easCmd = process.platform === 'win32' ? 'eas.cmd' : 'eas'
-    const easPath = join(npmRoot, easCmd)
-
-    console.log(`EAS binary: ${easPath}`)
-
-    // Try eas build:download
+  // Strategy 1: EAS REST API
+  if (EXPO_TOKEN && EAS_PROJECT_ID) {
     try {
-      const cwd = join(projectRoot, 'packages', 'mobile')
-      const output = await runCmd(easPath, ['build:download', '--platform', 'android', '--output', apkPath, '--project', EAS_PROJECT_ID], { cwd })
-      console.log('build:download output:', output.slice(0, 500))
-      if (statSync(apkPath).size > 1_000_000) {
-        console.log(`APK saved via CLI download: ${(statSync(apkPath).size / 1024 / 1024).toFixed(1)} MB`)
-        return
+      const url = `https://api.expo.dev/v2/projects/${EAS_PROJECT_ID}/builds?limit=1&platform=android`
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${EXPO_TOKEN}` } })
+
+      if (res.ok) {
+        const data = await res.json()
+        const latest = (data.data || data)[0]
+        if (latest?.android?.artifactUrl) {
+          const apk = await fetch(latest.android.artifactUrl)
+          if (apk.ok) {
+            mkdirSync(apkDir, { recursive: true })
+            writeFileSync(apkPath, Buffer.from(await apk.arrayBuffer()))
+            console.log(`APK from EAS: ${(statSync(apkPath).size / 1024 / 1024).toFixed(1)} MB`)
+            return
+          }
+        }
+        console.log(`EAS: latest build has no artifact (status: ${latest?.status}).`)
+      } else {
+        console.log(`EAS API ${res.status}: ${(await res.text()).slice(0, 200)}`)
       }
     } catch (err) {
-      console.log(`build:download failed: ${err.message}`)
+      console.log(`EAS error: ${err.message}`)
     }
+  }
 
-    // Fallback: list builds and download artifact
-    const json = await runCmd(easPath, ['build:list', '--json', '--limit', '3', '--platform', 'android', '--project', EAS_PROJECT_ID])
-    const builds = JSON.parse(json)
-    const latest = Array.isArray(builds) ? builds[0] : builds
-    const artifactUrl = latest?.android?.artifactUrl || latest?.artifacts?.buildUrl
-
-    if (!artifactUrl) {
-      console.log(`CLI list: no artifact URL. Build status: ${latest?.status || 'unknown'}`)
+  // Strategy 2: Use local APK (if real)
+  try {
+    const localStat = statSync(LOCAL_APK)
+    if (localStat.size > 1_000_000) {
+      mkdirSync(apkDir, { recursive: true })
+      copyFileSync(LOCAL_APK, apkPath)
+      console.log(`APK copied from local: ${(localStat.size / 1024 / 1024).toFixed(1)} MB`)
       return
     }
+  } catch {}
 
-    console.log(`Downloading artifact: ${artifactUrl.slice(0, 100)}...`)
-    const apk = await fetch(artifactUrl)
-    if (!apk.ok) { console.log(`Download failed: ${apk.status}`); return }
-
-    mkdirSync(apkDir, { recursive: true })
-    writeFileSync(apkPath, Buffer.from(await apk.arrayBuffer()))
-    console.log(`APK saved via CLI list: ${(statSync(apkPath).size / 1024 / 1024).toFixed(1)} MB`)
-  } catch (err) {
-    console.log(`CLI strategy failed: ${err.message}`)
-  }
+  console.log('No APK available. Download page will show placeholder.')
 }
 
 fetchApk()
