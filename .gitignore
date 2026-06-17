@@ -57,6 +57,7 @@ playwright-report/
 test-results/
 .playwright/
 .playwright-mcp/
+.playwright-cli/
 
 # E2E generated artifacts
 e2e/screenshots/

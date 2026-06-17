@@ -2,12 +2,13 @@
 module.exports = {
   testRunner: {
     args: {
-      '$0': 'node_modules/.bin/jest.cmd',
-      config: 'e2e/jest.config.js'
+      '$0': 'node',
+      _: ['node_modules/jest/bin/jest.js', '--config', 'e2e/mobile/jest.config.js'],
     },
     jest: {
       setupTimeout: 120000
-    }
+    },
+    forwardEnv: false
   },
   apps: {
     'ios.debug': {
@@ -25,7 +26,7 @@ module.exports = {
       binaryPath: 'packages/mobile/android/app/build/outputs/apk/debug/app-debug.apk',
       build: 'cd packages/mobile/android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug',
       reversePorts: [
-        8081
+        8081, 3000
       ]
     },
     'android.release': {

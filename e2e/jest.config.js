@@ -1,18 +1,15 @@
 /** @type {import('jest').Config} */
 module.exports = {
-  rootDir: '/f/Local_git/gardenVerse/e2e/mobile',
-  testRunner: 'jest-circus',
+  rootDir: '.',
+  testRunner: 'jest-circus/runner',
   testMatch: ['**/*.test.ts'],
   testTimeout: 120000,
   maxWorkers: 1,
   globalSetup: 'detox/runners/jest/globalSetup',
   globalTeardown: 'detox/runners/jest/globalTeardown',
   reporters: ['detox/runners/jest/reporter'],
-  testEnvironment: 'detox/runners/jest/testEnvironment',
+  testEnvironment: 'detox/runners/jest-circus/environment',
   verbose: true,
-  transform: {
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: '/f/Local_git/gardenVerse/tsconfig.base.json' }],
-  },
   moduleNameMapper: {
     '^detox$': 'detox',
   },

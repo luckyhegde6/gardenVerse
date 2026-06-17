@@ -1,3 +1,5 @@
+import { Platform } from 'react-native'
+
 export type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
 
 export interface LogEntry {
@@ -30,7 +32,7 @@ declare global {
 const MAX_BUFFER = 200
 const BATCH_INTERVAL = 500
 const LOGS_API_URL = __DEV__
-  ? 'http://localhost:3000/api/v1/logs'
+  ? (Platform.OS === 'android' ? 'http://10.0.2.2:3000/api/v1/logs' : 'http://localhost:3000/api/v1/logs')
   : 'https://gardenverse.vercel.app/api/v1/logs'
 
 let buffer: LogEntry[] = []

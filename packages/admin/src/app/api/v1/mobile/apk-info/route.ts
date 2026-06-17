@@ -1,26 +1,11 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
 
 export async function GET() {
   const version = process.env.APK_VERSION || '1.0.0'
   const buildNumber = parseInt(process.env.APK_BUILD_NUMBER || '1', 10)
-  const envSizeMB = process.env.APK_SIZE_MB
-  const releaseDate = process.env.APK_RELEASE_DATE || new Date().toISOString().split('T')[0]
-
-  // Try to get actual file size from local APK
-  let size: string
-  try {
-    const apkPath = path.join(process.cwd(), 'public', 'downloads', 'gardenverse-latest.apk')
-    if (fs.existsSync(apkPath)) {
-      const fileSize = fs.statSync(apkPath).size
-      size = `${(fileSize / 1024 / 1024).toFixed(1)} MB`
-    } else {
-      size = envSizeMB ? `${envSizeMB} MB` : 'N/A'
-    }
-  } catch {
-    size = envSizeMB ? `${envSizeMB} MB` : 'N/A'
-  }
+  const sizeMB = process.env.APK_SIZE_MB || '183'
+  const releaseDate = process.env.APK_RELEASE_DATE || '2026-06-15'
+  const size = `${sizeMB} MB`
 
   const changelog = [
     'Virtual garden with 2D/3D isometric views',

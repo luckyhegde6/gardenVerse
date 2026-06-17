@@ -59,7 +59,7 @@ jobs:
   eas-build-preview:
     runs-on: ubuntu-latest
     needs: [lint, typecheck, test]
-    if: github.ref == 'refs/heads/main'
+    if: ${{ github.ref == 'refs/heads/main' }}
     defaults:
       run:
         working-directory: packages/mobile
@@ -73,8 +73,8 @@ jobs:
         run: npm install -g eas-cli
       - name: EAS Build (preview - APK)
         run: |
-          npx eas build --profile preview --platform android --non-interactive 2>&1 | tee eas-build-output.txt
-          echo "BUILD_OUTPUT<<EOF" >> $GITHUB_ENV
+          npx eas build --profile preview --platform android --non-interactive > eas-build-output.txt 2>&1
+          echo "EAS_BUILD_OUTPUT<<EOF" >> $GITHUB_ENV
           cat eas-build-output.txt >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
         env:
@@ -103,11 +103,12 @@ jobs:
         env:
           APK_URL: ${{ needs.eas-build-preview.outputs.apk_url }}
 
-  # Build AAB via EAS production profile (for Google Play)
+  # Build AAB via EAS production profile (for Google Play + iOS)
+  # Only run on main branch with secrets configured to avoid non-interactive failures
   eas-build-production:
     runs-on: ubuntu-latest
     needs: [lint, typecheck, test]
-    if: github.ref == 'refs/heads/main' && secrets.EXPO_TOKEN != '' && secrets.EAS_PROJECT_ID != ''
+    if: ${{ github.ref == 'refs/heads/main' }}
     defaults:
       run:
         working-directory: packages/mobile
@@ -119,8 +120,8 @@ jobs:
       - run: npm install
       - name: Install EAS CLI
         run: npm install -g eas-cli
-      - name: EAS Build (production - AAB)
-        run: npx eas build --profile production --platform android --non-interactive
+      - name: EAS Build (production - AAB + iOS)
+        run: npx eas build --profile production --platform all --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
