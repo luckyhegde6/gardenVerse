@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
+import jwt from 'jsonwebtoken'
 import { signToken, success, badRequest, unauthorized, serverError } from '@/lib/middleware/auth'
 import { authRateLimit } from '@/lib/middleware/rate-limit'
 
@@ -22,8 +23,7 @@ export async function POST(request: NextRequest) {
     let payload: { userId: string; email: string; role: string }
 
     try {
-      const jwt = await import('jsonwebtoken')
-      payload = jwt.default.verify(refreshToken, refreshSecret) as typeof payload
+      payload = jwt.verify(refreshToken, refreshSecret) as typeof payload
     } catch {
       return unauthorized('Invalid or expired refresh token')
     }
@@ -42,12 +42,8 @@ export async function POST(request: NextRequest) {
       '15m'
     )
 
-    const jwt = await import('jsonwebtoken')
-    const newRefreshToken = jwt.default.sign(
-      { userId: user.id, email: user.email, role: user.role.toLowerCase() },
-      refreshSecret,
-      { expiresIn: '7d' }
-    )
+    const tokenPayload = { userId: user.id, email: user.email, role: user.role.toLowerCase() }
+    const newRefreshToken = jwt.sign(tokenPayload, refreshSecret, { expiresIn: '7d' })
 
     await prisma.session.create({
       data: {

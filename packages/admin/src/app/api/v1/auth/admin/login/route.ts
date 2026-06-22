@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma/client'
+import jwt from 'jsonwebtoken'
 import { signToken, success, badRequest, unauthorized, serverError } from '@/lib/middleware/auth'
 import { authRateLimit } from '@/lib/middleware/rate-limit'
 
@@ -67,12 +68,8 @@ export async function POST(request: NextRequest) {
     if (!refreshSecret) {
       return serverError('JWT_REFRESH_SECRET environment variable is required')
     }
-    const jwt = await import('jsonwebtoken')
-    const refreshToken = jwt.default.sign(
-      { userId: user.id, email: user.email, role: user.role.toLowerCase() },
-      refreshSecret,
-      { expiresIn: '7d' }
-    )
+    const tokenPayload = { userId: user.id, email: user.email, role: user.role.toLowerCase() }
+    const refreshToken = jwt.sign(tokenPayload, refreshSecret, { expiresIn: '7d' })
 
     await prisma.session.create({
       data: {

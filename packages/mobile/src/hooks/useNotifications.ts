@@ -20,7 +20,7 @@ export function useNotifications() {
       await registerForPushNotifications();
       try {
         const resp = await fetch(
-          `${process.env.API_URL || "https://api.gardenverse.app"}/api/v1/notifications/preferences`,
+          `${process.env.API_URL || "https://gardenverse.vercel.app"}/api/v1/notifications/preferences`,
         );
         if (resp.ok) {
           await resp.json();
