@@ -40,12 +40,72 @@
 | Service | Platform | Type | URL | Scaling |
 |---------|----------|------|-----|---------|
 | Admin Dashboard + API | Vercel | Next.js (SSG/SSR + API Routes) | `gardenverse.vercel.app` | Auto (serverless) |
-| AI Service | TBD | FastAPI (container) | TBD | TBD |
+| AI Service | Railway | FastAPI (Docker container) | `gardenverse-ai.up.railway.app` | 1 replica (auto-restart) |
 | Database | Supabase | PostgreSQL 16 | Managed | Auto-scale |
 | Cache/Queue | Upstash | Redis via HTTP | Managed | Auto-scale |
 | File Storage | Supabase | S3-compatible | Built-in | Managed |
 
 > **Note:** The backend API is no longer a separate service. All API routes (`/api/v1/*`) are served directly by the Next.js app on Vercel. This eliminates the need for a separate backend deployment and simplifies the architecture.
+
+### AI Service (Railway)
+
+The Python FastAPI service provides plant disease detection and health analysis. It is deployed as a Docker container on Railway.
+
+#### Prerequisites
+- A [Railway](https://railway.app) account
+- Railway CLI installed (`npm i -g @railway/cli`)
+- Docker installed locally
+
+#### Deployment Steps
+
+1. **Set up Railway project:**
+   ```bash
+   cd services/ai
+   railway login
+   railway init
+   ```
+
+2. **Configure environment variables** in Railway dashboard:
+   | Variable | Value |
+   |----------|-------|
+   | `REDIS_HOST` | (leave empty — Redis optional for AI service) |
+   | `CORS_ORIGINS` | `https://gardenverse.vercel.app,http://localhost:3000` |
+   | `WEATHER_API_KEY` | Your OpenWeatherMap API key |
+   | `LOG_LEVEL` | `info` |
+
+3. **Deploy:**
+   ```bash
+   railway up
+   ```
+
+4. **Verify:**
+   ```bash
+   curl https://your-project.up.railway.app/health
+   # Expected: {"status":"healthy","service":"gardenverse-ai-services","version":"1.0.0","redis_connected":false}
+   ```
+
+5. **Connect to Vercel:**
+   Add the Railway URL as `NEXT_PUBLIC_AI_SERVICE_URL` in Vercel environment variables:
+   ```bash
+   vercel env add NEXT_PUBLIC_AI_SERVICE_URL
+   # Value: https://your-project.up.railway.app
+   ```
+
+#### Local AI Service
+
+For local development, the AI service runs via Docker Compose or directly:
+
+```bash
+# Option A: Via Docker Compose (recommended — includes Redis)
+npm run docker:up
+# The AI service starts automatically on port 8000
+
+# Option B: Direct Python (for debugging)
+cd services/ai
+pip install -r requirements.txt
+cp .env.example .env  # Edit if needed
+uvicorn src.main:app --reload --port 8000
+```
 
 ---
 

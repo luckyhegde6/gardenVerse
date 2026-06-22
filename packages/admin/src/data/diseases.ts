@@ -651,16 +651,22 @@ export function searchDiseases(query: string): Disease[] {
 }
 
 export function getDiseaseStats() {
+  const byType = DISEASE_DATABASE.reduce<Record<string, number>>((acc, d) => {
+    acc[d.type] = (acc[d.type] || 0) + 1
+    return acc
+  }, {})
+
+  const severityCounts = DISEASE_DATABASE.reduce<Record<string, number>>((acc, d) => {
+    acc[d.severity] = (acc[d.severity] || 0) + 1
+    return acc
+  }, {})
+
   return {
     total: DISEASE_DATABASE.length,
-    byType: Object.fromEntries(
-      (Object.entries(Object.groupBy(DISEASE_DATABASE, d => d.type))).map(([k, v]) => [k, (v as Disease[]).length])
-    ),
+    byType,
     byCrop: Object.fromEntries(
       CROP_LIST.map(crop => [crop, getDiseasesByCrop(crop).length])
     ),
-    severityCounts: Object.fromEntries(
-      (Object.entries(Object.groupBy(DISEASE_DATABASE, d => d.severity))).map(([k, v]) => [k, (v as Disease[]).length])
-    ),
+    severityCounts,
   }
 }

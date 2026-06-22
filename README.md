@@ -79,8 +79,12 @@ cp .env.example .env
 # Edit .env with your API keys:
 ```
 
-### 3. Start Infrastructure (Docker)
+### 3. Start Infrastructure (Docker) — Backend Services
 ```bash
+# Full stack (PostgreSQL + Redis + AI Service)
+npm run docker:up
+
+# OR just the essentials (PostgreSQL + Redis, no AI)
 npm run docker:local
 # Starts PostgreSQL (5432) + Redis (6379)
 ```
@@ -89,20 +93,37 @@ npm run docker:local
 ```bash
 npm run prisma:generate
 npm run prisma:migrate
-npm run prisma:seed    # Optional: sample plants from OpenFarm
+npm run prisma:seed    # Seeds 20+ plant species, demo garden, crops
 ```
 
 ### 5. Start Development Servers
+Run these in separate terminals:
+
 ```bash
-# Admin Dashboard + API (Next.js, unified) on :3000
+# Terminal 1: Admin Dashboard + API (Next.js, unified) on :3000
 npm run admin:dev
 
-# Mobile (Expo)
+# Terminal 2: Mobile (Expo) — requires admin:dev running for API
 npm run mobile:dev
 
-# AI Service (if needed locally)
+# Terminal 3: AI Service (Python FastAPI, optional — admin falls back to TS analysis)
 npm run ai:dev
 ```
+
+**Service URLs (local development):**
+
+| Service | URL | Notes |
+|---------|-----|-------|
+| **Admin Dashboard** | http://localhost:3000 | Next.js UI + API routes |
+| **API Endpoints** | http://localhost:3000/api/v1/* | All backend APIs |
+| **AI Service** | http://localhost:8000 | Python FastAPI (optional) |
+| **PostgreSQL** | localhost:5432 | Docker |
+| **Redis** | localhost:6379 | Docker |
+
+**Important:**
+- The AI service is **optional** for local dev. When it's down, the admin app falls back to TypeScript-based analysis using the disease database.
+- The mobile app requires the admin API running on `:3000`. Set `NEXT_PUBLIC_API_URL=http://localhost:3000` in the mobile env.
+- To configure which AI service URL the admin uses, set `NEXT_PUBLIC_AI_SERVICE_URL` (defaults to `http://localhost:8000`).
 
 ### 6. Verify
 ```bash

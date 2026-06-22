@@ -14,3 +14,12 @@ local.properties
 
 # Bundle artifacts
 *.jsbundle
+
+# Build-generated assets (from APK build / Expo prebuild)
+app/src/main/assets/
+app/src/main/res/raw/
+app/src/main/res/drawable-*/__node_modules_*
+build_log.txt
+
+# Accidental lockfile from android directory
+package-lock.json

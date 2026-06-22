@@ -146,13 +146,32 @@ export interface SensorReading {
   timestamp: string;
 }
 
+export interface DiseaseEntry {
+  name?: string;
+  disease?: string;
+  probability?: number;
+  confidence?: number;
+  treatment?: string;
+}
+
+export interface SourceCitation {
+  source: string;
+  field: string;
+  value: string;
+}
+
 export interface AiScanResult {
   id: string;
   plantName?: string;
   species?: string;
   healthScore?: number;
-  diseases?: string[];
+  diseases?: (string | DiseaseEntry)[];
   recommendations?: string[];
+  confidence?: 'high' | 'medium' | 'low';
+  uncertainty?: 'low' | 'moderate' | 'high';
+  uncertaintyReason?: string;
+  analysisDisclaimer?: string;
+  sourceCitations?: SourceCitation[];
 }
 
 export interface GovernmentAdvisory {

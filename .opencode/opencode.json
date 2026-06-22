@@ -20,8 +20,7 @@
   "plugin": [
     "opencode-helicone-session",
     "opencode-wakatime",
-    ".opencode/plugins/graphify.js",
-    "~/.config/opencode/node_modules/superpowers"
+    "superpowers"
   ],
   "mcp": {
     "docker": {
