@@ -25,24 +25,24 @@
         "simulator": false
       },
       "android": {
-        "buildType": "apk",
-        "image": "ubuntu-22.04-jdk-17-ndk-r26b"
+        "buildType": "apk"
       },
       "env": {
         "API_URL": "https://gardenverse.vercel.app/api/v1",
-        "WS_URL": "wss://ws.gardenverse.app"
+        "WS_URL": "wss://ws.gardenverse.app",
+        "GRADLE_DISTRIBUTION_URL": "https://services.gradle.org/distributions/gradle-8.5-all.zip"
       }
     },
     "production": {
       "channel": "production",
       "credentialsSource": "remote",
       "android": {
-        "buildType": "apk",
-        "image": "ubuntu-22.04-jdk-17-ndk-r26b"
+        "buildType": "apk"
       },
       "env": {
         "API_URL": "https://gardenverse.vercel.app/api/v1",
-        "WS_URL": "wss://ws.gardenverse.app"
+        "WS_URL": "wss://ws.gardenverse.app",
+        "GRADLE_DISTRIBUTION_URL": "https://services.gradle.org/distributions/gradle-8.5-all.zip"
       }
     }
   },

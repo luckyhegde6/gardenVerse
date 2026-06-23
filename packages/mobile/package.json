@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
+    "postinstall": "node scripts/postinstall.js",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -22,6 +23,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@tanstack/react-query": "^5.51.1",
+    "@types/react": "~18.2.79",
     "@types/three": "^0.184.1",
     "axios": "^1.7.2",
     "dayjs": "^1.11.12",
@@ -55,8 +57,7 @@
     "react-native-web": "~0.19.10",
     "socket.io-client": "^4.7.5",
     "three": "^0.184.0",
-    "zustand": "^4.5.4",
-    "@types/react": "~18.2.79"
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
