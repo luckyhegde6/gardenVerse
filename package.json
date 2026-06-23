@@ -48,6 +48,7 @@
     "prisma:generate": "npm run prisma:generate -w packages/admin",
     "prisma:migrate": "npm run prisma:migrate -w packages/admin",
     "prisma:seed": "npm run prisma:seed -w packages/admin",
+    "postinstall": "node packages/mobile/scripts/postinstall.js",
     "prepare": "husky || true",
     "script:docker-local": "powershell -ExecutionPolicy Bypass -File scripts/docker-local.ps1",
     "script:docker-prod-debug": "powershell -ExecutionPolicy Bypass -File scripts/docker-prod-debug.ps1",
