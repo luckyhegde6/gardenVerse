@@ -1,7 +1,8 @@
 pluginManagement {
   def mobileRoot = new File(rootDir, "..").absolutePath.replace('\\', '/')
   def repoRoot = new File(rootDir, "../../..").absolutePath.replace('\\', '/')
-  def nodeModulesPath = mobileRoot + "/node_modules;" + repoRoot + "/node_modules"
+  def separator = System.getProperty("os.name").toLowerCase().contains("win") ? ";" : ":"
+  def nodeModulesPath = mobileRoot + "/node_modules" + separator + repoRoot + "/node_modules"
 
   def version = providers.exec {
     environment("NODE_PATH", nodeModulesPath)
@@ -30,7 +31,8 @@ includeBuild(new File(_repoRoot, "node_modules/@react-native/gradle-plugin").toS
 def getRNMinorVersion() {
   def mobileRoot = new File(rootDir, "..").absolutePath.replace('\\', '/')
   def repoRoot = new File(rootDir, "../../..").absolutePath.replace('\\', '/')
-  def nodeModulesPath = mobileRoot + "/node_modules;" + repoRoot + "/node_modules"
+  def separator = System.getProperty("os.name").toLowerCase().contains("win") ? ";" : ":"
+  def nodeModulesPath = mobileRoot + "/node_modules" + separator + repoRoot + "/node_modules"
   def version = providers.exec {
     environment("NODE_PATH", nodeModulesPath)
     commandLine("node", "-e", "console.log(require('react-native/package.json').version);")
