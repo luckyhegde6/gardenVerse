@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - 'packages/mobile/**'
+      - '.github/workflows/mobile.yml'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -66,9 +67,22 @@ jobs:
         with:
           node-version: 24
       - run: npm install
+      - name: Check EAS credentials
+        id: check-creds
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN/EAS_PROJECT_ID not set — skipping EAS build"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       - name: Install EAS CLI
+        if: steps.check-creds.outputs.skip != 'true'
         run: npm install -g eas-cli
       - name: EAS Build (preview - APK)
+        if: steps.check-creds.outputs.skip != 'true'
         run: |
           npx eas build --profile preview --platform android --non-interactive > eas-build-output.txt 2>&1
           echo "EAS_BUILD_OUTPUT<<EOF" >> $GITHUB_ENV
@@ -81,6 +95,7 @@ jobs:
           WS_URL: ${{ vars.WS_URL || 'wss://ws.gardenverse.app' }}
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
       - name: Extract APK download URL
+        if: steps.check-creds.outputs.skip != 'true'
         id: apk-url
         run: |
           APK_URL=$(grep -oP 'https://[^\s"]+\.apk' eas-build-output.txt | head -1)
@@ -91,6 +106,7 @@ jobs:
           echo "APK_URL=$APK_URL" >> $GITHUB_ENV
           echo "APK download URL: $APK_URL"
       - name: Download APK to public/downloads
+        if: steps.check-creds.outputs.skip != 'true'
         run: |
           mkdir -p "$GITHUB_WORKSPACE/packages/admin/public/downloads"
           echo "Downloading APK from: $APK_URL"
@@ -115,9 +131,22 @@ jobs:
         with:
           node-version: 24
       - run: npm install
+      - name: Check EAS credentials
+        id: check-creds
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN/EAS_PROJECT_ID not set — skipping EAS production build"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       - name: Install EAS CLI
+        if: steps.check-creds.outputs.skip != 'true'
         run: npm install -g eas-cli
       - name: EAS Build (production - AAB + iOS)
+        if: steps.check-creds.outputs.skip != 'true'
         run: npx eas build --profile production --platform all --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
