@@ -26,6 +26,7 @@ import {
   BookOpen,
   Bug,
   BrainCircuit,
+  Smartphone,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -55,6 +56,7 @@ const navItems: NavItem[] = [
   { href: '/admin/support', label: 'Support', icon: TicketCheck },
   { href: '/invites', label: 'Invites', icon: Mail },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
+  { href: '/mobile', label: 'Mobile App', icon: Smartphone },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/super-admin/dashboard', label: 'Super Admin', icon: Activity },
   { href: '/api-docs', label: 'API Routes', icon: BookOpen },

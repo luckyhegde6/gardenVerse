@@ -111,7 +111,7 @@ export default function MobileDownloadPage() {
 
   const checkBuildStatus = async () => {
     try {
-      const res = await fetch('/api/v1/mobile/build')
+      const res = await fetch('/api/v1/mobile/build-apk')
       const data = await res.json()
       if (data.apkExists) {
         setBuildStatus(prev => ({
@@ -130,7 +130,7 @@ export default function MobileDownloadPage() {
   const handleBuildApk = async () => {
     setBuildStatus({ status: 'building', message: 'Starting EAS preview build...', buildId: null, apkExists: buildStatus.apkExists, apkSize: buildStatus.apkSize })
     try {
-      const res = await fetch('/api/v1/mobile/build', {
+      const res = await fetch('/api/v1/mobile/build-apk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profile: 'preview' }),
