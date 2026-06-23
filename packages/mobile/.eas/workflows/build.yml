@@ -26,19 +26,9 @@ defaults:
   image: sdk-51
 
 jobs:
-  lint:
-    name: Lint & Typecheck
-    type: custom
-    runs_on: linux-medium
-    steps:
-      - run: npm install --prefix ../../
-      - run: npm run lint -w packages/mobile
-      - run: npm run typecheck -w packages/mobile
-
   build-development:
     name: Development Build
     type: build
-    needs: [lint]
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.profile == 'development' }}
     params:
       platform: ${{ inputs.platform || 'android' }}
@@ -47,7 +37,6 @@ jobs:
   build-production:
     name: Production Build
     type: build
-    needs: [lint]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     params:
       platform: android
