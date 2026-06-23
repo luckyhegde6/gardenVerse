@@ -113,8 +113,6 @@ jobs:
           curl -L -o "$GITHUB_WORKSPACE/packages/admin/public/downloads/gardenverse-latest.apk" "$APK_URL"
           ls -la "$GITHUB_WORKSPACE/packages/admin/public/downloads/gardenverse-latest.apk"
           echo "APK_SIZE_MB=$(du -m "$GITHUB_WORKSPACE/packages/admin/public/downloads/gardenverse-latest.apk" | cut -f1)" >> $GITHUB_ENV
-        env:
-          APK_URL: ${{ needs.eas-build-preview.outputs.apk_url }}
 
   # Build AAB via EAS production profile (for Google Play + iOS)
   # Only run on main branch with secrets configured to avoid non-interactive failures
@@ -147,7 +145,7 @@ jobs:
         run: npm install -g eas-cli
       - name: EAS Build (production - AAB + iOS)
         if: steps.check-creds.outputs.skip != 'true'
-        run: npx eas build --profile production --platform all --non-interactive
+        run: npx eas build --profile production --platform android --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}

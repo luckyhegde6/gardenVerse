@@ -50,5 +50,5 @@ jobs:
     needs: [lint]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     params:
-      platform: all
+      platform: android
       profile: production
