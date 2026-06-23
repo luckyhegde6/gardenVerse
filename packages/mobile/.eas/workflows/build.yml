@@ -31,7 +31,7 @@ jobs:
     type: custom
     runs_on: linux-medium
     steps:
-      - run: npm ci
+      - run: npm install --prefix ../../
       - run: npm run lint -w packages/mobile
       - run: npm run typecheck -w packages/mobile
 
