@@ -25,7 +25,8 @@
         "simulator": false
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleDistributionUrl": "https://services.gradle.org/distributions/gradle-8.5-all.zip"
       },
       "env": {
         "API_URL": "https://gardenverse.vercel.app/api/v1",
@@ -39,7 +40,8 @@
         "image": "latest"
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleDistributionUrl": "https://services.gradle.org/distributions/gradle-8.5-all.zip"
       },
       "env": {
         "API_URL": "https://gardenverse.vercel.app/api/v1",
