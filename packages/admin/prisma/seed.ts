@@ -1,6 +1,6 @@
 import { PrismaClient, GardenType, CropStatus } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { extraPlants } from './extra-plants';
 
 // Ensure DATABASE_URL is set for Prisma

@@ -63,7 +63,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Session Metadata
 - **Project**: GardenVerse - Hybrid Agriculture Simulation Ecosystem
-- **Session Started**: Jun 5, 2026 (Active: Session 11 — Mobile Logger Pipeline + Seed Data + First-Time Walkthrough)
+- **Session Started**: Jun 23, 2026 (Active: Session 12 — Production Auth Fix + Emulator Testing + E2E Flow Verification)
 - **Architecture**: Next.js API Routes (Unified Admin + API) → Future Microservices
 - **Monorepo**: npm workspaces
 - **Platform**: Windows (PowerShell)
@@ -238,6 +238,41 @@ Context minimization rules:
 ---
 
 ## Session Feedback & Improvements
+
+### Session 12 (Jun 23, 2026): Production Auth Fix + Emulator Testing + E2E Flow Verification
+
+**Focus**: Fix production auth (500 error on login), switch bcrypt→bcryptjs for Vercel serverless, add missing /api/v1/ai/scans route, test mobile app in Android emulator, verify full API flow end-to-end
+
+**Accomplishments:**
+- **Fixed production auth** — Login was returning 500 on Vercel due to `bcrypt@5.1.1` (native C++ module) failing in serverless Lambda. Switched to `bcryptjs` (pure JS, works everywhere). Also replaced all dynamic `await import('jsonwebtoken')` calls with static `import jwt from 'jsonwebtoken'` to avoid DEP0169 deprecation warnings.
+- **Fixed stale production URL** — `useNotifications.ts` hardcoded `https://api.gardenverse.app` (nonexistent domain) instead of `https://gardenverse.vercel.app`
+- **Added missing `/api/v1/ai/scans` route** — The route didn't exist, so requests fell through to `[id]/route.ts` which tried `findUnique({ where: { id: "scans" } })`, causing a 500. Created proper paginated GET handler with auth guard.
+- **Vercel deployment** — 152 pages/routes compiled successfully, all API routes included (including the new scans route)
+- **Emulator testing** — Launched Pixel_7_API_34 emulator with GardenVerse APK; logged in as `demo@gardenverse.vercel.app`; garden screen renders with collections, mastery, weather bar; confirmed API connectivity via adb logcat
+- **Found React useContext crash in dev APK** — `TypeError: Cannot read property 'useContext' of null` — React version mismatch in the development build; need production EAS build for stable APK
+- **Production API verification** — All endpoints returning 200: login, gardens, crops, plants, stats, marketplace, weather, community, ai/scans, notifications/preferences
+
+**Key Bugs Fixed:**
+1. **Login 500 on Vercel** — `bcrypt@5.1.1` native module fails on Vercel Lambda. `serverError()` handler hid the error by returning generic `"Internal server error"`. Switched to `bcryptjs` (pure JS).
+2. **Dynamic `jsonwebtoken` import** — `await import('jsonwebtoken')` triggered DEP0169 and could fail in serverless bundling. Replaced with static imports.
+3. **`/api/v1/ai/scans` 500** — Route didn't exist; fell through to `[id]` dynamic route which tried `findUnique({ where: { id: "scans" } })`. Created proper paginated GET handler.
+4. **Stale domain in notifications hook** — `useNotifications.ts` had `https://api.gardenverse.app` which doesn't resolve. Changed to `https://gardenverse.vercel.app`.
+
+**Mistakes & Corrections:**
+1. ❌ `edit` tool with `newString` containing partial text duplicated arguments in jwt.sign calls
+   ✅ Always read the full file after edit operations and verify typecheck passes
+2. ❌ Launched emulator and Expo dev server without verifying the production API works first
+   ✅ Test production API first, then decide if local dev or production-endpoint testing is needed
+3. ❌ Subagent for emulator login used wrong coordinates from stale UI dump
+   ✅ Always take fresh UI dump/screenshot before computing tap coordinates
+4. ❌ `npx vercel logs` uses `Select-String` which fails in cmd context
+   ✅ Use PowerShell-native filtering or redirect output
+
+**Next Steps:**
+- Build a production APK via `eas build --profile production` (this will embed the JS bundle and avoid `useContext` crash)
+- Set up a proper EAS build pipeline for mobile CI/CD
+- Run full E2E Playwright tests against the production API
+- Fix the dev build's React version mismatch issue
 
 ### Session 10 (Jun 4, 2026): Backend Migration Completion — Monitoring Overhaul + NestJS→Next.js + Logger + AI Dashboard
 
