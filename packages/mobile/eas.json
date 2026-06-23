@@ -47,13 +47,5 @@
       }
     }
   },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "@my-apple-id",
-        "ascAppId": "@my-asc-app-id",
-        "appleTeamId": "@my-apple-team-id"
-      }
-    }
-  }
+  "submit": {}
 }
