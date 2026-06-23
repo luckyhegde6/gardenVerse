@@ -29,6 +29,7 @@ import {
   Smartphone,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
 
 interface NavItem {
   href: string
@@ -36,7 +37,7 @@ interface NavItem {
   icon: typeof LayoutDashboard
 }
 
-const navItems: NavItem[] = [
+const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/users', label: 'Users', icon: Users },
   { href: '/monitoring', label: 'Monitoring', icon: Activity },
@@ -56,10 +57,13 @@ const navItems: NavItem[] = [
   { href: '/admin/support', label: 'Support', icon: TicketCheck },
   { href: '/invites', label: 'Invites', icon: Mail },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
-  { href: '/mobile', label: 'Mobile App', icon: Smartphone },
   { href: '/settings', label: 'Settings', icon: Settings },
-  { href: '/super-admin/dashboard', label: 'Super Admin', icon: Activity },
   { href: '/api-docs', label: 'API Routes', icon: BookOpen },
+]
+
+const ADMIN_ONLY: NavItem[] = [
+  { href: '/mobile', label: 'Mobile App', icon: Smartphone },
+  { href: '/super-admin/dashboard', label: 'Super Admin', icon: Activity },
 ]
 
 interface SidebarProps {
@@ -69,6 +73,9 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname()
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
+  const navItems = isAdmin ? [...ALL_NAV_ITEMS, ...ADMIN_ONLY] : ALL_NAV_ITEMS
 
   return (
     <aside

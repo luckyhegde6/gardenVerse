@@ -7,7 +7,7 @@ import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { PublicLayout } from './PublicLayout'
 
-const PUBLIC_PATHS = ['/', '/about', '/onboarding', '/login', '/super-admin', '/api-docs', '/mobile', '/support', '/download']
+const PUBLIC_PATHS = ['/', '/about', '/onboarding', '/login', '/super-admin', '/api-docs', '/support', '/download']
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
