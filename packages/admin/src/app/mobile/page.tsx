@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { Download, Smartphone, History, Shield, Zap, Wifi, WifiOff, Hammer, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { Download, Smartphone, History, Shield, Zap, Wifi, WifiOff, Hammer, Loader2, CheckCircle, XCircle, Lock } from 'lucide-react'
+import { useAuth } from '@/lib/auth-context'
 
 interface ApkInfo {
   version: string
@@ -29,6 +30,8 @@ interface BuildStatus {
 }
 
 export default function MobileDownloadPage() {
+  const { user } = useAuth()
+  const canBuild = user?.role === 'admin' || user?.role === 'super_admin'
   const [activeTab, setActiveTab] = useState<'download' | 'changelog' | 'sync' | 'build'>('download')
   const [apkInfo, setApkInfo] = useState<ApkInfo | null>(null)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ lastSync: null, status: 'idle', message: '' })
@@ -108,6 +111,12 @@ export default function MobileDownloadPage() {
       setSyncStatus({ lastSync: null, status: 'error', message: 'Network error. Check connection.' })
     }
   }
+
+  useEffect(() => {
+    if (!canBuild && (activeTab === 'build' || activeTab === 'sync')) {
+      setActiveTab('download')
+    }
+  }, [canBuild, activeTab])
 
   const checkBuildStatus = async () => {
     try {
@@ -193,9 +202,9 @@ export default function MobileDownloadPage() {
         <div className="flex gap-2 mb-6 bg-white rounded-xl p-1 shadow-sm border border-gray-100">
           {[
             { id: 'download' as const, label: 'Download', icon: Download },
-            { id: 'build' as const, label: 'Build APK', icon: Hammer },
+            ...(canBuild ? [{ id: 'build' as const, label: 'Build APK', icon: Hammer }] : []),
             { id: 'changelog' as const, label: 'Changelog', icon: History },
-            { id: 'sync' as const, label: 'Sync Status', icon: Zap },
+            ...(canBuild ? [{ id: 'sync' as const, label: 'Sync Status', icon: Zap }] : []),
           ].map(tab => (
             <button
               key={tab.id}
