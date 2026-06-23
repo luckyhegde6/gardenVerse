@@ -26,7 +26,7 @@
       },
       "android": {
         "buildType": "apk",
-        "gradleDistributionUrl": "https://services.gradle.org/distributions/gradle-8.5-all.zip"
+        "image": "ubuntu-22.04"
       },
       "env": {
         "API_URL": "https://gardenverse.vercel.app/api/v1",
@@ -36,12 +36,9 @@
     "production": {
       "channel": "production",
       "credentialsSource": "remote",
-      "ios": {
-        "image": "latest"
-      },
       "android": {
         "buildType": "apk",
-        "gradleDistributionUrl": "https://services.gradle.org/distributions/gradle-8.5-all.zip"
+        "image": "ubuntu-22.04"
       },
       "env": {
         "API_URL": "https://gardenverse.vercel.app/api/v1",
