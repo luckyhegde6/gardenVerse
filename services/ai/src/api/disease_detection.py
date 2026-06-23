@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 import logging
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
@@ -25,12 +25,18 @@ class DiseaseDetectResponse(BaseModel):
     causal_agent: Optional[str] = None
     disease_type: Optional[str] = None
     confidence: Optional[float] = None
+    uncertainty: str = "low"
+    uncertainty_reason: Optional[str] = None
     severity: Optional[str] = None
     severity_description: Optional[str] = None
     symptoms_matched: list = []
+    symptoms_quoted: list = []
     treatments: list = []
     prevention_tips: list = []
+    database_source: Optional[Dict[str, Any]] = None
     health_score: Optional[float] = None
+    message: Optional[str] = None
+    analysis_disclaimer: Optional[str] = None
 
 
 def get_image_processor() -> ImageProcessor:

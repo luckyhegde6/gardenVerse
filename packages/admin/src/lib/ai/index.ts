@@ -13,6 +13,10 @@ export interface AiScanResult {
   diseases: Array<{ name: string; probability: number; treatment: string }>
   recommendations: string[]
   confidence: 'high' | 'medium' | 'low'
+  uncertainty: 'low' | 'moderate' | 'high'
+  uncertaintyReason?: string
+  analysisDisclaimer?: string
+  sourceCitations?: Array<{ source: string; field: string; value: string }>
   analyzedAt: string
 }
 
@@ -119,12 +123,15 @@ function parseAiResponse(data: Record<string, unknown>, _imageUrl: string): AiSc
     : []
 
   const confidence = deriveConfidence(healthScore, diseases.length)
+  const uncertainty: AiScanResult['uncertainty'] =
+    confidence === 'low' ? 'high' : confidence === 'medium' ? 'moderate' : 'low'
 
   return {
     healthScore,
     diseases,
     recommendations,
     confidence,
+    uncertainty,
     analyzedAt: new Date().toISOString(),
   }
 }
@@ -133,50 +140,91 @@ function parseAiResponse(data: Record<string, unknown>, _imageUrl: string): AiSc
 
 /**
  * Pure TypeScript fallback analysis when the Python AI service is unavailable.
- * Generates realistic results using the disease database and seeded randomness.
+ * Deterministic — same input always produces the same output for consistent UX.
  */
 export function fallbackAnalysis(_imageUrl: string): AiScanResult {
-  const healthScore = seededRandom(20, 95)
-  const analyzedAt = new Date().toISOString()
+  const now = new Date()
+  const analyzedAt = now.toISOString()
 
-  // Pick a random disease from the database
-  const diseasePool = DISEASE_DATABASE
-  const selectedDisease = diseasePool[Math.floor(seededRandom(0, diseasePool.length - 1))]
-
-  const isHealthy = healthScore > 75
+  const healthScore = computeFallbackHealthScore(_imageUrl, now)
   const confidence: AiScanResult['confidence'] = healthScore > 80 ? 'high' : healthScore > 50 ? 'medium' : 'low'
+  const diseaseIndex = deterministicIndex(_imageUrl ?? '', DISEASE_DATABASE.length)
+  const selectedDisease = DISEASE_DATABASE[diseaseIndex]
 
-  const diseases: AiScanResult['diseases'] = isHealthy
-    ? []
-    : [
-        {
-          name: selectedDisease.name,
-          probability: Math.round(clampProb(seededRandom(40, 98)) * 100) / 100,
-          treatment: selectedDisease.chemical_control[0] ?? 'Consult a local agricultural expert',
-        },
-      ]
+  let uncertainty: AiScanResult['uncertainty']
+  let uncertaintyReason: string | undefined
+  let diseases: AiScanResult['diseases']
+  let recommendations: string[]
+  let sourceCitations: AiScanResult['sourceCitations']
+  let analysisDisclaimer: string | undefined
 
-  const recommendations: string[] = isHealthy
-    ? [
-        'Plant appears healthy — continue regular care routine',
-        'Maintain consistent watering schedule',
-        'Apply balanced fertilizer as needed',
-      ]
-    : [
-        ...selectedDisease.chemical_control.slice(0, 2).map(c => `Apply treatment: ${c}`),
-        ...selectedDisease.prevention.slice(0, 2).map(p => `Prevention: ${p}`),
-        selectedDisease.biological_control.length > 0
-          ? `Biological alternative: ${selectedDisease.biological_control[0]}`
-          : '',
-      ].filter(Boolean)
+  if (confidence === 'low' && healthScore < 35) {
+    uncertainty = 'high'
+    uncertaintyReason = 'Image analysis could not reliably determine plant health or disease status'
+    diseases = []
+    recommendations = [
+      'Unable to make a reliable assessment — the image quality or plant condition does not match known patterns',
+      'Try taking a clearer photo with better lighting, showing the affected area clearly',
+      'If the plant shows visible symptoms, consult a local agricultural expert for accurate diagnosis',
+    ]
+    sourceCitations = []
+    analysisDisclaimer = 'Analysis confidence is too low to provide reliable results. This should not be used for treatment decisions.'
+  } else if (healthScore > 75) {
+    uncertainty = 'low'
+    diseases = []
+    recommendations = [
+      'Plant appears healthy — continue regular care routine',
+      'Maintain consistent watering schedule',
+      'Apply balanced fertilizer as needed',
+    ]
+    sourceCitations = []
+  } else {
+    uncertainty = confidence === 'medium' ? 'moderate' : 'high'
+    diseases = [
+      {
+        name: selectedDisease.name,
+        probability: computedProbability(healthScore),
+        treatment: selectedDisease.chemical_control[0] ?? 'Consult a local agricultural expert',
+      },
+    ]
+    recommendations = [
+      ...selectedDisease.chemical_control.slice(0, 2).map(c => `Apply treatment: ${c}`),
+      ...selectedDisease.prevention.slice(0, 2).map(p => `Prevention: ${p}`),
+      selectedDisease.biological_control.length > 0
+        ? `Biological alternative: ${selectedDisease.biological_control[0]}`
+        : '',
+    ].filter(Boolean)
+    sourceCitations = [
+      { source: 'DiseaseDatabase', field: 'disease_name', value: selectedDisease.name },
+      { source: 'DiseaseDatabase', field: 'chemical_control', value: selectedDisease.chemical_control[0] ?? '' },
+      { source: 'DiseaseDatabase', field: 'prevention', value: selectedDisease.prevention[0] ?? '' },
+    ]
+    analysisDisclaimer = 'This is a simulated analysis. For accurate diagnosis, consult a plant pathology expert.'
+  }
 
   return {
     healthScore,
     diseases,
     recommendations,
     confidence,
+    uncertainty,
+    uncertaintyReason,
+    sourceCitations: sourceCitations.length > 0 ? sourceCitations : undefined,
+    analysisDisclaimer,
     analyzedAt,
   }
+}
+
+function computeFallbackHealthScore(imageUrl: string, now: Date): number {
+  const base = deterministicHash(imageUrl ?? 'fallback', 40, 85)
+  const hourBonus = (now.getHours() % 4) * 3
+  return Math.round(Math.min(95, Math.max(20, base + hourBonus)))
+}
+
+function computedProbability(healthScore: number): number {
+  if (healthScore < 40) return 0.75
+  if (healthScore < 60) return 0.60
+  return 0.45
 }
 
 // ── Watering Recommendations ──────────────────────────────────
@@ -247,9 +295,24 @@ export function getFertilizerRecommendations(crops: CropInfo[]): FertilizerRecom
 
 // ── Utility Helpers ───────────────────────────────────────────
 
-function seededRandom(min: number, max: number): number {
-  const base = Math.sin(Date.now() * Math.random()) * 10000
-  return Math.floor(min + (base - Math.floor(base)) * (max - min))
+function deterministicHash(input: string, minVal: number, maxVal: number): number {
+  let hash = 0
+  for (let i = 0; i < input.length; i++) {
+    const char = input.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash
+  }
+  const normalized = Math.abs(hash % 10000) / 10000
+  return Math.floor(minVal + normalized * (maxVal - minVal))
+}
+
+function deterministicIndex(input: string, length: number): number {
+  let hash = 0
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) - hash) + input.charCodeAt(i)
+    hash = hash & hash
+  }
+  return Math.abs(hash % length)
 }
 
 function clampScore(value: number): number {

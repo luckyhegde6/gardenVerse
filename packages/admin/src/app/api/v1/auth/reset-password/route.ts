@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma/client'
 import { success, badRequest, serverError } from '@/lib/middleware/auth'
 import { strictRateLimit } from '@/lib/middleware/rate-limit'

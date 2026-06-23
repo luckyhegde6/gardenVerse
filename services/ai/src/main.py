@@ -4,9 +4,10 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from dotenv import load_dotenv
 
@@ -73,20 +74,53 @@ async def log_requests(request: Request, call_next):
     return response
 
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+class ErrorResponse(BaseModel):
+    error: bool = True
+    status_code: int
+    error_type: str
+    message: str
+    detail: str = ""
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    logger.warning(
+        "HTTP %d on %s %s: %s", exc.status_code, request.method, request.url.path, exc.detail
+    )
     return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error", "message": str(exc)},
+        status_code=exc.status_code,
+        content=ErrorResponse(
+            status_code=exc.status_code,
+            error_type="http_error",
+            message=str(exc.detail),
+        ).model_dump(),
     )
 
 
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
+    logger.warning("Validation error on %s %s: %s", request.method, request.url.path, exc)
     return JSONResponse(
         status_code=422,
-        content={"detail": "Validation error", "message": str(exc)},
+        content=ErrorResponse(
+            status_code=422,
+            error_type="validation_error",
+            message=str(exc),
+        ).model_dump(),
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content=ErrorResponse(
+            status_code=500,
+            error_type="internal_error",
+            message="An unexpected error occurred. Please try again later.",
+            detail=str(exc) if os.getenv("LOG_LEVEL", "info").upper() == "DEBUG" else "",
+        ).model_dump(),
     )
 
 

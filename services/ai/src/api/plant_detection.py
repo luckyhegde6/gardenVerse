@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 import logging
 import numpy as np
 
@@ -14,21 +14,29 @@ router = APIRouter(prefix="/api/v1/plant", tags=["Plant Detection"])
 
 
 class PlantIdentificationResponse(BaseModel):
-    plant_name: str
-    scientific_name: str
+    identified: bool = True
+    plant_name: Optional[str] = None
+    scientific_name: Optional[str] = None
     confidence: float
+    uncertainty: str = "low"
+    uncertainty_reason: Optional[str] = None
+    message: Optional[str] = None
     family: Optional[str] = None
     type: Optional[str] = None
-    characteristics: Optional[Dict] = None
+    characteristics: Optional[Dict[str, Any]] = None
+    database_source: Optional[Dict[str, Any]] = None
+    analysis_disclaimer: Optional[str] = None
 
 
 class HealthAnalysisResponse(BaseModel):
     health_score: float = Field(..., ge=0, le=100)
     status: str
     diseases_detected: list
-    leaf_metrics: Dict
+    leaf_metrics: Dict[str, Any]
     nutrient_deficiencies: list
     recommendations: list
+    uncertainty: str = "low"
+    analysis_disclaimer: Optional[str] = None
 
 
 def get_image_processor() -> ImageProcessor:
@@ -100,6 +108,9 @@ async def analyze_health(
         health_score, diseases, deficiencies
     )
 
+    has_low_conf = any(d.get("confidence", 1) < 0.5 for d in diseases)
+    uncertainty = "high" if (has_low_conf and health_score > 60) else "low"
+
     return HealthAnalysisResponse(
         health_score=health_score,
         status="healthy" if health_score >= 70 else "fair" if health_score >= 45 else "poor",
@@ -107,6 +118,8 @@ async def analyze_health(
         leaf_metrics=leaf_metrics,
         nutrient_deficiencies=deficiencies,
         recommendations=recommendations,
+        uncertainty=uncertainty,
+        analysis_disclaimer="This is a simulated analysis based on visible leaf metrics. For accurate diagnosis, consult a plant pathology expert." if uncertainty != "low" else None,
     )
 
 

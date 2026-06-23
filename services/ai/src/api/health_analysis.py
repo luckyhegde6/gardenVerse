@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 import logging
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
@@ -18,11 +18,13 @@ class HealthAnalysisResponse(BaseModel):
     status: str
     disease_name: Optional[str] = None
     disease_confidence: Optional[float] = None
+    uncertainty: str = "low"
     severity: Optional[str] = None
     diseases_detected: list = []
-    leaf_metrics: Dict
+    leaf_metrics: Dict[str, Any]
     nutrient_deficiencies: list = []
     recommendations: list = []
+    analysis_disclaimer: Optional[str] = None
 
 
 def get_image_processor() -> ImageProcessor:
@@ -67,19 +69,26 @@ async def analyze_health(
 
     health_score = disease_result.get("health_score", 50) if disease_result.get("disease_detected") else _compute_health_score(leaf_metrics)
 
+    disease_uncertainty = disease_result.get("uncertainty", "low")
     deficiency_list = _detect_nutrient_deficiencies(leaf_metrics)
     recommendations = _generate_health_recommendations(health_score, disease_result, deficiency_list)
+
+    disclaimer = disease_result.get("analysis_disclaimer") or (
+        "This is a simulated analysis. For accurate diagnosis, consult a plant pathology expert."
+    )
 
     return HealthAnalysisResponse(
         health_score=health_score,
         status="healthy" if health_score >= 70 else "fair" if health_score >= 45 else "poor",
         disease_name=disease_result.get("disease_name"),
         disease_confidence=disease_result.get("confidence"),
+        uncertainty=disease_uncertainty,
         severity=disease_result.get("severity"),
         diseases_detected=[disease_result] if disease_result.get("disease_detected") else [],
         leaf_metrics=leaf_metrics,
         nutrient_deficiencies=deficiency_list,
         recommendations=recommendations,
+        analysis_disclaimer=disclaimer,
     )
 
 

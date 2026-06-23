@@ -30,16 +30,13 @@ jobs:
 
   typecheck:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/mobile
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - run: npm install
-      - run: npx tsc --noEmit
+      - run: npx tsc --noEmit -p packages/mobile/tsconfig.json
 
   test:
     runs-on: ubuntu-latest

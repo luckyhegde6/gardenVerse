@@ -32,8 +32,8 @@ jobs:
     runs_on: linux-medium
     steps:
       - run: npm ci
-      - run: npm run lint
-      - run: npx tsc --noEmit
+      - run: npm run lint -w packages/mobile
+      - run: npm run typecheck -w packages/mobile
 
   build-development:
     name: Development Build

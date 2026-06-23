@@ -92,3 +92,9 @@ login-page-snapshot.yml
 
 .vercel
 packages/admin/public/downloads/*.apk
+
+.kilo
+
+# Temporary test files
+tmp_*
+

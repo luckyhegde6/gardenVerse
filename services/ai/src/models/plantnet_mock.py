@@ -3,6 +3,8 @@ import random
 import numpy as np
 from ..utils.plant_database import PlantDatabase
 
+SIMILARITY_THRESHOLD = 0.5
+
 
 class PlantNetMock:
     def __init__(self, model_path: Optional[str] = None) -> None:
@@ -40,29 +42,24 @@ class PlantNetMock:
         batch = np.expand_dims(normalized.transpose(2, 0, 1), axis=0)
         return batch.astype(np.float32)
 
-    def predict(self, image: np.ndarray) -> Tuple[str, str, float]:
+    def predict(self, image: np.ndarray) -> Tuple[Optional[str], Optional[str], float]:
         """
         Mock plant identification.
-        In production, runs:
-        
-        with torch.no_grad():
-            tensor = torch.from_numpy(self.preprocess(image))
-            outputs = self.model(tensor)
-            probabilities = torch.nn.functional.softmax(outputs[0], dim=0)
-            top_prob, top_idx = torch.topk(probabilities, 1)
-            class_id = top_idx.item()
-            confidence = top_prob.item()
+        Returns (None, None, confidence) if no species matches above threshold.
         """
         features = self._extract_features(image)
         scores = self._compute_similarity_scores(features)
         top_idx = int(np.argmax(scores))
         confidence = float(scores[top_idx])
 
+        confidence = max(0.0, min(0.99, confidence + random.uniform(-0.1, 0.1)))
+
+        if confidence < SIMILARITY_THRESHOLD:
+            return None, None, confidence
+
         plant_name = self.plants_list[top_idx]
         plant_info = self.plant_db.get_plant(plant_name)
         species = plant_info["scientific_name"] if plant_info else "Unknown"
-
-        confidence = max(0.45, min(0.99, confidence + random.uniform(-0.1, 0.1)))
 
         return plant_name, species, confidence
 
@@ -114,20 +111,57 @@ class PlantNetMock:
 
     def identify(self, image: np.ndarray) -> Dict:
         plant_name, species, confidence = self.predict(image)
+
+        if plant_name is None:
+            return {
+                "identified": False,
+                "plant_name": None,
+                "scientific_name": None,
+                "confidence": round(confidence, 4),
+                "uncertainty": "high",
+                "uncertainty_reason": "Image does not match any known plant species with sufficient confidence",
+                "message": "Unable to identify plant species. The image may not contain a recognizable plant, or the quality is insufficient for analysis.",
+                "family": None,
+                "type": None,
+                "characteristics": None,
+                "analysis_disclaimer": "This is a simulated analysis with low confidence. Results may not be accurate.",
+            }
+
         plant_info = self.plant_db.get_plant(plant_name)
+        if plant_info is None:
+            return {
+                "identified": True,
+                "plant_name": plant_name.replace("_", " ").title(),
+                "scientific_name": species,
+                "confidence": round(confidence, 4),
+                "uncertainty": "high",
+                "message": "Plant identified but no detailed information available in the database.",
+                "family": None,
+                "type": None,
+                "characteristics": None,
+                "analysis_disclaimer": "This is a simulated analysis. For accurate identification, consult a botanical expert.",
+            }
 
         return {
+            "identified": True,
             "plant_name": plant_name.replace("_", " ").title(),
             "scientific_name": species,
             "confidence": round(confidence, 4),
-            "family": plant_info["family"] if plant_info else None,
-            "type": plant_info["type"] if plant_info else None,
+            "uncertainty": "low" if confidence > 0.75 else "moderate",
+            "family": plant_info.get("family"),
+            "type": plant_info.get("type"),
             "characteristics": {
                 "growth_days_range": (
-                    plant_info["growth_days_min"],
-                    plant_info["growth_days_max"],
+                    plant_info.get("growth_days_min"),
+                    plant_info.get("growth_days_max"),
                 ),
-                "sun_requirement": plant_info["sun_requirement"],
-                "difficulty": plant_info["difficulty"],
-            } if plant_info else None,
+                "sun_requirement": plant_info.get("sun_requirement"),
+                "difficulty": plant_info.get("difficulty"),
+            },
+            "database_source": {
+                "database": "PlantDatabase (mock)",
+                "entry_name": plant_name,
+                "entry_fields_used": ["scientific_name", "family", "type", "growth_days_min", "growth_days_max", "sun_requirement", "difficulty"],
+            },
+            "analysis_disclaimer": "This is a simulated analysis. For accurate identification, consult a botanical expert.",
         }

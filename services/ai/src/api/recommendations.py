@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import logging
 
 from fastapi import APIRouter, Query, HTTPException, Depends
@@ -17,7 +17,8 @@ class WateringResponse(BaseModel):
     best_time: str
     reason: str
     confidence: float
-    factors: Dict
+    factors: Dict[str, Any]
+    source_rationale: Optional[Dict[str, Any]] = None
 
 
 class FertilizerResponse(BaseModel):
@@ -28,6 +29,7 @@ class FertilizerResponse(BaseModel):
     reason: str
     ph_adjustment_needed: bool
     ph_adjustment: Optional[str] = None
+    source_rationale: Optional[Dict[str, Any]] = None
 
 
 class CropRecommendation(BaseModel):

@@ -862,3 +862,86 @@ Changed the seed script to use `tsx prisma/seed.ts` instead. `tsx` is compatible
 - Always test shell commands on Windows when writing cross-platform scripts
 - Prefer `tsx` over `ts-node` for scripts that need Windows compatibility
 - Use `npx tsx` for running TypeScript files directly
+
+## 2026-06-23: bcrypt Native Module Fails on Vercel Serverless
+
+**Session**: ses-012
+**Category**: Security, Deployment
+**Impact**: High
+
+### Situation
+Production auth was returning 500 on Vercel. Login and register endpoints failed with `"Internal server error"`. Public endpoints (plants, marketplace, weather) worked fine.
+
+### Problem
+`bcrypt@5.1.1` is a native C++ module that requires compilation for the specific Lambda runtime. On Vercel serverless, the precompiled binary may not match or the module fails to load entirely. The error was hidden by the `serverError()` handler which returns a generic `"Internal server error"` in production.
+
+### Root Cause
+1. `bcrypt` uses native bindings (node-gyp compiled C++). Vercel's serverless runtime may not have compatible prebuilt binaries, causing a silent failure.
+2. The `serverError()` handler logs but returns `"Internal server error"` in production, making debugging impossible without Vercel logs.
+3. Dynamic `await import('jsonwebtoken')` triggered Node.js DEP0169 deprecation warning and could also fail in serverless bundling.
+
+### Solution
+1. Switched to `bcryptjs` (pure JavaScript, no native dependencies) across all 4 auth routes: login, admin/login, register, reset-password
+2. Replaced all dynamic `await import('jsonwebtoken')` with static `import jwt from 'jsonwebtoken'` in login, admin/login, and refresh routes
+3. Used a variable to hold JWT payload objects instead of inline object literals to avoid TypeScript overload resolution issues
+
+### Prevention
+- **Never use `bcrypt` on Vercel** — Use `bcryptjs` for any serverless deployment
+- **No dynamic imports of already-bundled modules** — If a module is already imported statically elsewhere (like auth.ts importing jwt), don't re-import it dynamically in route handlers
+- **Check Vercel logs before debugging** — `npx vercel logs <url>` reveals actual errors hidden by catch-all error handlers
+- **Verify production API before local/emulator testing** — fix the production endpoint first, then test downstream consumers
+
+## 2026-06-23: Missing API Route Causes Silent 500 via Dynamic Route Catch-All
+
+**Session**: ses-012
+**Category**: Architecture
+**Impact**: High
+
+### Situation
+The admin dashboard and mobile app called `GET /api/v1/ai/scans` which returned 500.
+
+### Problem
+No `scans/` route directory existed under `api/v1/ai/`. Next.js App Router routed `GET /api/v1/ai/scans` to `api/v1/ai/[id]/route.ts` with `id="scans"`. The dynamic route tried `prisma.aiScan.findUnique({ where: { id: "scans" } })`, which failed because `"scans"` is not a valid UUID.
+
+### Root Cause
+The `scans` route was never created when the AI module was initially built. The parent `ai/route.ts` handled `GET /api/v1/ai` (list) and `POST /api/v1/ai` (create scan), but no `scans/` sub-route existed for the plural listing path.
+
+### Solution
+Created `packages/admin/src/app/api/v1/ai/scans/route.ts` with a paginated GET handler that:
+- Requires authentication via `requireAuth`
+- Supports `?page=` and `?limit=` query params
+- Admins see all scans; regular users scoped to their own
+- Returns standardized paginated response format
+
+### Prevention
+- When creating dynamic routes `[id]/route.ts`, always check if there are known reserved paths that should be explicit routes first
+- Run a complete API surface audit after adding new dynamic routes
+- Add E2E tests that verify all documented API endpoints return proper responses
+
+## 2026-06-23: Dev APK React `useContext` Crash — Production Build Required
+
+**Session**: ses-012
+**Category**: Mobile, Build
+**Impact**: Medium
+
+### Situation
+The dev APK (built with `eas build --profile development`) crashed on the login screen with `TypeError: Cannot read property 'useContext' of null`.
+
+### Problem
+The development build tries to load JavaScript from the Metro bundler at runtime (dev=true). When the Metro server isn't accessible or there's a React version mismatch, React itself becomes null and `useContext` fails.
+
+### Root Cause
+1. The APK was built with `"dev": true` in the Metro config, meaning JS is served from the Metro server rather than embedded
+2. Metro bundler runs on port 8081 and the app tries to connect via WebSocket
+3. When the connection fails or the bundle has version conflicts, React fails to initialize
+
+### Solution
+- Use `eas build --profile production` for stable testing
+- Production builds embed the JS bundle and don't depend on Metro server
+- The same API works correctly via Expo Go (which properly manages module loading)
+
+### Prevention
+- Use Expo Go for quick dev iteration (proper module resolution)
+- Reserve EAS development builds for native module testing only
+- Always use production builds (`eas build --profile production`) for end-to-end testing
+- Document the build type differences in the mobile testing workflow

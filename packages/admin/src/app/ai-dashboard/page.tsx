@@ -43,13 +43,12 @@ interface ServiceStatus {
   lastChecked: string
 }
 
-interface ModelMetrics {
-  accuracy: number
-  precision: number
-  recall: number
-  f1Score: number
-  lastTrainingDate: string
-  modelVersion: string
+interface UncertaintyStats {
+  lowConfidenceCount: number
+  moderateConfidenceCount: number
+  highConfidenceCount: number
+  lowConfidenceRate: number
+  avgConfidence: number
 }
 
 interface RecommendationStats {
@@ -116,14 +115,13 @@ export default function AiDashboardPage() {
     sustainabilityReports: 0,
   })
 
-  // Model metrics (mock)
-  const [modelMetrics] = useState<ModelMetrics>({
-    accuracy: 94.2,
-    precision: 91.7,
-    recall: 89.3,
-    f1Score: 90.5,
-    lastTrainingDate: '2026-05-28',
-    modelVersion: 'v2.1.0',
+  // Analysis quality (computed from real scan data)
+  const [uncertaintyStats, setUncertaintyStats] = useState<UncertaintyStats>({
+    lowConfidenceCount: 0,
+    moderateConfidenceCount: 0,
+    highConfidenceCount: 0,
+    lowConfidenceRate: 0,
+    avgConfidence: 0,
   })
 
   const [isLoading, setIsLoading] = useState(true)
@@ -171,6 +169,24 @@ export default function AiDashboardPage() {
         const diseased = parsedScans.filter(s => s.disease !== 'None' && s.disease !== '').length
         const rate = parsedScans.length > 0 ? (diseased / parsedScans.length) * 100 : 0
         setDiseaseDetectionRate(Math.round(rate * 10) / 10)
+
+        // Uncertainty / confidence distribution from real scan data
+        const confidences = rawScans
+          .map(s => Number(s.confidence ?? s.healthScore ? (s.healthScore as number) / 100 : 0.5))
+          .filter(c => c > 0)
+        const lowConf = confidences.filter(c => c < 0.5).length
+        const modConf = confidences.filter(c => c >= 0.5 && c < 0.75).length
+        const highConf = confidences.filter(c => c >= 0.75).length
+        const avgConf = confidences.length > 0
+          ? confidences.reduce((sum, c) => sum + c, 0) / confidences.length
+          : 0
+        setUncertaintyStats({
+          lowConfidenceCount: lowConf,
+          moderateConfidenceCount: modConf,
+          highConfidenceCount: highConf,
+          lowConfidenceRate: confidences.length > 0 ? Math.round((lowConf / confidences.length) * 100) : 0,
+          avgConfidence: Math.round(avgConf * 100),
+        })
       }
 
       // Fetch health/detailed for AI service status
@@ -364,7 +380,20 @@ export default function AiDashboardPage() {
         )}
       </div>
 
-      {/* Section 3: AI Service Status & Section 4: Model Accuracy — side by side */}
+      {/* Disclaimer Banner */}
+      {uncertaintyStats.lowConfidenceRate > 30 && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-400/10 border border-amber-400/20">
+          <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm text-amber-300 font-medium">High uncertainty detected</p>
+            <p className="text-xs text-amber-400/70 mt-0.5">
+              {uncertaintyStats.lowConfidenceRate}% of scans have low confidence. Results are simulated — always verify with an agricultural expert before treatment decisions.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Section 3: AI Service Status & Section 4: Analysis Quality — side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Section 3: AI Service Status */}
         <div className="card">
@@ -411,44 +440,54 @@ export default function AiDashboardPage() {
           </div>
         </div>
 
-        {/* Section 4: Model Accuracy */}
+        {/* Section 4: Analysis Quality (replaces mock Model Accuracy) */}
         <div className="card">
           <div className="card-header">
             <h3 className="card-title flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-admin-400" />
-              Model Accuracy
+              Analysis Quality
             </h3>
           </div>
           <div className="space-y-4">
-            {/* Metric bars */}
+            {/* Confidence distribution bars */}
             {([
-              { label: 'Accuracy', value: modelMetrics.accuracy, color: 'bg-emerald-500' },
-              { label: 'Precision', value: modelMetrics.precision, color: 'bg-blue-500' },
-              { label: 'Recall', value: modelMetrics.recall, color: 'bg-purple-500' },
-              { label: 'F1 Score', value: modelMetrics.f1Score, color: 'bg-amber-500' },
-            ] as const).map(metric => (
-              <div key={metric.label}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm text-slate-300">{metric.label}</span>
-                  <span className="text-sm font-semibold text-slate-100">{metric.value}%</span>
+              { label: 'High Confidence', value: uncertaintyStats.highConfidenceCount, total: totalScans || 1, color: 'bg-emerald-500', desc: '≥ 75% confidence' },
+              { label: 'Moderate Confidence', value: uncertaintyStats.moderateConfidenceCount, total: totalScans || 1, color: 'bg-amber-500', desc: '50-74% confidence' },
+              { label: 'Low Confidence', value: uncertaintyStats.lowConfidenceCount, total: totalScans || 1, color: 'bg-red-500', desc: '< 50% confidence' },
+            ] as const).map(metric => {
+              const pct = totalScans > 0 ? Math.round((metric.value / totalScans) * 100) : 0
+              return (
+                <div key={metric.label}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm text-slate-300">{metric.label}</span>
+                    <span className="text-sm font-semibold text-slate-100">
+                      {metric.value} <span className="text-xs text-slate-500 font-normal">({pct}%)</span>
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className={cn('h-full rounded-full transition-all duration-500', metric.color)}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-slate-500 mt-0.5 block">{metric.desc}</span>
                 </div>
-                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className={cn('h-full rounded-full transition-all duration-500', metric.color)}
-                    style={{ width: `${metric.value}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              )
+            })}
 
             <div className="pt-2 border-t border-slate-800/60">
               <div className="flex items-center justify-between text-xs text-slate-500">
-                <span>Model version: <span className="text-slate-300 font-mono">{modelMetrics.modelVersion}</span></span>
-                <span>Last trained: <span className="text-slate-300">{modelMetrics.lastTrainingDate}</span></span>
+                <span>Avg confidence: <span className="text-slate-300 font-mono">{uncertaintyStats.avgConfidence}%</span></span>
+                <span>Total scans: <span className="text-slate-300">{totalScans}</span></span>
               </div>
             </div>
           </div>
         </div>
+      </div>
+      <div className="px-1">
+        <p className="text-xs text-slate-500 italic">
+          This is a simulated analysis system. All results should be verified with a qualified agricultural expert before making treatment decisions.
+        </p>
       </div>
 
       {/* Section 5: Recommendation Stats */}

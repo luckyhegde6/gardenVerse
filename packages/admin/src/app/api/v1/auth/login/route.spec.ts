@@ -22,7 +22,7 @@ jest.mock('jsonwebtoken', () => ({
 import { NextRequest } from 'next/server'
 import { POST } from './route'
 import { prisma } from '@/lib/prisma/client'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 
 const jwt = jest.requireMock('jsonwebtoken')
 

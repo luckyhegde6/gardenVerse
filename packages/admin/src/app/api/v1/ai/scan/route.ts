@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireAuth, success, badRequest, serverError } from '@/lib/middleware/auth'
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000'
+const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || process.env.AI_SERVICE_URL || 'http://localhost:8000'
 
 /**
  * POST /api/v1/ai/scan
@@ -81,10 +81,21 @@ export async function POST(request: NextRequest) {
       data: { experience: { increment: 5 } },
     }).catch(() => {})
 
+    const disclaimer = aiSuccess && aiResult.analysis_disclaimer
+      ? String(aiResult.analysis_disclaimer)
+      : !aiSuccess
+        ? 'AI service was unavailable. Results will be processed when the service is restored.'
+        : undefined
+
     return success({
       scan,
-      aiResult: aiSuccess ? aiResult : null,
+      aiResult: aiSuccess ? {
+        ...aiResult,
+        disclaimer,
+      } : null,
       aiServiceAvailable: aiSuccess,
+      uncertainty: aiResult.uncertainty ?? 'low',
+      disclaimer,
       message: aiSuccess
         ? 'Plant scanned successfully'
         : 'Image saved. AI service temporarily unavailable — results will be processed when service is restored.',

@@ -93,6 +93,15 @@ class RecommendationEngine:
                 "humidity_factor": round(humidity_factor, 2),
                 "rainfall_credit_ml": round(rainfall_adjustment),
             },
+            "source_rationale": {
+                "data_points_used": ["soil_moisture", "temperature", "humidity", "rainfall_forecast", "plant_type"],
+                "thresholds_applied": {
+                    "soil_moisture_critical_below": 0.2,
+                    "soil_moisture_low_below": 0.35,
+                    "water_decision_threshold": 0.45,
+                },
+                "plant_database_entry": plant_info.get("scientific_name", plant_type) if plant_info else plant_type,
+            },
         }
 
     def _temperature_watering_factor(self, temperature: float) -> float:
@@ -256,6 +265,12 @@ class RecommendationEngine:
             "reason": reason + ".",
             "ph_adjustment_needed": ph_issue,
             "ph_adjustment": ph_adjustment if ph_issue else None,
+            "source_rationale": {
+                "data_points_used": ["growth_stage", "nutrient_level", "soil_ph", "plant_type"],
+                "growth_stage_multiplier_applied": stage_multiplier,
+                "nutrient_deficit_assessment": deficit_type if nutrient_score <= 0.7 else "sufficient",
+                "npk_basis": f"Base NPK from plant database: {recommended_npk}",
+            },
         }
 
     def crop_recommendation(
