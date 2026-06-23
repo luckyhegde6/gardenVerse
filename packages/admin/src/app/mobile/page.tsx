@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import { Download, Smartphone, History, Shield, Zap, Wifi, WifiOff, Hammer, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { useAuth } from '@/lib/auth-context'
 
 interface ApkInfo {
   version: string
@@ -28,7 +30,11 @@ interface BuildStatus {
   apkSize: string | null
 }
 
-export default function MobileDownloadPage() {
+export default function MobileManagementPage() {
+  const router = useRouter()
+  const { user, isAuthenticated, loading } = useAuth()
+  const canManage = isAuthenticated && (user?.role === 'admin' || user?.role === 'super_admin')
+
   const [activeTab, setActiveTab] = useState<'download' | 'changelog' | 'sync' | 'build'>('download')
   const [apkInfo, setApkInfo] = useState<ApkInfo | null>(null)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ lastSync: null, status: 'idle', message: '' })
@@ -36,21 +42,24 @@ export default function MobileDownloadPage() {
   const [buildStatus, setBuildStatus] = useState<BuildStatus>({ status: 'idle', message: '', buildId: null, apkExists: false, apkSize: null })
 
   useEffect(() => {
-    // Check online status
+    if (!loading && !canManage) {
+      router.replace('/download')
+    }
+  }, [loading, canManage, router])
+
+  useEffect(() => {
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
     setIsOnline(navigator.onLine)
 
-    // Fetch APK info from API
     fetch('/api/v1/mobile/apk-info')
       .then(res => res.json())
       .then(data => {
         if (data.data) setApkInfo(data.data)
       })
       .catch(() => {
-        // Fallback to default info
         setApkInfo({
           version: '1.0.0',
           buildNumber: 1,
@@ -111,7 +120,7 @@ export default function MobileDownloadPage() {
 
   const checkBuildStatus = async () => {
     try {
-      const res = await fetch('/api/v1/mobile/build')
+      const res = await fetch('/api/v1/mobile/build-apk')
       const data = await res.json()
       if (data.apkExists) {
         setBuildStatus(prev => ({
@@ -130,7 +139,7 @@ export default function MobileDownloadPage() {
   const handleBuildApk = async () => {
     setBuildStatus({ status: 'building', message: 'Starting EAS preview build...', buildId: null, apkExists: buildStatus.apkExists, apkSize: buildStatus.apkSize })
     try {
-      const res = await fetch('/api/v1/mobile/build', {
+      const res = await fetch('/api/v1/mobile/build-apk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profile: 'preview' }),
@@ -164,17 +173,18 @@ export default function MobileDownloadPage() {
     }
   }
 
+  if (loading || !canManage) return null
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 md:p-8">
-      {/* Header */}
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
             <Smartphone className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">GardenVerse Mobile</h1>
-            <p className="text-gray-500 text-sm">Download, sync, and manage the mobile app</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Mobile App Management</h1>
+            <p className="text-gray-500 text-sm">Build, sync, and publish the mobile app</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
             {isOnline ? (
@@ -212,12 +222,10 @@ export default function MobileDownloadPage() {
           ))}
         </div>
 
-        {/* Tab Content */}
         <div className="space-y-6">
           {/* Download Tab */}
           {activeTab === 'download' && apkInfo && (
             <div className="grid md:grid-cols-2 gap-6">
-              {/* Download Card */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -258,13 +266,15 @@ export default function MobileDownloadPage() {
 
                 <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
                   <Shield className="w-3.5 h-3.5" />
-                  <span>Signed with GardenVerse release key • SHA-256 verified</span>
+                  <span>Signed with GardenVerse release key</span>
                 </div>
               </div>
 
-              {/* QR Code Card */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Scan to Download</h3>
+                <p className="text-sm text-gray-500 mb-4 text-center max-w-xs">
+                  Public download page is at <strong>/download</strong> — share this QR with users.
+                </p>
                 <div className="bg-white p-4 rounded-2xl shadow-inner border border-gray-100 mb-4">
                   <QRCodeSVG
                     value={apkInfo.qrCodeData}
@@ -279,9 +289,6 @@ export default function MobileDownloadPage() {
                     }}
                   />
                 </div>
-                <p className="text-sm text-gray-500 text-center max-w-xs">
-                  Scan this QR code with your Android device to download the APK directly.
-                </p>
                 <div className="mt-4 text-xs text-gray-400 font-mono bg-gray-50 px-3 py-1.5 rounded-lg break-all max-w-full">
                   {apkInfo.downloadUrl}
                 </div>
@@ -314,7 +321,6 @@ export default function MobileDownloadPage() {
               </div>
 
               <div className="space-y-4">
-                {/* APK Status */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-50 rounded-xl">
                     <div className="text-xs text-gray-500 mb-1">APK Status</div>
@@ -334,7 +340,6 @@ export default function MobileDownloadPage() {
                   </div>
                 </div>
 
-                {/* Build result message */}
                 {buildStatus.message && (
                   <div className={`p-4 rounded-xl text-sm flex items-start gap-3 ${
                     buildStatus.status === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
@@ -354,18 +359,16 @@ export default function MobileDownloadPage() {
                   </div>
                 )}
 
-                {/* Build info */}
                 <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
                   <h3 className="text-sm font-medium text-blue-800 mb-2">About EAS Builds</h3>
                   <ul className="text-xs text-blue-700 space-y-1">
-                    <li>• <strong>Preview</strong>: Builds an APK for direct download (used by this website)</li>
+                    <li>• <strong>Preview</strong>: Builds an APK for direct download</li>
                     <li>• <strong>Production</strong>: Builds an AAB for Google Play Store</li>
                     <li>• Build time: typically 10-20 minutes</li>
                     <li>• The APK is compiled from the latest <code className="bg-blue-100 px-1 rounded">packages/mobile</code> code</li>
                   </ul>
                 </div>
 
-                {/* Download current APK if exists */}
                 {buildStatus.apkExists && (
                   <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
                     <div className="flex-1">
@@ -428,7 +431,6 @@ export default function MobileDownloadPage() {
               </div>
 
               <div className="space-y-4">
-                {/* Status indicators */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-50 rounded-xl">
                     <div className="text-xs text-gray-500 mb-1">Server Connection</div>
@@ -447,7 +449,6 @@ export default function MobileDownloadPage() {
                   </div>
                 </div>
 
-                {/* Sync result message */}
                 {syncStatus.message && (
                   <div className={`p-4 rounded-xl text-sm ${
                     syncStatus.status === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
@@ -458,14 +459,12 @@ export default function MobileDownloadPage() {
                   </div>
                 )}
 
-                {/* Sync info */}
                 <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
                   <h3 className="text-sm font-medium text-amber-800 mb-2">About Game Sync</h3>
                   <ul className="text-xs text-amber-700 space-y-1">
                     <li>• Game progress is automatically saved locally on the device</li>
                     <li>• Data syncs to the server when the app connects</li>
                     <li>• On conflict, server data takes precedence</li>
-                    <li>• Manual sync available in mobile app settings</li>
                     <li>• Auto-sync runs on app start and every 5 minutes in foreground</li>
                   </ul>
                 </div>
@@ -474,10 +473,8 @@ export default function MobileDownloadPage() {
           )}
         </div>
 
-        {/* Footer info */}
         <div className="mt-8 text-center text-xs text-gray-400">
-          <p>GardenVerse Mobile v{apkInfo?.version || '1.0.0'} • Build #{apkInfo?.buildNumber || 1}</p>
-          <p className="mt-1">Non-breaking deployments ensure game data continuity</p>
+          <p>Public download URL: <a href="/download" className="text-green-600 underline">/download</a></p>
         </div>
       </div>
     </div>
