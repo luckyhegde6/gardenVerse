@@ -25,7 +25,8 @@ apply plugin: "com.facebook.react.rootproject"
 
 def mobileRoot = new File(rootDir, "..").absolutePath.replace('\\', '/')
 def repoRoot = new File(rootDir, "../../..").absolutePath.replace('\\', '/')
-def nodeModulesPath = mobileRoot + "/node_modules;" + repoRoot + "/node_modules"
+def separator = System.getProperty("os.name").toLowerCase().contains("win") ? ";" : ":"
+def nodeModulesPath = mobileRoot + "/node_modules" + separator + repoRoot + "/node_modules"
 
 allprojects {
     repositories {

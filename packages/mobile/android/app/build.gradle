@@ -4,7 +4,8 @@ apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath().replace('\\', '/')
 def repoRoot = new File(projectRoot).getParentFile().getAbsolutePath().replace('\\', '/')
-def nodeModulesPath = projectRoot + "/node_modules;" + repoRoot + "/node_modules"
+def separator = System.getProperty("os.name").toLowerCase().contains("win") ? ";" : ":"
+def nodeModulesPath = projectRoot + "/node_modules" + separator + repoRoot + "/node_modules"
 
 static def versionToNumber(major, minor, patch) {
   return patch * 100 + minor * 10000 + major * 1000000
@@ -218,18 +219,15 @@ if (rnVersion < versionToNumber(0, 75, 0)) {
     applyNativeModulesAppBuildGradle(project)
 }
 
-// Fix SQLite JDBC temp directory issue on Windows
-// Ensure kapt forked processes use a writable temp directory
-def windowsTempDir = System.getenv('LOCALAPPDATA') != null ? System.getenv('LOCALAPPDATA') + '\\Temp' : System.getProperty('java.io.tmpdir')
+// Ensure kapt forked processes use a writable temp directory (cross-platform)
+def kaptTmpDir = System.properties['java.io.tmpdir']
 subprojects {
     afterEvaluate { project ->
         project.tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptWithoutKotlincTask).configureEach { task ->
-            task.forkOptions.jvmArgs += ["-Djava.io.tmpdir=${windowsTempDir}", "-Dorg.sqlite.tmpdir=${windowsTempDir}", "-Dkotlin.home=${windowsTempDir}"]
+            task.forkOptions.jvmArgs += ["-Djava.io.tmpdir=${kaptTmpDir}", "-Dorg.sqlite.tmpdir=${kaptTmpDir}", "-Dkotlin.home=${kaptTmpDir}"]
         }
         project.tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptWithKotlincTask).configureEach { task ->
-            task.forkOptions.jvmArgs += ["-Djava.io.tmpdir=${windowsTempDir}", "-Dorg.sqlite.tmpdir=${windowsTempDir}", "-Dkotlin.home=${windowsTempDir}"]
+            task.forkOptions.jvmArgs += ["-Djava.io.tmpdir=${kaptTmpDir}", "-Dorg.sqlite.tmpdir=${kaptTmpDir}", "-Dkotlin.home=${kaptTmpDir}"]
         }
-
-        // CMake prefab fix: no longer needed after expo prebuild
     }
 }
