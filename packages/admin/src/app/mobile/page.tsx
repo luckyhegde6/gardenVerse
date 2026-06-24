@@ -281,12 +281,6 @@ export default function MobileManagementPage() {
                     size={180}
                     level="H"
                     includeMargin
-                    imageSettings={{
-                      src: '/icon-192.png',
-                      height: 36,
-                      width: 36,
-                      excavate: true,
-                    }}
                   />
                 </div>
                 <div className="mt-4 text-xs text-gray-400 font-mono bg-gray-50 px-3 py-1.5 rounded-lg break-all max-w-full">
