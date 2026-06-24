@@ -77,12 +77,6 @@ export default function DownloadPage() {
                   size={200}
                   level="H"
                   includeMargin
-                  imageSettings={{
-                    src: '/icon-192.png',
-                    height: 40,
-                    width: 40,
-                    excavate: true,
-                  }}
                 />
               </div>
             </div>
