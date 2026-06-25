@@ -945,3 +945,153 @@ The development build tries to load JavaScript from the Metro bundler at runtime
 - Reserve EAS development builds for native module testing only
 - Always use production builds (`eas build --profile production`) for end-to-end testing
 - Document the build type differences in the mobile testing workflow
+
+---
+
+## 2026-06-24: QR Code `imageSettings` Causes 404 Without Fallback Icon
+
+**Session**: ses-013
+**Category**: UI
+**Impact**: Low
+
+### Situation
+The public `/download` page used `qr-code.react` with `imageSettings` pointing to `/icon-192.png` for a center logo in the QR code.
+
+### Problem
+The `icon-192.png` file didn't exist in the Next.js public directory, causing a 404. The QR code still rendered but DevTools showed a 404 error.
+
+### Root Cause
+Assumed `icon-192.png` would exist from Vercel deployment or PWA setup, but no such file was ever created.
+
+### Solution
+Removed `imageSettings` entirely from `QRCodeSVG`. QR code renders cleanly without a center logo.
+
+### Prevention
+- Verify all static assets referenced in code exist in the public directory
+- For optional UI elements like QR logos, provide a fallback or skip if missing
+
+---
+
+## 2026-06-25: Mobile Emulator Shows "No plants found" — Dev Server Must Be Running
+
+**Session**: ses-014
+**Category**: Workflow
+**Impact**: Medium
+
+### Situation
+The Android emulator's plant selection screen showed "No plants found" when trying to plant a crop. The emulator was connecting to the API but getting empty/no response.
+
+### Problem
+The Next.js dev server (port 3000) was not running. The emulator at `10.0.2.2:3000` was connecting to nothing, so all API calls failed silently.
+
+### Root Cause
+The dev server was stopped at some point during the session (possibly by another process or manual restart). No health check was done before testing mobile features.
+
+### Solution
+Restarted the dev server: `npm run admin:dev`. After 15 seconds, the API was reachable and plant data loaded.
+
+### Prevention
+- Always verify `netstat -ano | findstr :3000` before testing mobile features against the API
+- Add a quick curl health check: `curl.exe -f http://localhost:3000/api/v1/health`
+
+---
+
+## 2026-06-25: JWT Role Case-Sensitivity — Hidden Auth Breaking Bug
+
+**Session**: ses-014
+**Category**: Security, Backend
+**Impact**: High
+
+### Situation
+Login was working (JWT issued successfully) but several admin API routes returned 403 Forbidden or empty results.
+
+### Problem
+Login routes stored `role: user.role.toLowerCase()` in the JWT payload. Many API routes did direct comparisons like `user.role !== 'ADMIN'` which failed because `jwt.verify()` returned lowercase `'admin'`.
+
+### Root Cause
+The `requireRole` middleware (`src/lib/middleware/auth.ts`) does case-insensitive comparison, so it works with either case. But various API routes had inline role checks using strict equality `!== 'ADMIN'` or `!== 'SUPER_ADMIN'`, which broke when the JWT stored lowercase roles.
+
+### Solution
+1. Changed login routes to store `user.role` as-is (uppercase from DB)
+2. Added `.toUpperCase()` guards on direct role comparisons in gardens API routes
+3. The `requireRole` middleware already handles case-insensitive comparison
+
+### Prevention
+- Always store roles in a canonical case (uppercase is convention)
+- All role comparisons should be case-insensitive or use a shared utility function
+- When changing JWT payload fields, audit ALL consumers for case assumptions
+- The `requireRole` middleware is the safe path; inline `!==` comparisons are the footgun
+
+---
+
+## 2026-06-25: E2E Fixture Silent try/catch Hides Auth Failures
+
+**Session**: ses-014
+**Category**: Testing
+**Impact**: High
+
+### Situation
+Super admin tests were flaky — failing on first run but passing on retry. The root cause was hidden by a silent try/catch in the fixture.
+
+### Problem
+The `authenticatedPage` and `superAdminPage` fixtures in `e2e/fixtures/test.ts` wrapped the entire setup in a try/catch that only logged to console. When `loginAs` failed (e.g., 503 from dev server restarting), the catch block silently logged the error, and the fixture fell through to returning the unauthenticated page. Subsequent tests that expected authenticated state would fail with confusing errors that didn't point to the auth failure.
+
+### Root Cause
+`console.log` output isn't visible in the Playwright test reporter. The error was swallowed entirely, making it look like a test logic bug rather than an infrastructure issue.
+
+### Solution
+Removed the try/catch entirely from `authenticatedPage` and `superAdminPage` fixtures. Now auth failures propagate as unhandled rejections, which show the actual error in the test report.
+
+### Prevention
+- Never wrap fixture setup in silent try/catch — let errors propagate
+- If error recovery in fixtures is needed, log with `test.info().attach()` or explicit `console.error()` with visible markers
+- For Playwright fixtures, use `test.beforeEach()` setup with explicit `expect()` verification instead
+
+---
+
+## 2026-06-25: Gradle Kapt SQLite Lock Crash — Worker Process Inherits Wrong `java.io.tmpdir`
+
+**Session**: ses-014
+**Category**: Build, Mobile
+**Impact**: Medium
+
+### Situation
+Running `gradlew.bat assembleDebug` failed with a crash in `expo-updates:kaptDebugKotlin` — Room's DatabaseVerifier/SQLiteJDBCLoader couldn't write a lock file.
+
+### Problem
+The Kapt worker process forked by Gradle inherits the system `java.io.tmpdir`, which on Windows defaults to `C:\WINDOWS\TEMP` (not writable by non-admin processes). Room's SQLiteJDBCLoader tries to create a temporary lock file there and crashes.
+
+### Solution
+Skip the `expo-updates:kaptDebugKotlin` task entirely with `-x :expo-updates:kaptDebugKotlin`. This task is unnecessary for debug builds (expo-updates doesn't run in debug mode).
+
+### Prevention
+- Document Windows-specific Gradle workarounds explicitly
+- On Windows, always build with `-x :expo-updates:kaptDebugKotlin` for debug APKs
+- Consider CI-based builds (EAS) to avoid Windows-specific build issues
+- Setting `kapt.use.worker.api=false` and JVM tmpdir env vars doesn't propagate to forked workers — skip the task instead
+
+---
+
+## 2026-06-25: Mobile Screen Uses Hardcoded Backend URL — API Service Already Exists
+
+**Session**: ses-014
+**Category**: Mobile
+**Impact**: Medium
+
+### Situation
+PlantBrowserScreen.tsx had hardcoded `http://localhost:3001/api/v1/plants/by-season` and `http://localhost:3001/api/v1/plants/search` URLs pointing to the old NestJS backend (port 3001, long deleted).
+
+### Problem
+The NestJS backend at port 3001 was deleted in Session 10. The mobile screen was still using hardcoded URLs instead of the shared `api` service, so plant browsing was completely broken.
+
+### Root Cause
+When PlantBrowserScreen was created, it used direct `axios.get()` calls without going through the shared `api` service. The port 3001 was never updated to 3000 after the backend migration.
+
+### Solution
+Replaced hardcoded URLs with `api.get("/plants?season=...")` and `api.get("/plants?q=...")` using the existing shared API service at `packages/mobile/src/services/api.ts`.
+
+### Prevention
+- Always verify API endpoints used in mobile screens match the available API routes
+- The shared `api` service (with base URL, auth interceptor, logging) should be the ONLY way to make API calls
+- After any backend migration (NestJS → Next.js), audit mobile screens for stale port references
+- Any new screen that needs API access should use the `api` service from the start

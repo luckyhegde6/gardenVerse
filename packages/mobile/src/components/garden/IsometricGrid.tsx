@@ -347,6 +347,25 @@ export function IsometricGrid({
                   fill="#7c5c3a"
                   opacity={0.4}
                 />
+                {/* Plus icon for empty plots */}
+                <Rect
+                  x={sx - 6}
+                  y={sy - 1}
+                  width={12}
+                  height={2}
+                  rx={1}
+                  fill="#a0825a"
+                  opacity={0.6}
+                />
+                <Rect
+                  x={sx - 1}
+                  y={sy - 6}
+                  width={2}
+                  height={12}
+                  rx={1}
+                  fill="#a0825a"
+                  opacity={0.6}
+                />
               </G>
             )}
 

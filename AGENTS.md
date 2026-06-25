@@ -63,7 +63,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Session Metadata
 - **Project**: GardenVerse - Hybrid Agriculture Simulation Ecosystem
-- **Session Started**: Jun 23, 2026 (Active: Session 12 — Production Auth Fix + Emulator Testing + E2E Flow Verification)
+- **Session Started**: Jun 23, 2026 (Active: Session 14 — Admin Auth Guarding + Public Plants + Gradle APK + E2E Stability)
 - **Architecture**: Next.js API Routes (Unified Admin + API) → Future Microservices
 - **Monorepo**: npm workspaces
 - **Platform**: Windows (PowerShell)
@@ -932,7 +932,13 @@ Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
   2. **Room kapt SQLite lock file crash** — `expo-updates:kaptDebugKotlin` forks a worker process where `java.io.tmpdir` defaults to `C:\WINDOWS\` (not writable). Workaround: skip task with `-x :expo-updates:kaptDebugKotlin`
 - **Working APK produced** — `app-arm64-v8a-debug.apk` (70MB) assembled and installed on `Pixel_7_API_34` emulator
 - **TypeScript tsc --noEmit** passes with zero errors on admin package
-- **E2E tests**: 7/7 auth pass, 8/10 admin pass (1 flaky fixture, 1 pre-existing "USERNAME" column mismatch)
+- **E2E tests**: 68/68 all passing (20 integration + 10 admin + 7 auth + 7 invites + 24 screenshots)
+  - Fixed flaky fixture — removed silent try/catch in authenticatedPage/superAdminPage
+  - Fixed USERNAME column mismatch — `text=USERNAME` → `th:has-text("Username")`
+  - Fixed integration tests: variable name bugs (`res` → `res1`/`res2`), garden page strict-mode selector, authenticateUI rewritten to API+localStorage, features page selector specificity
+- **Dev server restarted** — was not running, mobile emulator showed "No plants found"
+- **Fixed PlantBrowserScreen.tsx** — removed hardcoded `localhost:3001` (dead NestJS), uses shared `api` service
+- **Fixed JWT role case** — login routes stored `user.role.toLowerCase()` in JWT, breaking uppercase role comparisons; changed to store `user.role` as-is (uppercase)
 
 **Key Bug Fixes:**
 1. Non-admin authenticated users could access all admin pages — AppShell only checked `isAuthenticated`, not role
@@ -940,6 +946,9 @@ Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
 3. No public plant/disease reference pages accessible without login
 4. Gradle build failed due to `expo-updates:kaptDebugKotlin` — Room DatabaseVerifier SQLiteJDBCLoader tries to write lock file to `C:\WINDOWS\` in forked worker
 5. `e2e/fixtures/test.ts` and `e2e/tests/integration.spec.ts` had self-referencing `DEFAULT_PASSWORD` fallback bug
+6. **JWT role case**: DB stores roles as `'ADMIN'`, login routes were storing `role: user.role.toLowerCase()` in JWT → `'admin'`. API guards with `!== 'ADMIN'` (case-sensitive) failed. `requireRole` middleware is case-insensitive but inline checks weren't.
+7. **E2E fixture silent catch**: try/catch in fixtures swallowed auth failures — tests failed confusingly instead of showing auth error
+8. **Mobile PlantBrowserScreen stale URLs**: hardcoded `localhost:3001` pointed to deleted NestJS backend — should use shared `api` service
 
 **Mistakes & Corrections:**
 1. ❌ `gradle.taskGraph.whenReady` + `forkOptions.jvmArgs` doesn't propagate to forked Kapt worker
@@ -948,6 +957,14 @@ Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
    ✅ Set `kapt.use.worker.api=false` in gradle.properties (already there)
 3. ❌ Setting `JAVA_HOME` with spaces in path failed in cmd
    ✅ Use `set "JAVA_HOME=path with spaces"` (quotes around both variable and value)
+4. ❌ E2E fixture silent try/catch hid auth failures
+   ✅ Propagate errors directly — no silent catches in fixtures
+5. ❌ JWT role stored lowercase while API guards checked uppercase
+   ✅ Store `user.role` as-is (uppercase from DB), not `.toLowerCase()`
+6. ❌ PlantBrowserScreen used hardcoded localhost:3001 (deleted NestJS backend)
+   ✅ Always use shared `api` service for HTTP calls
+7. ❌ `res.json()` variable name bug in integration test (copy-paste error from `res1` to `res2` but forgot `res` → `res2`)
+   ✅ Use distinct variable names per response; verify copy-paste doesn't leave stale references
 
 ---
 

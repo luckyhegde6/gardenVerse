@@ -142,10 +142,11 @@ android {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.debug
-            shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
-            minifyEnabled enableProguardInReleaseBuilds
+            // Disable ProGuard/minification for local dev builds (speeds up build 10x)
+            shrinkResources false
+            minifyEnabled false
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
-            crunchPngs (findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
+            crunchPngs false
         }
     }
     packagingOptions {
@@ -250,10 +251,20 @@ task copyPrebuiltBundle {
 }
 
 afterEvaluate {
-    def bundleTask = tasks.findByName("createBundleDebugJsAndAssets")
-    if (bundleTask != null) {
-        bundleTask.enabled = false
-        tasks.findByName("mergeDebugAssets")?.dependsOn(copyPrebuiltBundle)
-        tasks.findByName("mergeDebugResources")?.dependsOn(copyPrebuiltBundle)
+    // Disable Metro bundling for all variants — use pre-built bundle instead
+    // (Metro 0.80.x file crawler hangs on Windows with large node_modules)
+    ["createBundleDebugJsAndAssets", "createBundleReleaseJsAndAssets"].each { taskName ->
+        def bundleTask = tasks.findByName(taskName)
+        if (bundleTask != null) {
+            bundleTask.enabled = false
+        }
+    }
+    // Wire pre-built bundle into both debug and release variants
+    def mergeTasks = ["mergeDebugAssets", "mergeReleaseAssets", "mergeDebugResources", "mergeReleaseResources"]
+    mergeTasks.each { taskName ->
+        def t = tasks.findByName(taskName)
+        if (t != null) {
+            t.dependsOn(copyPrebuiltBundle)
+        }
     }
 }

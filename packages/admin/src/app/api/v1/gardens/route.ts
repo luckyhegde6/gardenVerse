@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = {}
     if (userId) {
       where.userId = userId
-    } else if (auth.payload.role !== 'ADMIN' && auth.payload.role !== 'SUPER_ADMIN') {
+    } else if (auth.payload.role.toUpperCase() !== 'ADMIN' && auth.payload.role.toUpperCase() !== 'SUPER_ADMIN') {
       where.userId = auth.payload.userId
     }
     if (type) where.type = type

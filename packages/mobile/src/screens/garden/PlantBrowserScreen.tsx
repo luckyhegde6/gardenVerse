@@ -6,13 +6,13 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import axios from "axios";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { PlantSpecies } from "../../types";
 import debounce from "../../utils/debounce";
 import HapticFeedback from "../../utils/haptics";
+import api from "../../services/api";
 
 const DIFFICULTY_BADGES: Record<
   string,
@@ -56,13 +56,9 @@ function PlantBrowserScreen() {
   const fetchPopularPlants = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(
-        "http://localhost:3001/api/v1/plants/by-season",
-        {
-          params: { season: getCurrentSeason() },
-        },
-      );
-      setPlants(Array.isArray(data) ? data : []);
+      const resp = await api.get("/plants?season=" + getCurrentSeason() + "&limit=30");
+      const plantsList = resp.data?.data || resp.data || [];
+      setPlants(Array.isArray(plantsList) ? plantsList : []);
     } catch {
       setPlants([]);
     } finally {
@@ -86,13 +82,9 @@ function PlantBrowserScreen() {
       }
       setLoading(true);
       try {
-        const { data } = await axios.get(
-          "http://localhost:3001/api/v1/plants/search",
-          {
-            params: { q: query, limit: 30 },
-          },
-        );
-        setPlants(Array.isArray(data.data) ? data.data : []);
+        const resp = await api.get("/plants?q=" + encodeURIComponent(query as string) + "&limit=30");
+        const plantsList = resp.data?.data || resp.data || [];
+        setPlants(Array.isArray(plantsList) ? plantsList : []);
       } catch {
         setPlants([]);
       } finally {

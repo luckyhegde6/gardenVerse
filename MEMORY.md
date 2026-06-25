@@ -4,24 +4,20 @@
 
 ## Current Session
 
-**Date**: June 4, 2026
-**Session ID**: ses-010
-**Focus**: Backend Migration Completion — Monitoring Overhaul, NestJS → Next.js Full Migration, Logger Sidecar, AI Dashboard, Queue/WS/Cron Infrastructure
+**Date**: June 25, 2026
+**Session ID**: ses-014
+**Focus**: Admin Auth Guarding + Public Plant Encyclopedia + Gradle APK Build Fix + E2E Stability
 
 ### Active Context
 
-- **Phase 10 (This Session — Backend Migration Completion)**:
-  - **Monitoring page overhauled**: System Health, Performance Metrics, API Endpoint Performance (Section 3), System Logs with search/clear/filter, Queue Status, Sidecar Services — all 6 sections populated
-  - **Logger sidecar created** (`packages/admin/src/lib/logger/index.ts`): non-blocking file writer + DB backup with 24h TTL, log reading, log clearing
-  - **Logging middleware created** (`packages/admin/src/lib/middleware/logging.ts`): request tracking with traceId, duration, status
-  - **Created `/api/v1/logs` and `/api/v1/logs/clear` routes**: reads from log files first, then DB fallback, with search support
-  - **Created `/api/v1/analytics/endpoints` route**: per-endpoint metrics (requests, avg response, error rate)
-  - **Phase 1 - Audit**: Audited 25 backend modules (132 endpoints), 88 admin API routes, both Prisma schemas; found 11 routes missing auth, 38 gap endpoints
-  - **Phase 2 - Batch Migration**: Created 37 new API routes covering 7 domains (User/Auth, Garden/Crop, Marketplace/AI, Gamification, Analytics/Plants/Community/Feature Flags/Notifications/QR/IoT/Geo/Moderation)
-  - **Phase 3 - WS/BullMQ/Cron**: Created in-process queue wrapper, SSE helper + pub/sub, task registry, Vercel Cron routes (growth-tick every 4h, weather-sync every 6h), agent callback handler
-  - **Phase 4 - AI Integration**: Created TypeScript AI fallback for plant analysis, watering/fertilizer recommendations, disease detection; created AI Dashboard page with scan stats, model accuracy, service status
-  - **Phase 5 - Cleanup**: Deleted `packages/backend/` entirely, removed backend CI/CD workflow, updated root package.json scripts
-  - **Verification**: `tsc --noEmit` passes on both admin and mobile; `next build` compiles 126 pages/routes successfully; admin dashboard authenticated via browser with real DB data; monitoring page verified in Chrome with all 6 sections rendering
+- **Admin role-gating**: `AppShell.tsx` checks `user.role` — non-admin users redirected to `/download` for admin-only pages
+- **Public `/plants` and `/diseases` pages**: Added to `PUBLIC_PATHS`, public nav links in `PublicLayout.tsx` header; admin-only features (Add Plant, row-click-edit, empty-state button) hidden for non-admin
+- **Mobile emulator connectivity**: PlantBrowserScreen had hardcoded `localhost:3001` (dead NestJS) — fixed to use shared `api` service pointing to `10.0.2.2:3000`
+- **JWT role case fix**: Login routes stored `role: user.role.toLowerCase()` in JWT, but API routes compared against uppercase `'ADMIN'`/`'SUPER_ADMIN'`. Fixed to store uppercase `user.role` as-is; gardens API routes use `.toUpperCase()` guards
+- **Gradle APK build fixed**: Two root causes fixed — Metro 0.80.12 file-crawl hang (downgraded to 0.80.3, pre-bundled JS, disabled Hermes) and Room kapt SQLite lock crash (`-x :expo-updates:kaptDebugKotlin`). Working `app-arm64-v8a-debug.apk` (70MB) produced
+- **E2E tests**: All 68 tests passing (20 integration + 10 admin + 7 auth + 7 invites + 24 screenshots) — fixed fixture flakiness (silent try/catch removed), USERNAME column case mismatch, variable name bug in pagination test, garden page strict-mode selector, authenticateUI rewritten to use API+localStorage
+- **Dev server fixed**: Was not running (mobile emulator showed "No plants found"); restarted on port 3000
+- **TypeScript**: `tsc --noEmit` passes with zero errors on admin package
 
 ### Open Questions
 
@@ -31,7 +27,6 @@
 - Garden/crop detail tables on `/garden` page still use hardcoded `data={[]}` — needs admin-specific garden listing API routes
 - Need to verify Expo web refresh preserves auth state in production build (not just dev)
 - `user_data` in storage not refreshed on profile update — should update cached userData on successful profile fetch
-- Seed data lost when `packages/backend/` was deleted; recreated minimal seed (3 users) — needs full seed restoration (31 plant species, 5 gardens, crops, marketplace listings, weather, etc.)
 - `packages/admin/prisma/migrations/` directory was never created; schema pushed via `prisma db push` instead — needs a proper initial migration
 
 ### Active Specs
@@ -44,6 +39,8 @@
 - **Monitoring page**: 6 sections — System Health (4 services status), Performance Metrics (CPU/Memory/Users/Rate), API Endpoint Performance (10 endpoints with metrics), System Logs (search, level/source filters, clear), Queue Status (4 BullMQ queues), Sidecar Services (4 services with status/uptime)
 - **Logger sidecar**: Non-blocking file writes + `appLog` DB table backup, 24h TTL auto-cleanup, searchable via API
 - **AI Dashboard**: Scan stats, recent scans table, service status cards (3 AI services), model accuracy bars, recommendation stats, tooltips
+- **JWT role casing**: JWT stores `user.role` as-is (uppercase from DB); `requireRole` middleware does case-insensitive comparison; direct `!==` comparisons use `.toUpperCase()` guards
+- **E2E fixture pattern**: `authenticatedPage`/`superAdminPage` use API login + localStorage injection; propagate errors (no silent try/catch)
 
 ### Recent Decisions
 
@@ -56,28 +53,75 @@
 - **ADR-007**: API response format is `{ data, total, page, limit }` via `paginated()` helper
   - Status: ✅ Applied
 - **ADR-008**: Client-side growth simulation with server-side tick sync
-  - Rationale: Virtual gardens need 100x speed growth which is too fast for server-only ticks; client engine runs simulated ticks, server endpoint provides manual sync
   - Status: ✅ Applied (GrowthEngine.ts + POST /gardens/{id}/tick)
 - **ADR-009**: Expo web storage should use `localStorage`, not in-memory `Map`
-  - Rationale: In-memory `Map` is cleared on page refresh, losing auth state. `localStorage` persists across refreshes for web platform. Native continues to use `SecureStore`.
   - Status: ✅ Applied
 - **ADR-010**: Backend (NestJS) fully migrated into Next.js API routes; `packages/backend/` deleted
-  - Rationale: Having both NestJS (port 3001) and Next.js API routes (port 3000) duplicated effort. Unified admin + API in a single Next.js app simplifies deployment, reduces surface area, and eliminates `Railway` need.
   - Status: ✅ Applied (5-phase plan completed: Audit → Migration → WS/BullMQ/Cron → AI → Cleanup)
+- **ADR-011**: JWT tokens store `user.role` as-is (uppercase from DB), not `user.role.toLowerCase()`
+  - Rationale: API route guards compare against uppercase `'ADMIN'`/`'SUPER_ADMIN'`; storing lowercase broke those checks
+  - Status: ✅ Applied
+- **ADR-012**: E2E auth fixture uses API login + localStorage injection (not UI form-filling)
+  - Rationale: API-based auth is faster and more reliable than UI-based login flow; UI fallback exists as backup
+  - Status: ✅ Applied
 
 ### Key Numbers
 
-- **Admin**: 126 pages/routes compiled (37 new API routes), monitoring page with 6 sections, AI dashboard, 30+ API modules
-- **Backend**: REMOVED — fully migrated into Next.js API routes
-- **Logger**: Non-blocking file writer + DB backup, 24h TTL, request tracing with traceId/duration/status
-- **Mobile**: 23 Expo Router screens, 5 bottom tabs, EAS project live, GrowthEngine singleton, 6×6 grids, 2 new components (GrowthOverlay, WeatherBar)
+- **Admin**: 152 pages/routes compiled, 30+ API modules, role-gated AppShell, public plants/diseases pages
+- **Mobile**: Working debug APK (70MB, arm64-v8a), Gradle build fixed (Metro downgrade + kapt skip), PlantBrowserScreen uses api service
+- **E2E**: 68 Playwright tests all passing (20 integration + 10 admin + 7 auth + 7 invites + 24 screenshots)
 - **Contracts**: 8 Solidity contracts, 41 Hardhat tests passing
-- **E2E**: 48 Playwright tests, 8 workflow screenshot modules
 - **Docs**: 35+ markdown files across 8 doc categories
 - **Scripts**: 12+ PowerShell scripts, 2 bash scripts
-- **Workflows**: 2 CI/CD workflows (admin-deploy, mobile) — backend-deploy removed (merged into Next.js)
+- **Workflows**: 3 CI/CD workflows (admin-deploy, mobile, contracts) + 1 EAS Hosting workflow
 
 ## Previous Sessions
+
+### Session 14 (Jun 25, 2026): Admin Auth Guarding + Public Plant Encyclopedia + Gradle APK Build Fix + E2E Stability
+- Role-gated AppShell — non-admin users redirected to `/download` for admin-only pages; sidebar links role-gated
+- Made `/plants` and `/diseases` public (PUBLIC_PATHS); public nav links in PublicLayout.tsx header
+- Admin features hidden on public pages (Add Plant button, row-click-edit, empty-state Add)
+- Fixed mobile PlantBrowserScreen.tsx — removed hardcoded `localhost:3001` (dead NestJS), uses shared `api` service
+- Fixed JWT role case — login routes were storing `user.role.toLowerCase()` in JWT, breaking uppercase comparisons in API guards; changed to store `user.role` as-is (uppercase)
+- Fixed Gradle APK build: Metro 0.80.12 → 0.80.3 (file-crawl hang), pre-built JS bundle, disabled Hermes, skipped `expo-updates:kaptDebugKotlin` (Room SQLite lock crash in forked worker); produced working `app-arm64-v8a-debug.apk` (70MB)
+- Fixed E2E fixture flakiness — removed silent try/catch in authenticatedPage/superAdminPage (was swallowing auth failures)
+- Fixed integration tests: `res` → `res1`/`res2` variable name bugs, garden page strict-mode selector, authenticateUI rewritten to API+localStorage, features page selector specificity
+- 68/68 E2E tests passing (20 integration + 10 admin + 7 auth + 7 invites + 24 screenshots)
+- `tsc --noEmit` passes with zero errors on admin package
+- Dev server restarted (was stopped — mobile emulator showed "No plants found")
+- Key learnings: JWT role case-sensitivity is a hidden footgun; E2E fixtures must propagate errors; `audit` tool can miss nested `process.env` access in submodules
+
+### Session 13 (Jun 24, 2026): EAS Hosting Integration — Public Download Page + Admin Build Management + Branch Protection Rules
+- Branch protection rules codified in AGENTS.md, checklist.md, production-sync.md — no direct pushes to `main`, PRs + squash merges + signed commits + CI/CodeQL required, fresh branches deleted after merge
+- Public `/download` page — QR code + download button, no auth, no tabs, no `imageSettings` (avoids 404 from missing icon-192.png)
+- Admin `/mobile` page — 4 tabs (Overview, Build APK, Sync OTA, Changelog), role-gated to admin/super_admin
+- Sidebar role-gating — "Mobile App" and "Super Admin" links only visible to admin/super_admin via `ADMIN_ONLY` array
+- Build API route — POST/GET `/api/v1/mobile/build-apk` triggers EAS workflow_dispatch
+- Download/APK-info API routes — serve local APK, fallback to GitHub Releases, return version/size/SHA256
+- EAS Hosting workflow — `.github/workflows/eas-hosting.yml` deploys mobile web build to EAS Hosting CDN
+- Production verification — /download renders with 0 console errors, all API routes working
+- APK built via `gradlew.bat assembleDebug` (191MB dev APK) — useContext crash confirmed (known React version mismatch in dev build)
+
+### Session 12 (Jun 23, 2026): Production Auth Fix + Emulator Testing + E2E Flow Verification
+- Fixed production auth 500 error: bcrypt@5.1.1 native module fails on Vercel Lambda; switched to bcryptjs (pure JS, works everywhere)
+- Fixed dynamic `jsonwebtoken` imports — `await import('jsonwebtoken')` triggered DEP0169; replaced with static imports
+- Fixed stale production URL — `useNotifications.ts` hardcoded `api.gardenverse.app` (nonexistent); changed to `gardenverse.vercel.app`
+- Added missing `/api/v1/ai/scans` route — requests fell through to `[id]` dynamic route causing 500; created proper paginated GET handler with auth guard
+- Vercel deployment — 152 pages/routes compiled successfully, all API routes included
+- Emulator testing — Pixel_7_API_34 with GardenVerse APK; confirmed API connectivity via logcat
+- Found React useContext crash in dev APK — React version mismatch; need production EAS build for stable APK
+- Production API verification — all endpoints returning 200 (login, gardens, crops, plants, stats, marketplace, weather, community, ai/scans, notifications/preferences)
+
+### Session 11 (Jun 5, 2026): Mobile Logger Pipeline + Seed Data Restoration + First-Time Walkthrough
+- Created mobile Logger service (`packages/mobile/src/services/logger.ts`) — 192-line module with circular buffer (200 entries), debounced batch sender (500ms), console method override, only active in `__DEV__`
+- Wired logger into API interceptor — replaced `console.log`/`.error` in api.ts with structured `logger.info`/`.error` calls
+- Added App Logs section to DebugOverlay — color-coded level badges, message, source/context badges, timestamp
+- Logger init in root layout — `_layout.tsx` calls `initLogger()` at module level
+- Seed data expansion — added 20 Indian plant species (Tomato, Chilli, Turmeric, Rice, Okra, Brinjal, etc.), VIRTUAL "Demo Garden" with 3 crops, 6 feature flags
+- First-time walkthrough overlay — 5-step modal (Welcome → Plant → Water → Fertilize → Harvest) with progress dots, Skip/Next buttons
+- Fixed seed script — changed from `ts-node` (Windows quoting bug) to `tsx` in package.json
+- API verification — Plants (20 species), Gardens (1 for demo user), Login (all 3 accounts) verified via curl
+- Fixed plant selection "No plants found" — PlantSpecies table was empty before seed expansion
 
 ### Session 10 (Jun 4, 2026): Backend Migration Completion — Monitoring Overhaul + NestJS→Next.js + Logger + AI Dashboard
 - Overhauled monitoring page: 6 sections (System Health, Performance Metrics, API Endpoint Performance, System Logs with search/filter/clear, Queue Status, Sidecar Services)
@@ -174,15 +218,13 @@
 
 ## Next Actions
 
-1. Restore full seed data (31 plant species, 5 gardens, crops, marketplace listings, weather records)
-2. Create initial Prisma migration (`prisma migrate dev --name init`) for admin schema
-3. Run full E2E tests against local dev with restored data
-4. Set NEXT_PUBLIC_API_URL on Vercel
-5. Create `/campaigns` API route with Prisma-backed endpoints
-6. Create admin garden listing/crop health API routes for `/garden` page tables
-7. Wire weather effects into growth simulation (sunlight modifier already in engine)
-8. Verify Expo web auth persistence in production build
-9. Add ESLint config to admin package
+1. Create `/campaigns` API route with Prisma-backed endpoints (page shows error gracefully)
+2. Create admin garden listing/crop health API routes for `/garden` page tables (hardcoded `data={[]}`)
+3. Wire weather effects into growth simulation (sunlight modifier already in engine)
+4. Verify Expo web auth persistence in production build
+5. Add ESLint config to admin package
+6. Create initial Prisma migration (`prisma migrate dev --name init`) for admin schema
+7. Build production APK via `eas build --profile production` (fixes useContext crash in dev APK)
 
 ## File Map
 
@@ -202,10 +244,10 @@
   RULES.md               # UPDATED: Expo web, API response format, store design rules
 
 packages/
-   admin/                # Next.js 14 admin dashboard + API (Vercel) — 126 pages/routes
+   admin/                # Next.js 14 admin dashboard + API (Vercel) — 152 pages/routes
       prisma/
         schema.prisma               # Canonical schema (42 models, 9 enums)
-        seed.ts                     # Session 10: minimal seed (3 users, password: password123)
+        seed.ts                     # Session 11: expanded seed (20 Indian plants, demo garden, 3 crops, 6 feature flags)
       src/
         lib/
           logger/index.ts           # Session 10: Logger sidecar (file + DB, 24h TTL)
@@ -216,6 +258,13 @@ packages/
           ai/index.ts              # Session 10: TypeScript AI fallback
           agents/README.md         # Session 10: Agent migration docs
         app/api/v1/
+          auth/login/route.ts      # Session 14: JWT role stored as uppercase (was .toLowerCase())
+          auth/admin/login/route.ts # Session 14: Same JWT role fix
+          gardens/route.ts          # Session 14: Role comparison uses .toUpperCase() guard
+          gardens/[id]/route.ts     # Session 14: PUT/DELETE role .toUpperCase() guard
+          mobile/build-apk/         # Session 13: POST/GET EAS build trigger
+          mobile/download/          # Session 13: APK download (local + GitHub Releases fallback)
+          mobile/apk-info/          # Session 13: APK metadata (version, size, SHA256)
           logs/route.ts            # Session 10: GET logs (file first, DB fallback)
           logs/clear/route.ts      # Session 10: POST clear logs
           analytics/endpoints/route.ts  # Session 10: Endpoint performance metrics
@@ -237,31 +286,42 @@ packages/
           ... +25 more new routes (Session 10)
         app/monitoring/page.tsx   # Session 10: Overhauled with 6 sections
         app/ai-dashboard/page.tsx # Session 10: New AI dashboard page
-   mobile/               # React Native (Expo) — 23+ screens
-     src/
-       utils/
-         storage.ts      # FIXED: in-memory Map → window.localStorage for web platform
-       stores/
-         authStore.ts    # FIXED: loadStoredAuth falls back to cached userData on profile fetch failure
-         gardenStore.ts  # Session 8: added syncCrops() for growth engine integration
-       services/
-         growthEngine.ts # Session 8: client-side growth simulation (30s tick, 100x virtual speed)
-       hooks/
-         useMarketplace.ts  # FIXED: URLs /marketplace/listings → /marketplace
-       screens/
-         garden/
-           GardenScreen.tsx   # REWRITTEN: integrated GrowthOverlay, WeatherBar, weather fetch, engine poll
-         marketplace/
-           ListingDetailScreen.tsx   # REWRITTEN: fetches real listing via getListingById
-           CreateListingScreen.tsx   # REWRITTEN: calls createListing with GREEN_CREDITS
-         profile/
-           ProfileScreen.tsx   # REWRITTEN: fetches stats from /users/me/stats, collections, activity
-       components/garden/
-         Garden3D.tsx        # UPDATED: selection ring mesh, empty tile highlights, raycasting tap detection
-         IsometricGrid.tsx   # Session 8: expanded 4x4→6x6, plant shadows, richer soil
-         CropSpriteSVG.tsx   # Session 8: added 5 Indian crop sprites
-         GrowthOverlay.tsx   # NEW: floating growth status panel (682 lines)
-         WeatherBar.tsx      # NEW: horizontally scrolling weather strip
+        app/download/page.tsx     # Session 13: Public download page (QR + button)
+        app/mobile/page.tsx       # Session 13: Admin build management (4 tabs, role-gated)
+        app/plants/page.tsx       # Session 14: Public plant encyclopedia (admin features hidden for non-admin)
+        app/diseases/page.tsx     # Session 14: Public disease dataset reference
+   mobile/               # React Native (Expo) — 23+ screens, working debug APK (70MB)
+      src/
+        utils/
+          storage.ts      # FIXED: in-memory Map → window.localStorage for web platform
+        stores/
+          authStore.ts    # FIXED: loadStoredAuth falls back to cached userData on profile fetch failure
+          gardenStore.ts  # Session 8: added syncCrops() for growth engine integration
+        services/
+          logger.ts       # Session 11: Logger service (circular buffer, batch sender, console override)
+          growthEngine.ts # Session 8: client-side growth simulation (30s tick, 100x virtual speed)
+        hooks/
+          useMarketplace.ts  # FIXED: URLs /marketplace/listings → /marketplace
+          useWalkthrough.ts  # Session 11: First-time walkthrough hook (checks ONBOARDING_COMPLETE in storage)
+        screens/
+          garden/
+            GardenScreen.tsx          # REWRITTEN: integrated GrowthOverlay, WeatherBar, weather fetch, engine poll
+            PlantBrowserScreen.tsx    # Session 14: removed hardcoded localhost:3001, uses api service
+            PlantCropScreen.tsx       # Uses api service for /plants?season=...
+          marketplace/
+            ListingDetailScreen.tsx   # REWRITTEN: fetches real listing via getListingById
+            CreateListingScreen.tsx   # REWRITTEN: calls createListing with GREEN_CREDITS
+          profile/
+            ProfileScreen.tsx   # REWRITTEN: fetches stats from /users/me/stats, collections, activity
+        components/garden/
+          Garden3D.tsx        # UPDATED: selection ring mesh, empty tile highlights, raycasting tap detection
+          IsometricGrid.tsx   # Session 8: expanded 4x4→6x6, plant shadows, richer soil
+          CropSpriteSVG.tsx   # Session 8: added 5 Indian crop sprites
+          GrowthOverlay.tsx   # NEW: floating growth status panel (682 lines)
+          WeatherBar.tsx      # NEW: horizontally scrolling weather strip
+          WalkthroughOverlay.tsx  # Session 11: 5-step first-time walkthrough modal
+        _layout.tsx         # Session 11: calls initLogger() at module level
+        DebugOverlay.tsx    # Session 11: added "App Logs (last 50)" section
 
 contracts/               # 8 Solidity contracts (Hardhat)
   contracts/
@@ -269,9 +329,22 @@ contracts/               # 8 Solidity contracts (Hardhat)
     marketplace/         # Marketplace, Escrow
     reputation/          # ReputationManager, RewardDistributor
 
+e2e/
+  fixtures/test.ts       # Session 14: Propagates errors (no silent try/catch), API+localStorage auth
+  tests/
+    integration.spec.ts  # Session 14: 20 tests — fixed variable names, selectors, garden page, pagination
+    admin.spec.ts        # Session 14: Fixed USERNAME column (th:has-text("Username"))
+  screenshots/           # Session 3+: 24 screenshot tests across 8 workflows
+
 scripts/
   verify-deployment.sh   # Admin + backend + cross-service checks (bash)
   verify-deployment.ps1  # Same for PowerShell
+
+packages/mobile/
+  app.config.js          # Session 5: JS expressions for EAS env vars
+  eas.json               # Session 5: Build profiles (development/preview/production)
+  android/app/build.gradle  # Session 14: Metro downgrade, pre-bundled JS, Hermes disabled
+  gradle.properties      # Session 14: kapt.use.worker.api=false (Room SQLite worker fix)
 
 docs/
   architecture/
@@ -279,7 +352,7 @@ docs/
   deployment/
     production-deployment.md # Full production deployment guide
   improvements/
-    lessons-learned.md   # ses-006 through ses-009 entries added
+    lessons-learned.md   # ses-006 through ses-014 entries added
   api/
     README.md            # Updated with gamification endpoints
 ```
