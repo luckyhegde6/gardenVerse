@@ -65,6 +65,10 @@ export interface Crop {
   totalCareCount: number;
   /** Number of times harvested (used for mastery calculation) */
   harvestCount?: number;
+  /** ISO timestamp of last watering */
+  lastWateredAt?: string;
+  /** ISO timestamp of last fertilizing */
+  lastFertilizedAt?: string;
 }
 
 export enum CropStatus {

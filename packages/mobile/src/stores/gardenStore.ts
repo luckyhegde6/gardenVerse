@@ -96,13 +96,13 @@ export const useGardenStore = create<GardenState>()(
 
     waterCrop: async (cropId: string) => {
       try {
-        // Trigger medium haptic feedback for watering action
         HapticFeedback.action();
+        const now = new Date().toISOString();
         await api.patch(`/crops/${cropId}`, { action: "water" });
         set((state) => ({
           crops: state.crops.map((c) =>
             c.id === cropId
-              ? { ...c, hydration: Math.min(c.hydration + 20, 100) }
+              ? { ...c, hydration: Math.min(c.hydration + 20, 100), lastWateredAt: now }
               : c,
           ),
         }));
@@ -115,13 +115,13 @@ export const useGardenStore = create<GardenState>()(
 
     fertilizeCrop: async (cropId: string) => {
       try {
-        // Trigger medium haptic feedback for fertilizing action
         HapticFeedback.action();
+        const now = new Date().toISOString();
         await api.patch(`/crops/${cropId}`, { action: "fertilize" });
         set((state) => ({
           crops: state.crops.map((c) =>
             c.id === cropId
-              ? { ...c, nutrientLevel: Math.min(c.nutrientLevel + 30, 100) }
+              ? { ...c, nutrientLevel: Math.min(c.nutrientLevel + 30, 100), lastFertilizedAt: now }
               : c,
           ),
         }));

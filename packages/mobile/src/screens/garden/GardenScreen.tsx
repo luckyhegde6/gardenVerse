@@ -494,46 +494,48 @@ export function GardenScreen() {
           </View>
         )}
 
-        {/* Garden Grid */}
+        {/* Garden Grid — always visible */}
         <View className="px-4 mb-4">
-
           <Animated.View
             style={viewToggleStyle}
             className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100"
           >
-            {crops.length === 0 ? (
-              <View className="items-center py-12">
-                <Text className="text-4xl mb-3">🌱</Text>
-                <Text className="text-gray-500 text-sm mb-1">
-                  Your garden is empty
-                </Text>
-                <TouchableOpacity
-                  onPress={() => router.push('/plant-crop')}
-                  className="bg-primary-600 px-6 py-2.5 rounded-xl mt-2"
-                >
-                  <Text className="text-white font-semibold">
-                    Plant Your First Crop
-                  </Text>
-                </TouchableOpacity>
+            {viewMode === '2d' ? (
+              <View>
+                <IsometricGrid
+                  crops={crops}
+                  gridWidth={6}
+                  gridHeight={6}
+                  selectedCropId={selectedCropId}
+                  onTilePress={handleTilePress}
+                  onWaterCrop={(cid) => handleWater(cid)}
+                  onFertilizeCrop={(cid) => handleFertilize(cid)}
+                  soilQuality={soilQuality}
+                  irrigationLevel={irrigationLevel}
+                />
+                {crops.length === 0 && (
+                  <View className="items-center py-4">
+                    <Text className="text-gray-400 text-xs">
+                      Tap any empty plot or press + Plant to start growing
+                    </Text>
+                  </View>
+                )}
               </View>
-            ) : viewMode === '2d' ? (
-              <IsometricGrid
-                crops={crops}
-                gridWidth={6}
-                gridHeight={6}
-                selectedCropId={selectedCropId}
-                onTilePress={handleTilePress}
-                onWaterCrop={(cid) => handleWater(cid)}
-                onFertilizeCrop={(cid) => handleFertilize(cid)}
-                soilQuality={soilQuality}
-                irrigationLevel={irrigationLevel}
-              />
             ) : (
-              <Garden3D
-                selectedCropId={selectedCropId}
-                onTilePress={handleTilePress}
-                onPlantPress={(col, row) => router.push({ pathname: '/plant-crop', params: { plotX: String(col), plotY: String(row) } })}
-              />
+              <View>
+                <Garden3D
+                  selectedCropId={selectedCropId}
+                  onTilePress={handleTilePress}
+                  onPlantPress={(col, row) => router.push({ pathname: '/plant-crop', params: { plotX: String(col), plotY: String(row) } })}
+                />
+                {crops.length === 0 && (
+                  <View className="items-center py-4">
+                    <Text className="text-gray-400 text-xs">
+                      Tap any empty plot or press + Plant to start growing
+                    </Text>
+                  </View>
+                )}
+              </View>
             )}
           </Animated.View>
         </View>
@@ -548,14 +550,17 @@ export function GardenScreen() {
               <View className="flex-row justify-between gap-2">
                 <WaterButton
                   onPress={() => handleWater(selectedCrop.id)}
+                  crop={selectedCrop}
                   className="flex-1"
                 />
                 <FertilizeButton
                   onPress={() => handleFertilize(selectedCrop.id)}
+                  crop={selectedCrop}
                   className="flex-1"
                 />
                 <HarvestButton
                   onPress={() => handleHarvest(selectedCrop.id)}
+                  crop={selectedCrop}
                   className="flex-1"
                 />
               </View>

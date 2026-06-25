@@ -120,6 +120,33 @@ function formatDate(isoString: string): string {
   });
 }
 
+function formatTimeAgo(isoString: string | undefined): string {
+  if (!isoString) return "—";
+  const then = new Date(isoString).getTime();
+  const now = Date.now();
+  const diffMs = now - then;
+  if (diffMs < 0) return "just now";
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return `${diffSec}s ago`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHrs = Math.floor(diffMin / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.floor(diffHrs / 24);
+  return `${diffDays}d ago`;
+}
+
+function estimatedTimeToNextStage(growthStage: number): string {
+  if (growthStage >= 100) return "Ready to harvest!";
+  const remaining = 100 - growthStage;
+  const estTicks = Math.ceil(remaining / 1.39);
+  const estMinutes = estTicks * 0.5;
+  if (estMinutes < 60) return `~${estMinutes}m`;
+  const estHours = Math.round(estMinutes / 60);
+  if (estHours < 24) return `~${estHours}h`;
+  return `~${Math.round(estHours / 24)}d`;
+}
+
 // ─── Sub-Components ─────────────────────────────────────────────────────────
 
 function ProgressBar({
@@ -293,6 +320,44 @@ function CropStatusCard({ crop }: { crop: Crop }) {
         value={crop.nutrientLevel}
         color={getBarColor(crop.nutrientLevel)}
       />
+
+      {/* Divider */}
+      <View style={styles.divider} />
+
+      {/* Time tracking section */}
+      <Text style={styles.sectionTitle}>Time Tracking</Text>
+      <View style={styles.timingRow}>
+        <Text style={styles.timingLabel}>Last Watered</Text>
+        <Text style={styles.timingValue}>
+          {formatTimeAgo(crop.lastWateredAt)}
+        </Text>
+      </View>
+      <View style={styles.timingRow}>
+        <Text style={styles.timingLabel}>Last Fertilized</Text>
+        <Text style={styles.timingValue}>
+          {formatTimeAgo(crop.lastFertilizedAt)}
+        </Text>
+      </View>
+      <View style={styles.timingRow}>
+        <Text style={styles.timingLabel}>Planted</Text>
+        <Text style={styles.timingValue}>
+          {formatDaysSince(crop.plantedAt)}
+        </Text>
+      </View>
+      <View style={styles.timingRow}>
+        <Text style={styles.timingLabel}>Est. Next Stage</Text>
+        <Text style={styles.timingValue}>
+          {estimatedTimeToNextStage(crop.growthStage)}
+        </Text>
+      </View>
+      {crop.estimatedHarvest && (
+        <View style={styles.timingRow}>
+          <Text style={styles.timingLabel}>Est. Harvest Date</Text>
+          <Text style={styles.timingValue}>
+            {formatDate(crop.estimatedHarvest)}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -644,6 +709,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     color: "#64748b",
+  },
+
+  // Time tracking rows
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#94a3b8",
+    marginBottom: spacing.xs + 2,
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+  },
+  timingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 3,
+  },
+  timingLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#64748b",
+  },
+  timingValue: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#e2e8f0",
   },
 
   // Divider
