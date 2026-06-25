@@ -25,10 +25,17 @@
 
 | Branch | Purpose | Deploys To |
 |--------|---------|-----------|
-| `main` | Production-ready code | Vercel Production |
+| `main` | Production-ready code (**protected**) | Vercel Production |
 | `feature/*` | New features | Vercel Preview |
 | `fix/*` | Bug fixes | Vercel Preview |
 | `release/*` | Release candidates | Vercel Preview |
+
+#### Branch Protection Rules (`main`)
+- **No direct pushes** — all changes via PRs only
+- **Squash merges** required — enforces linear history
+- **Signed commits** required
+- **CI + CodeQL must pass** before merge
+- Use **fresh branches from `main`** for each PR (delete after merge)
 
 ### Commit Convention
 

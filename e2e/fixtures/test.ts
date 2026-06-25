@@ -3,7 +3,7 @@ import path from 'path';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000/api/v1';
 const ADMIN_URL = process.env.ADMIN_URL || 'http://localhost:3000';
-const DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || DEFAULT_PASSWORD;
+const DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'password123';
 
 export interface AuthSession {
   accessToken: string;

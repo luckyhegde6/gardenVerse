@@ -10,7 +10,7 @@ import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const API_URL = `${BASE_URL}/api/v1`;
-const DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || DEFAULT_PASSWORD;
+const DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'password123';
 
 // ─── Helper: Login via API and return auth token ────────────────────────────
 async function login(request: any, email: string, password: string) {

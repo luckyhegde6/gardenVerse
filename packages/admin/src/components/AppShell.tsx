@@ -7,15 +7,16 @@ import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { PublicLayout } from './PublicLayout'
 
-const PUBLIC_PATHS = ['/', '/about', '/onboarding', '/login', '/super-admin', '/api-docs', '/support', '/download']
+const PUBLIC_PATHS = ['/', '/about', '/onboarding', '/login', '/super-admin', '/api-docs', '/support', '/download', '/marketplace', '/plants', '/diseases']
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, loading, user } = useAuth()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const isPublic = PUBLIC_PATHS.some(p => pathname === p || (p !== '/' && pathname.startsWith(p)))
   const isRoot = pathname === '/'
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
 
   if (loading) {
     return (
@@ -29,8 +30,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     redirect('/dashboard')
   }
 
-  if (!isAuthenticated && !isPublic) {
+  if (!isPublic && !isAuthenticated) {
     redirect('/login')
+  }
+
+  if (!isPublic && isAuthenticated && !isAdmin) {
+    redirect('/download')
   }
 
   if (isPublic) {

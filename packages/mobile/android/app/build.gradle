@@ -40,9 +40,14 @@ react {
     hermesCommand = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(["NODE_PATH=" + nodeModulesPath], rootDir).text.trim()).getParentFile().getAbsolutePath().replace('\\', '/') + "/sdks/hermesc/%OS-BIN%/hermesc"
     codegenDir = new File(["node", "--print", "require.resolve('@react-native/codegen/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(["NODE_PATH=" + nodeModulesPath], rootDir).text.trim()).getParentFile().getAbsoluteFile()
 
-    cliFile = new File(["node", "--print", "require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })"].execute(["NODE_PATH=" + nodeModulesPath], rootDir).text.trim())
-    bundleCommand = "export:embed"
+    // Use react-native CLI instead of @expo/cli to avoid Metro Bundler hang on Windows.
+    // @expo/cli's export:embed command causes Metro 0.80.3 file crawler to hang.
+    cliFile = new File(["node", "--print", "require.resolve('@react-native-community/cli/build/index.js')"].execute(["NODE_PATH=" + nodeModulesPath], rootDir).text.trim())
+    bundleCommand = "bundle"
     nodeExecutableAndArgs = ["node"]
+    // Hermes disabled for debug builds because the Metro Bundler hang prevents
+    // generating the Hermes bytecode. Use pre-built JS bundle instead.
+    hermesEnabled = false
 
     /* Folders */
     //   The root of your project, i.e. where "package.json" lives. Default is '..'
@@ -74,7 +79,7 @@ react {
     //
     //   A list of extra flags to pass to the 'bundle' commands.
     //   See https://github.com/react-native-community/cli/blob/main/docs/commands.md#bundle
-    // extraPackagerArgs = []
+    extraPackagerArgs = ["--max-workers", "2"]
 
     /* Hermes Commands */
     //   The hermes compiler command to run. By default it is 'hermesc'
@@ -219,15 +224,36 @@ if (rnVersion < versionToNumber(0, 75, 0)) {
     applyNativeModulesAppBuildGradle(project)
 }
 
-// Ensure kapt forked processes use a writable temp directory (cross-platform)
-def kaptTmpDir = System.properties['java.io.tmpdir']
-subprojects {
-    afterEvaluate { project ->
-        project.tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptWithoutKotlincTask).configureEach { task ->
-            task.forkOptions.jvmArgs += ["-Djava.io.tmpdir=${kaptTmpDir}", "-Dorg.sqlite.tmpdir=${kaptTmpDir}", "-Dkotlin.home=${kaptTmpDir}"]
+
+
+// Metro Bundler hangs on Windows when crawling root node_modules.
+// Use pre-built JS bundle from `npx react-native bundle` instead of running Metro.
+// Hermes is disabled for debug builds to avoid needing the Hermes bytecode step.
+def bundleAssetName = "index.android.bundle"
+def prebuiltBundleDir = file("src/main/assets")
+def genAssetsDir = new File(project.buildDir, "generated/assets/react/debug")
+
+task copyPrebuiltBundle {
+    doLast {
+        genAssetsDir.mkdirs()
+        if (file("${prebuiltBundleDir}/${bundleAssetName}").exists()) {
+            copy {
+                from prebuiltBundleDir
+                into genAssetsDir
+                include bundleAssetName
+            }
+            println "Copied pre-built bundle from ${prebuiltBundleDir}/${bundleAssetName} to ${genAssetsDir}/${bundleAssetName}"
+        } else {
+            throw new GradleException("Pre-built bundle not found at ${prebuiltBundleDir}/${bundleAssetName}. Run: cd ${projectDir} && npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output src/main/assets/${bundleAssetName} --assets-dest src/main/res/ --reset-cache --max-workers 2")
         }
-        project.tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptWithKotlincTask).configureEach { task ->
-            task.forkOptions.jvmArgs += ["-Djava.io.tmpdir=${kaptTmpDir}", "-Dorg.sqlite.tmpdir=${kaptTmpDir}", "-Dkotlin.home=${kaptTmpDir}"]
-        }
+    }
+}
+
+afterEvaluate {
+    def bundleTask = tasks.findByName("createBundleDebugJsAndAssets")
+    if (bundleTask != null) {
+        bundleTask.enabled = false
+        tasks.findByName("mergeDebugAssets")?.dependsOn(copyPrebuiltBundle)
+        tasks.findByName("mergeDebugResources")?.dependsOn(copyPrebuiltBundle)
     }
 }

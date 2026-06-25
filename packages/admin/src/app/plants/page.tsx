@@ -20,6 +20,7 @@ import { Modal, ModalFooter } from '@/components/Modal'
 import { Input } from '@/components/Input'
 import { Select } from '@/components/Select'
 import { StatCard } from '@/components/StatCard'
+import { useAuth } from '@/lib/auth-context'
 import api from '@/lib/api'
 
 // ── Types ──────────────────────────────────────────────────
@@ -121,9 +122,11 @@ const SUNLIGHT_OPTIONS = [
 
 const SEASONS_LIST = ['spring', 'summer', 'fall', 'winter'] as const
 
-// ── Page Component ────────────────────────────────────────
+  // ── Page Component ────────────────────────────────────────
 
 export default function PlantsPage() {
+  const { isAuthenticated, user } = useAuth()
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
   const [plants, setPlants] = useState<PlantSpecies[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -415,6 +418,26 @@ export default function PlantsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Public hero section */}
+      {!isAuthenticated && (
+        <div className="relative overflow-hidden rounded-xl border border-slate-800/60 bg-gradient-to-br from-emerald-950/60 via-slate-900 to-slate-950 p-8">
+          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-emerald-500/5 blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-admin-500/5 blur-3xl" />
+          <div className="relative flex flex-col lg:flex-row items-start lg:items-center gap-6">
+            <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/20 shrink-0">
+              <Sprout className="w-8 h-8 text-emerald-400" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <h2 className="text-2xl font-bold text-slate-100">Plant Species Encyclopedia</h2>
+              <p className="text-slate-400 max-w-2xl leading-relaxed">
+                Browse our comprehensive catalog of plant species with detailed growing information, seasonal data, and identification guides.
+                Use the filters below to find plants by difficulty, season, or growing conditions.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Error Banner */}
       {error && (
         <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-400/10 border border-amber-400/20">
@@ -522,11 +545,13 @@ export default function PlantsPage() {
             </Button>
           )}
 
-          {/* Add Plant */}
-          <Button onClick={openCreateModal} className="shrink-0 ml-auto">
-            <Plus className="w-4 h-4" />
-            Add Plant
-          </Button>
+          {/* Add Plant (admin only) */}
+          {isAdmin && (
+            <Button onClick={openCreateModal} className="shrink-0 ml-auto">
+              <Plus className="w-4 h-4" />
+              Add Plant
+            </Button>
+          )}
         </div>
       </div>
 
@@ -663,10 +688,10 @@ export default function PlantsPage() {
             data={plants as unknown as Record<string, unknown>[]}
             keyExtractor={(item) => String(item.id)}
             searchable={false}
-            onRowClick={(r) => {
+            onRowClick={isAdmin ? (r) => {
               const plant = plants.find((p) => p.id === r.id)
               if (plant) openEditModal(plant)
-            }}
+            } : undefined}
             pageSize={20}
             emptyMessage="No plants match your filters. Try adjusting your search criteria."
           />
@@ -681,7 +706,7 @@ export default function PlantsPage() {
                 ? 'No plants match your current filters. Try broadening your search.'
                 : 'Get started by adding your first plant species to the catalog.'}
             </p>
-            {!hasActiveFilters && (
+            {isAdmin && !hasActiveFilters && (
               <Button onClick={openCreateModal} className="mt-4">
                 <Plus className="w-4 h-4" />
                 Add Plant

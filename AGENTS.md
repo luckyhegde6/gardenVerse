@@ -142,11 +142,17 @@ module-name/
 ```
 
 ### Git Workflow
-- `main` - Production-ready, protected
-- `develop` - Integration branch
+- `main` - Production-ready, **protected** (no direct pushes)
 - `feature/*` - Feature branches
 - `fix/*` - Bug fixes
 - `release/*` - Release candidates
+
+#### Branch Protection Rules (`main`)
+- **No direct pushes** — all changes via PRs only
+- **Squash merges** required — enforces linear history
+- **Signed commits** required
+- **CI + CodeQL must pass** before merge
+- Use **fresh branches from `main`** for each PR (delete feature branches after merge)
 
 ### Commit Convention
 ```
@@ -873,6 +879,44 @@ Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
 
 - `docs/support/faq.md` — Common Q&A for getting started, development, testing, deployment, troubleshooting
 - `docs/support/troubleshooting.md` — Solutions for Node/PowerShell, Docker, Prisma, Backend, Mobile, E2E issues
+
+### Session 13 (Jun 24, 2026): EAS Hosting Integration — Public Download Page + Admin Build Management + Branch Protection Rules
+
+**Focus**: Complete EAS Hosting + APK download integration, role-gated admin build management, public download page, codify branch protection rules across all docs, local APK build and emulator verification
+
+**Accomplishments:**
+- **Branch protection rules codified** — Added explicit rules to `AGENTS.md` (Git Workflow section), `.agents/rules/checklist.md` (new "Branch Rules" section), `docs/guides/production-sync.md` (branch strategy). Rules: no direct pushes to `main`, PRs required, squash merges for linear history, signed commits, CI + CodeQL must pass, use fresh branches from `main`, delete after merge.
+- **Public `/download` page** — QR code + download button, no auth required, no tabs, no `imageSettings` (avoids 404 from missing `icon-192.png`)
+- **Admin `/mobile` page** — 4 tabs (Overview, Build APK, Sync OTA, Changelog), role-gated to `admin`/`super_admin`, redirects non-admin to `/download`
+- **Sidebar role-gating** — "Mobile App" and "Super Admin" links only visible to admin/super_admin via `ADMIN_ONLY` array in `AppShell.tsx`
+- **Build API route** — `POST/GET /api/v1/mobile/build-apk` triggers EAS build via `workflow_dispatch`, returns build status
+- **Download API route** — `/api/v1/mobile/download` serves local APK, falls back to GitHub Releases redirect
+- **APK info endpoint** — `/api/v1/mobile/apk-info` returns version, size, build date, SHA256
+- **EAS Hosting workflow** — `.github/workflows/eas-hosting.yml` deploys mobile web build to EAS Hosting CDN on push to `main`
+- **Favicon** — `packages/admin/public/favicon.ico` copied from mobile assets
+- **Production verification** — `https://gardenverse.vercel.app/` live: `/download` renders with 0 console errors, all API routes working
+- **APK build** — `gradlew.bat assembleDebug` produced `app-debug.apk` (191MB), installed on `Pixel_7_API_34` emulator
+- **Emulator verification** — App launches but crashes with `renderApplication`/`useContext` null error (known React version mismatch in dev build — same as Session 12)
+
+**Key Decisions:**
+- Split `/download` (public, no auth) and `/mobile` (admin-only, role-gated) — QR codes point to `/download`, admins manage builds at `/mobile`
+- Role-gating on client side (`AuthContext` + `useAuth()`) — admin/super_admin can build/sync, all others see only download/changelog
+- All changes to `main` via PRs with squash merges — enforces linear history, signed commits, CI + CodeQL must pass
+- Remove `imageSettings` from QRCodeSVG instead of adding missing `icon-192.png` — simpler, avoids serving a static asset just for QR center logo
+
+**Mistakes & Corrections:**
+1. ❌ `imageSettings` in QRCodeSVG referenced `icon-192.png` which didn't exist — caused 404
+   ✅ Removed `imageSettings` entirely — QR code renders clean without center logo
+2. ❌ `/mobile` was in `PUBLIC_PATHS` — non-admin users could see build management UI
+   ✅ Removed from `PUBLIC_PATHS`, route now redirects non-admin users, sidebar link is role-gated
+
+**Next Steps:**
+- Build production APK via `eas build --profile production` (blocked until EAS free plan resets July 1, 2026)
+- Set up proper EAS build pipeline for mobile CI/CD
+- Fix dev build's React version mismatch for stable debug APKs
+- Delete stale `feat/eas-hosting-integration` branch after all related PRs merged
+
+---
 
 ## MCP Configuration Reference
 ```json

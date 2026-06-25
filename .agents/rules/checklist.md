@@ -113,6 +113,18 @@ Engineering guardrails for AI agents and contributors. All changes must be valid
 
 ---
 
+## Branch Rules
+
+- [ ] branch_from_main
+- [ ] no_direct_push_to_main
+- [ ] pr_required_for_all_changes
+- [ ] squash_merge_for_linear_history
+- [ ] signed_commits_enforced
+- [ ] ci_and_codeql_pass_before_merge
+- [ ] delete_feature_branch_after_merge
+
+---
+
 ## Final Gate
 
 - [ ] checklist_passed

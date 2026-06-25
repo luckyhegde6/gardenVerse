@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Store, Flag, Scale, Tags, Receipt, AlertTriangle, Loader2, AlertCircle } from 'lucide-react'
+import { Store, Flag, Scale, Tags, Receipt, AlertTriangle, Loader2, AlertCircle, User, ShoppingBag, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { DataTable } from '@/components/DataTable'
@@ -10,8 +10,7 @@ import { Input } from '@/components/Input'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from '@/components/Tabs'
 import { StatCard } from '@/components/StatCard'
 import api from '@/lib/api'
-
-// ── Types ──────────────────────────────────────────────────
+import { useAuth } from '@/lib/auth-context'
 
 interface MarketplaceListing {
   id: string
@@ -43,9 +42,8 @@ interface MarketStats {
   volume7d: number
 }
 
-// ── Page Component ────────────────────────────────────────
-
 export default function MarketplacePage() {
+  const { isAuthenticated } = useAuth()
   const [listings, setListings] = useState<MarketplaceListing[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [marketStats, setMarketStats] = useState<MarketStats>({
@@ -64,13 +62,10 @@ export default function MarketplacePage() {
     setError(null)
 
     try {
-      const [listingsRes, txRes, dashRes] = await Promise.all([
+      const [listingsRes] = await Promise.all([
         api.get('/marketplace', { params: { limit: 50 } }),
-        api.get('/marketplace/transactions', { params: { limit: 20 } }).catch(() => ({ data: [] })),
-        api.get('/admin'),
       ])
 
-      // Parse listings
       const listingsBody = listingsRes.data as Record<string, unknown>
       const rawListings = (listingsBody.data as unknown[]) ||
         (listingsBody.listings as unknown[]) ||
@@ -93,44 +88,51 @@ export default function MarketplacePage() {
         }))
       }
 
-      // Parse transactions
-      const txBody = txRes.data as Record<string, unknown>
-      const rawTxs = (txBody.data as unknown[]) ||
-        (txBody.transactions as unknown[]) ||
-        (Array.isArray(txBody) ? txBody : [])
+      if (isAuthenticated) {
+        const [txRes, dashRes] = await Promise.all([
+          api.get('/marketplace/transactions', { params: { limit: 20 } }).catch(() => ({ data: [] })),
+          api.get('/admin'),
+        ])
 
-      if (Array.isArray(rawTxs) && rawTxs.length > 0) {
-        setTransactions(rawTxs.map(t => {
-          const entry = t as Record<string, unknown>
-          return {
-            id: String(entry.id ?? ''),
-            type: String(entry.type ?? 'Listing'),
-            item: String(entry.item ?? 'Unknown'),
-            seller: String(entry.seller ?? entry.sellerName ?? 'unknown'),
-            buyer: String(entry.buyer ?? entry.buyerName ?? 'unknown'),
-            amount: typeof entry.amount === 'number' ? entry.amount : Number(entry.amount ?? 0),
-            fee: typeof entry.fee === 'number' ? entry.fee : Number(entry.fee ?? 0),
-            date: String(entry.date ?? entry.createdAt ?? entry.created_at ?? new Date().toISOString()),
-          }
-        }))
-      }
+        const txBody = txRes.data as Record<string, unknown>
+        const rawTxs = (txBody.data as unknown[]) ||
+          (txBody.transactions as unknown[]) ||
+          (Array.isArray(txBody) ? txBody : [])
 
-      // Parse dashboard stats
-      if (dashRes.data) {
-        const d = dashRes.data as Record<string, unknown>
-        setMarketStats({
-          totalListings: typeof d.marketplaceVolume === 'number' ? d.marketplaceVolume : 0,
-          flaggedItems: typeof d.pendingReports === 'number' ? d.pendingReports : 0,
-          openDisputes: 0,
-          volume7d: typeof d.revenue === 'number' ? d.revenue : 0,
-        })
+        if (Array.isArray(rawTxs) && rawTxs.length > 0) {
+          setTransactions(rawTxs.map(t => {
+            const entry = t as Record<string, unknown>
+            return {
+              id: String(entry.id ?? ''),
+              type: String(entry.type ?? 'Listing'),
+              item: String(entry.item ?? 'Unknown'),
+              seller: String(entry.seller ?? entry.sellerName ?? 'unknown'),
+              buyer: String(entry.buyer ?? entry.buyerName ?? 'unknown'),
+              amount: typeof entry.amount === 'number' ? entry.amount : Number(entry.amount ?? 0),
+              fee: typeof entry.fee === 'number' ? entry.fee : Number(entry.fee ?? 0),
+              date: String(entry.date ?? entry.createdAt ?? entry.created_at ?? new Date().toISOString()),
+            }
+          }))
+        }
+
+        if (dashRes.data) {
+          const d = dashRes.data as Record<string, unknown>
+          setMarketStats({
+            totalListings: typeof d.marketplaceVolume === 'number' ? d.marketplaceVolume : 0,
+            flaggedItems: typeof d.pendingReports === 'number' ? d.pendingReports : 0,
+            openDisputes: 0,
+            volume7d: typeof d.revenue === 'number' ? d.revenue : 0,
+          })
+        }
+      } else {
+        setMarketStats(prev => ({ ...prev, totalListings: listings.length }))
       }
     } catch {
       setError('Could not load marketplace data from server.')
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [isAuthenticated])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
@@ -160,29 +162,77 @@ export default function MarketplacePage() {
         </div>
       )}
 
+      {/* Hero section for public visitors */}
+      {!isAuthenticated && (
+        <div className="relative overflow-hidden rounded-xl border border-slate-800/60 bg-gradient-to-br from-admin-950/60 via-slate-900 to-slate-950 p-8">
+          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-admin-500/5 blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-emerald-500/5 blur-3xl" />
+          <div className="relative flex flex-col lg:flex-row items-start lg:items-center gap-6">
+            <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-admin-500/20 shrink-0">
+              <Store className="w-8 h-8 text-admin-400" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <h2 className="text-2xl font-bold text-slate-100">GardenVerse Marketplace</h2>
+              <p className="text-slate-400 max-w-2xl leading-relaxed">
+                Browse fresh produce, seeds, and gardening supplies traded by the GardenVerse community.
+                Sign in to start buying, selling, and trading with fellow gardeners.
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <a href="/login">
+                  <Button variant="primary" size="sm">
+                    <User className="w-4 h-4" />
+                    Sign In to Trade
+                  </Button>
+                </a>
+                <a href="/onboarding">
+                  <Button variant="ghost" size="sm">
+                    Learn More
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats - simplified for public, full for admin */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Total Listings" value={marketStats.totalListings} change={5.2} trend="up" icon={<Store className="w-6 h-6" />} changeLabel="this week" />
-        <StatCard title="Flagged Items" value={marketStats.flaggedItems} change={-12} trend="down" icon={<Flag className="w-6 h-6" />} changeLabel="vs last week" />
-        <StatCard title="Open Disputes" value={marketStats.openDisputes} change={2} trend="up" icon={<Scale className="w-6 h-6" />} changeLabel="new today" />
-        <StatCard title="Volume (7d)" value={marketStats.volume7d} change={18.3} trend="up" icon={<Receipt className="w-6 h-6" />} changeLabel="vs last week" />
+        <StatCard title="Total Listings" value={marketStats.totalListings || listings.length} change={5.2} trend="up" icon={<Store className="w-6 h-6" />} changeLabel="this week" />
+        {isAuthenticated && (
+          <>
+            <StatCard title="Flagged Items" value={marketStats.flaggedItems} change={-12} trend="down" icon={<Flag className="w-6 h-6" />} changeLabel="vs last week" />
+            <StatCard title="Open Disputes" value={marketStats.openDisputes} change={2} trend="up" icon={<Scale className="w-6 h-6" />} changeLabel="new today" />
+            <StatCard title="Volume (7d)" value={marketStats.volume7d} change={18.3} trend="up" icon={<Receipt className="w-6 h-6" />} changeLabel="vs last week" />
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <div className="xl:col-span-3 card">
           <TabsRoot value={tab} onValueChange={setTab}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="card-title">All Listings</h3>
+              <h3 className="card-title">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4" />
+                  {isAuthenticated ? 'All Listings' : 'Browse Items'}
+                </div>
+              </h3>
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="active">Active</TabsTrigger>
-                <TabsTrigger value="flagged">
-                  Flagged
-                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-red-400/20 text-red-400 text-xs">
-                    {flaggedCount}
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger value="sold">Sold</TabsTrigger>
-                <TabsTrigger value="removed">Removed</TabsTrigger>
+                {isAuthenticated && (
+                  <>
+                    <TabsTrigger value="flagged">
+                      Flagged
+                      <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-red-400/20 text-red-400 text-xs">
+                        {flaggedCount}
+                      </span>
+                    </TabsTrigger>
+                    <TabsTrigger value="sold">Sold</TabsTrigger>
+                    <TabsTrigger value="removed">Removed</TabsTrigger>
+                  </>
+                )}
               </TabsList>
             </div>
 
@@ -204,8 +254,10 @@ export default function MarketplacePage() {
                       </Badge>
                     ),
                   },
-                  { key: 'reports', header: 'Reports', sortable: true, width: '80px' },
-                  { key: 'views', header: 'Views', sortable: true, width: '80px' },
+                  ...(isAuthenticated ? [
+                    { key: 'reports' as string, header: 'Reports' as string, sortable: true as const, width: '80px' as const },
+                    { key: 'views' as string, header: 'Views' as string, sortable: true as const, width: '80px' as const },
+                  ] : []),
                 ]}
                 data={filtered as unknown as Record<string, unknown>[]}
                 keyExtractor={item => String(item.id)}
@@ -244,31 +296,34 @@ export default function MarketplacePage() {
               })}
             </div>
           ) : (
-            <p className="text-sm text-slate-500 p-2">No category data available.</p>
+            <p className="text-sm text-slate-500 p-2">No categories available.</p>
           )}
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">Recent Transactions</h3>
-          <Badge variant="info">Live</Badge>
+      {/* Transactions - admin only */}
+      {isAuthenticated && (
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">Recent Transactions</h3>
+            <Badge variant="info">Live</Badge>
+          </div>
+          <DataTable
+            columns={[
+              { key: 'type', header: 'Type', sortable: true, width: '80px' },
+              { key: 'item', header: 'Item', sortable: true },
+              { key: 'seller', header: 'Seller', sortable: true },
+              { key: 'buyer', header: 'Buyer', sortable: true },
+              { key: 'amount', header: 'Amount', sortable: true, render: r => `${(r.amount as number).toLocaleString()} ¤` },
+              { key: 'fee', header: 'Fee', sortable: true, render: r => `${(r.fee as number).toLocaleString()} ¤` },
+              { key: 'date', header: 'Date', sortable: true },
+            ]}
+            data={transactions as unknown as Record<string, unknown>[]}
+            keyExtractor={item => String(item.id)}
+            pageSize={5}
+          />
         </div>
-        <DataTable
-          columns={[
-            { key: 'type', header: 'Type', sortable: true, width: '80px' },
-            { key: 'item', header: 'Item', sortable: true },
-            { key: 'seller', header: 'Seller', sortable: true },
-            { key: 'buyer', header: 'Buyer', sortable: true },
-            { key: 'amount', header: 'Amount', sortable: true, render: r => `${(r.amount as number).toLocaleString()} ¤` },
-            { key: 'fee', header: 'Fee', sortable: true, render: r => `${(r.fee as number).toLocaleString()} ¤` },
-            { key: 'date', header: 'Date', sortable: true },
-          ]}
-          data={transactions as unknown as Record<string, unknown>[]}
-          keyExtractor={item => String(item.id)}
-          pageSize={5}
-        />
-      </div>
+      )}
 
       {selectedListing && (
         <Modal open={!!selectedListing} onOpenChange={o => !o && setSelectedListing(null)} title={selectedListing.title}>
@@ -301,7 +356,7 @@ export default function MarketplacePage() {
                 <p className="text-sm text-slate-200">{selectedListing.reports}</p>
               </div>
             </div>
-            {selectedListing.status === 'flagged' && (
+            {isAuthenticated && selectedListing.status === 'flagged' && (
               <ModalFooter>
                 <Button variant="ghost">Dismiss Flags</Button>
                 <Button variant="danger">Remove Listing</Button>
