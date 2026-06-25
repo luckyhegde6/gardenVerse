@@ -911,10 +911,43 @@ Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
    ✅ Removed from `PUBLIC_PATHS`, route now redirects non-admin users, sidebar link is role-gated
 
 **Next Steps:**
+- Create PR (`feat/admin-auth-gradle-fix`) and merge via squash merge
 - Build production APK via `eas build --profile production` (blocked until EAS free plan resets July 1, 2026)
-- Set up proper EAS build pipeline for mobile CI/CD
-- Fix dev build's React version mismatch for stable debug APKs
+- Install and test APK on emulator to verify no useContext crash
 - Delete stale `feat/eas-hosting-integration` branch after all related PRs merged
+
+---
+
+### Session 14 (Jun 25, 2026): Admin Auth Guarding + Public Plant Encyclopedia + Gradle APK Build Fix
+
+**Focus**: Role-gate admin pages from non-admin users, make plants/diseases public reference pages, fix Gradle build on Windows (Metro hang + SQLite kapt crash), produce working debug APK.
+
+**Accomplishments:**
+- **Role-gated AppShell** — `AppShell.tsx` now checks `user.role` — non-admin users redirected to `/download` for admin-only pages
+- **Made `/plants` and `/diseases` public** — added to `PUBLIC_PATHS` so anyone can browse plant species and disease datasets
+- **Public nav links** — added Plants and Diseases links to `PublicLayout.tsx` header
+- **Admin features hidden for public** — `/plants` page conditionally hides Add Plant button, row-click-edit, and empty-state Add button from non-admin users; removed unused imports (`Leaf`)
+- **Fixed Gradle APK build**: Two root causes fixed:
+  1. **Metro 0.80.12 file crawl hang** — Downgraded to 0.80.3, pre-built JS bundle via `npx react-native bundle`, `build.gradle` skips `createBundleDebugJsAndAssets` by setting `debuggableVariants = []`, `cliFile = @react-native-community/cli`, disables Hermes
+  2. **Room kapt SQLite lock file crash** — `expo-updates:kaptDebugKotlin` forks a worker process where `java.io.tmpdir` defaults to `C:\WINDOWS\` (not writable). Workaround: skip task with `-x :expo-updates:kaptDebugKotlin`
+- **Working APK produced** — `app-arm64-v8a-debug.apk` (70MB) assembled and installed on `Pixel_7_API_34` emulator
+- **TypeScript tsc --noEmit** passes with zero errors on admin package
+- **E2E tests**: 7/7 auth pass, 8/10 admin pass (1 flaky fixture, 1 pre-existing "USERNAME" column mismatch)
+
+**Key Bug Fixes:**
+1. Non-admin authenticated users could access all admin pages — AppShell only checked `isAuthenticated`, not role
+2. `/garden` page was accessible to any logged-in user — now admin-only via AppShell role check
+3. No public plant/disease reference pages accessible without login
+4. Gradle build failed due to `expo-updates:kaptDebugKotlin` — Room DatabaseVerifier SQLiteJDBCLoader tries to write lock file to `C:\WINDOWS\` in forked worker
+5. `e2e/fixtures/test.ts` and `e2e/tests/integration.spec.ts` had self-referencing `DEFAULT_PASSWORD` fallback bug
+
+**Mistakes & Corrections:**
+1. ❌ `gradle.taskGraph.whenReady` + `forkOptions.jvmArgs` doesn't propagate to forked Kapt worker
+   ✅ Simply skip expo-updates kapt task with `-x :expo-updates:kaptDebugKotlin`
+2. ❌ `_JAVA_OPTIONS` and `JAVA_TOOL_OPTIONS` env vars don't propagate to Gradle worker processes
+   ✅ Set `kapt.use.worker.api=false` in gradle.properties (already there)
+3. ❌ Setting `JAVA_HOME` with spaces in path failed in cmd
+   ✅ Use `set "JAVA_HOME=path with spaces"` (quotes around both variable and value)
 
 ---
 
