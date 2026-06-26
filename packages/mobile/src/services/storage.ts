@@ -40,4 +40,9 @@ export const StorageKeys = {
   ACHIEVEMENTS: "achievements",
   INVENTORY: "inventory",
   SETTINGS: "settings",
+  SHOP_CACHE: "shop_cache",
+  PLOTS_CACHE: "plots_cache",
+  COUPONS_CACHE: "coupons_cache",
+  INVENTORY_ITEMS: "inventory_items",
+  REAL_GARDENER: "real_gardener",
 } as const;

@@ -33,7 +33,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return notFound('Garden not found')
     }
 
-    if (garden.userId !== auth.payload.userId && auth.payload.role !== 'ADMIN' && auth.payload.role !== 'SUPER_ADMIN') {
+    if (garden.userId !== auth.payload.userId && auth.payload.role.toUpperCase() !== 'ADMIN' && auth.payload.role.toUpperCase() !== 'SUPER_ADMIN') {
       return unauthorized('Not authorized to update this garden')
     }
 
@@ -80,7 +80,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return notFound('Garden not found')
     }
 
-    if (garden.userId !== auth.payload.userId && auth.payload.role !== 'ADMIN' && auth.payload.role !== 'SUPER_ADMIN') {
+    if (garden.userId !== auth.payload.userId && auth.payload.role.toUpperCase() !== 'ADMIN' && auth.payload.role.toUpperCase() !== 'SUPER_ADMIN') {
       return unauthorized('Not authorized to delete this garden')
     }
 

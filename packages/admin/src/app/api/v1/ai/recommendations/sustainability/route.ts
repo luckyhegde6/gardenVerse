@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Fetch user with garden info
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { garden: true },
+      include: { gardens: true },
     })
 
     if (!user) {
@@ -32,8 +32,10 @@ export async function GET(request: NextRequest) {
       effort: 'LOW' | 'MEDIUM' | 'HIGH'
     }> = []
 
+    const firstGarden = user?.gardens?.[0]
+
     // Garden type tip
-    if (user.garden?.type === 'VIRTUAL') {
+    if (firstGarden?.type === 'VIRTUAL') {
       tips.push({
         title: 'Start a Real Garden',
         description: 'Link a real garden to earn double sustainability points',
@@ -43,7 +45,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Soil quality tip
-    if (user.garden?.soilQuality !== null && user.garden?.soilQuality !== undefined && user.garden.soilQuality < 50) {
+    if (firstGarden?.soilQuality !== null && firstGarden?.soilQuality !== undefined && firstGarden.soilQuality < 50) {
       tips.push({
         title: 'Improve Soil Quality',
         description: 'Add compost and organic matter to boost soil health',
@@ -112,7 +114,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Water conservation tip
-    if (user.garden?.irrigationLevel !== null && user.garden?.irrigationLevel !== undefined && user.garden.irrigationLevel < 40) {
+    if (firstGarden?.irrigationLevel !== null && firstGarden?.irrigationLevel !== undefined && firstGarden.irrigationLevel < 40) {
       tips.push({
         title: 'Improve Irrigation Efficiency',
         description: 'Switch to drip irrigation to reduce water usage by up to 50%',
@@ -123,8 +125,8 @@ export async function GET(request: NextRequest) {
 
     // Calculate score component
     let score = 0
-    if (user.garden?.type === 'REAL' || user.garden?.type === 'HYBRID') score += 20
-    if (user.garden?.soilQuality && user.garden.soilQuality >= 60) score += 15
+    if (firstGarden?.type === 'REAL' || firstGarden?.type === 'HYBRID') score += 20
+    if (firstGarden?.soilQuality && firstGarden.soilQuality >= 60) score += 15
     if (user.currentStreak >= 7) score += 10
     if (recentHarvests > 0) score += 10
     if (deviceCount > 0) score += 15

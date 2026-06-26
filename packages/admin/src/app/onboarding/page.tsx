@@ -17,6 +17,7 @@ import {
   Target,
   Rocket,
   Globe,
+  Smartphone,
 } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -36,6 +37,45 @@ interface Step {
 const steps: Step[] = [
   {
     number: 1,
+    icon: '📲',
+    title: 'Download the App',
+    description:
+      'Get the GardenVerse mobile app on your Android device. Download the APK, install it, and get ready to start your gardening journey on the go.',
+    duration: '~1 minute',
+    tips: [
+      'Download the latest APK from the Download page',
+      'Enable "Install from unknown sources" in your Android settings',
+      'The app works on Android 8.0 and above',
+    ],
+  },
+  {
+    number: 2,
+    icon: '📝',
+    title: 'Create an Account',
+    description:
+      'Sign up for a GardenVerse account using your email. Set up your profile with your location and gardening preferences to get personalized recommendations.',
+    duration: '~2 minutes',
+    tips: [
+      'Use a valid email for account recovery',
+      'Set your growing zone for accurate plant recommendations',
+      'Add a profile picture to connect with the community',
+    ],
+  },
+  {
+    number: 3,
+    icon: '🔐',
+    title: 'Log In & Explore',
+    description:
+      'Log in to your new account and explore the dashboard. Check the weather, browse the marketplace, and get familiar with the GardenVerse ecosystem.',
+    duration: '~1 minute',
+    tips: [
+      'Check the weather forecast for your area',
+      'Browse the marketplace to see what others are trading',
+      'Visit the Getting Started guide for a full walkthrough',
+    ],
+  },
+  {
+    number: 4,
     icon: '🌱',
     title: 'Create Your Garden',
     description:
@@ -48,7 +88,7 @@ const steps: Step[] = [
     ],
   },
   {
-    number: 2,
+    number: 5,
     icon: '🌿',
     title: 'Plant Crops',
     description:
@@ -61,7 +101,7 @@ const steps: Step[] = [
     ],
   },
   {
-    number: 3,
+    number: 6,
     icon: '💧',
     title: 'Water & Fertilize',
     description:
@@ -74,7 +114,7 @@ const steps: Step[] = [
     ],
   },
   {
-    number: 4,
+    number: 7,
     icon: '🌾',
     title: 'Harvest Your Crops',
     description:
@@ -87,7 +127,7 @@ const steps: Step[] = [
     ],
   },
   {
-    number: 5,
+    number: 8,
     icon: '🏪',
     title: 'Sell on Marketplace',
     description:
@@ -267,11 +307,11 @@ export default function OnboardingPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-slate-500 mb-0.5">XP from checklist</p>
-              <p className="text-xl font-bold text-amber-400">+1,200 XP</p>
+              <p className="text-xl font-bold text-amber-400">+2,000 XP</p>
             </div>
             <div>
               <p className="text-xs text-slate-500 mb-0.5">Credits earned</p>
-              <p className="text-xl font-bold text-emerald-400">+500 GC</p>
+              <p className="text-xl font-bold text-emerald-400">+800 GC</p>
             </div>
           </div>
         </div>
@@ -572,10 +612,10 @@ export default function OnboardingPage() {
             what other gardeners are trading.
           </p>
           <div className="flex items-center justify-center gap-3 pt-2">
-            <a href="/garden">
+            <a href="/download">
               <Button variant="primary" size="lg">
-                <Sprout className="w-4 h-4" />
-                Go to My Garden
+                <Smartphone className="w-4 h-4" />
+                Download the App
               </Button>
             </a>
             <a href="/marketplace">

@@ -3,7 +3,7 @@ import path from 'path';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000/api/v1';
 const ADMIN_URL = process.env.ADMIN_URL || 'http://localhost:3000';
-const DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || DEFAULT_PASSWORD;
+const DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'password123';
 
 export interface AuthSession {
   accessToken: string;
@@ -62,13 +62,10 @@ export const test = base.extend<TestFixtures>({
   authenticatedPage: async ({ browser }, use) => {
     const context = await browser.newContext({ storageState: undefined });
     const page = await context.newPage();
-    try {
-      const session = await loginAs('admin@gardenverse.vercel.app', DEFAULT_PASSWORD);
-      await setupAuthPage(page, session);
-    } catch {
-      // Fallback: navigate to login page
-      await page.goto(`${ADMIN_URL}/login`);
-    }
+    const session = await loginAs('admin@gardenverse.vercel.app', DEFAULT_PASSWORD);
+    await setupAuthPage(page, session);
+    await page.goto(`${ADMIN_URL}/dashboard`, { waitUntil: 'networkidle', timeout: 15000 });
+    await page.waitForSelector('nav', { timeout: 10000 });
     await use(page);
     await context.close();
   },
@@ -76,12 +73,10 @@ export const test = base.extend<TestFixtures>({
   superAdminPage: async ({ browser }, use) => {
     const context = await browser.newContext({ storageState: undefined });
     const page = await context.newPage();
-    try {
-      const session = await loginAs('admin@gardenverse.vercel.app', DEFAULT_PASSWORD);
-      await setupAuthPage(page, session);
-    } catch {
-      await page.goto(`${ADMIN_URL}/login`);
-    }
+    const session = await loginAs('admin@gardenverse.vercel.app', DEFAULT_PASSWORD);
+    await setupAuthPage(page, session);
+    await page.goto(`${ADMIN_URL}/dashboard`, { waitUntil: 'networkidle', timeout: 15000 });
+    await page.waitForSelector('nav', { timeout: 10000 });
     await use(page);
     await context.close();
   },

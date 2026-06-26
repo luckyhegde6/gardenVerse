@@ -4,80 +4,138 @@
 
 ## Current Session
 
-**Date**: June 4, 2026
-**Session ID**: ses-010
-**Focus**: Backend Migration Completion — Monitoring Overhaul, NestJS → Next.js Full Migration, Logger Sidecar, AI Dashboard, Queue/WS/Cron Infrastructure
+**Date**: June 27, 2026
+**Session ID**: ses-016
+**Focus**: Multi-Garden Economy — Plot Purchases, Shop, Coupons, Real Gardener, Campaigns (Admin API + UI + Mobile)
 
 ### Active Context
 
-- **Phase 10 (This Session — Backend Migration Completion)**:
-  - **Monitoring page overhauled**: System Health, Performance Metrics, API Endpoint Performance (Section 3), System Logs with search/clear/filter, Queue Status, Sidecar Services — all 6 sections populated
-  - **Logger sidecar created** (`packages/admin/src/lib/logger/index.ts`): non-blocking file writer + DB backup with 24h TTL, log reading, log clearing
-  - **Logging middleware created** (`packages/admin/src/lib/middleware/logging.ts`): request tracking with traceId, duration, status
-  - **Created `/api/v1/logs` and `/api/v1/logs/clear` routes**: reads from log files first, then DB fallback, with search support
-  - **Created `/api/v1/analytics/endpoints` route**: per-endpoint metrics (requests, avg response, error rate)
-  - **Phase 1 - Audit**: Audited 25 backend modules (132 endpoints), 88 admin API routes, both Prisma schemas; found 11 routes missing auth, 38 gap endpoints
-  - **Phase 2 - Batch Migration**: Created 37 new API routes covering 7 domains (User/Auth, Garden/Crop, Marketplace/AI, Gamification, Analytics/Plants/Community/Feature Flags/Notifications/QR/IoT/Geo/Moderation)
-  - **Phase 3 - WS/BullMQ/Cron**: Created in-process queue wrapper, SSE helper + pub/sub, task registry, Vercel Cron routes (growth-tick every 4h, weather-sync every 6h), agent callback handler
-  - **Phase 4 - AI Integration**: Created TypeScript AI fallback for plant analysis, watering/fertilizer recommendations, disease detection; created AI Dashboard page with scan stats, model accuracy, service status
-  - **Phase 5 - Cleanup**: Deleted `packages/backend/` entirely, removed backend CI/CD workflow, updated root package.json scripts
-  - **Verification**: `tsc --noEmit` passes on both admin and mobile; `next build` compiles 126 pages/routes successfully; admin dashboard authenticated via browser with real DB data; monitoring page verified in Chrome with all 6 sections rendering
+- **Multi-garden economy**: Prisma schema updated (1:1 → 1:many User:Garden), 15 economy API routes created, 6 admin UI pages built, seed data with 21 shop items / 6 fertilizers / 6 coupons
+- **API routes tested**: Plot purchase (100 GC deducted), shop buy (item added + token transaction), coupon redeem (10% off), real gardener verify (badge 🏡 assigned) — all verified via curl
+- **Admin UI pages live**: Shop (3-tab Browse/Purchases/Inventory), Coupons (CRUD modals + stats), Plots (card grid + soil-check form + pricing tiers), Fertilizers, Campaigns (enhanced w/ discount fields)
+- **Mobile Phase 1-4 complete**: 11 new types, 4 service modules, 3 Zustand stores, 6 new screen routes, 6 screens (Shop, CouponRedeem, Plots, PlotDetail, SoilCheck, RealGardener), updated GardenScreen plot selector + ProfileScreen menu items
+- **Emulator verified**: App launches, GardenScreen renders fully (plot selector bar, 2D/3D toggles, plant collections, care streaks), Profile tab accessible via DPAD, shows Shop/Plots/RealGardener menu items between stats and activity feed
+- **TypeScript passes**: `tsc --noEmit` zero errors on both admin and mobile packages
+- **E2E**: 68/68 tests passing (5.9m, zero failures)
+- **Seed script**: Uses `SET session_replication_role = 'replica'` + TRUNCATE CASCADE via raw SQL for clean FK-safe resets
 
 ### Open Questions
 
-- `/campaigns` API route doesn't exist — page shows error gracefully, needs campaign endpoints
-- ESLint not configured for Next.js admin project — `next lint` asks interactive setup questions
 - Weather effects on growth engine not wired (sunlight modifier exists but no weather data integration)
 - Garden/crop detail tables on `/garden` page still use hardcoded `data={[]}` — needs admin-specific garden listing API routes
-- Need to verify Expo web refresh preserves auth state in production build (not just dev)
-- `user_data` in storage not refreshed on profile update — should update cached userData on successful profile fetch
-- Seed data lost when `packages/backend/` was deleted; recreated minimal seed (3 users) — needs full seed restoration (31 plant species, 5 gardens, crops, marketplace listings, weather, etc.)
 - `packages/admin/prisma/migrations/` directory was never created; schema pushed via `prisma db push` instead — needs a proper initial migration
 
 ### Active Specs
 
-- **Auth persistence**: Web uses `localStorage`, native uses `SecureStore`; `loadStoredAuth` falls back to cached `user_data` on profile fetch failure
-- **GrowthOverlay**: Floating panel with garden name badge, weather strip (5-day), crop status card (stage bar, hydration/nutrient/health gauges, care streak), game time stats (virtual speed indicator, next tick countdown, total ticks)
-- **WeatherBar**: Horizontally scrollable weather cards with condition emoji, temp, humidity, condition-adaptive background gradient
-- **ProfileScreen**: Stats cards (gardens, crops, streaks), Garden Summary grid (thumbnail + name + crop count), Species Collection progress bar + mastery breakdown, Activity feed (plant/harvest/water/fertilize events)
-- **Marketplace routing**: URLs use `/marketplace` base path; `getListings`, `getListingById`, `createListing` all hit `/api/v1/marketplace`
-- **Monitoring page**: 6 sections — System Health (4 services status), Performance Metrics (CPU/Memory/Users/Rate), API Endpoint Performance (10 endpoints with metrics), System Logs (search, level/source filters, clear), Queue Status (4 BullMQ queues), Sidecar Services (4 services with status/uptime)
-- **Logger sidecar**: Non-blocking file writes + `appLog` DB table backup, 24h TTL auto-cleanup, searchable via API
-- **AI Dashboard**: Scan stats, recent scans table, service status cards (3 AI services), model accuracy bars, recommendation stats, tooltips
+- **Multi-garden economy**: One User → many Gardens (plots); first plot free, subsequent via tiered pricing [100, 250, 500, 800, 1200, 1500 GC]; max 10 plots, hard cap at API level
+- **Plot purchase**: POST /api/v1/plots → creates new Garden with plotNumber (auto-increment), deducts GC, records TokenTransaction
+- **Shop buy**: POST /api/v1/shop/buy → validates coupon if provided, deducts GC, creates Purchase + InventoryItem, records TokenTransaction
+- **Coupon system**: Admin CRUD at /api/v1/coupons; redeem at POST /api/v1/coupons/redeem — validates code, expiry, max redemptions, user role, garden type
+- **Real gardener**: GET /api/v1/real-gardener (status), POST /api/v1/real-gardener/verify (sets badge + verifiedAt), GET /api/v1/real-gardener/encouragement (daily rotating tips by region)
+- **Soil check**: POST /api/v1/plots/[id]/soil-check — accepts pH/moisture/NPK, calculates quality score, appends to soilQualityHistory Json array
+- **Crop movement**: POST /api/v1/plots/[id]/move-crop — level 3+ same-garden, level 5+ cross-garden; decrements move budget (3 moves/day base)
+- **External data sync**: GET /api/v1/external-data-sync (logs), POST /api/v1/external-data-sync/trigger (simulated sync with 3 sources)
+- **Seed reset pattern**: Uses `SET session_replication_role = 'replica'` + TRUNCATE CASCADE raw SQL for reliable FK-safe data cleanup (deleteMany chain fails with multi-model FK references)
+- **Mobile store pattern**: Zustand stores follow existing authStore/gardenStore pattern with loading/error states; service modules use try/catch with sensible fallback defaults
+- **Encouragement rotation**: Daily rotating tips based on `(dayOfYear + userIdHash) % totalTips` for personalization
 
 ### Recent Decisions
 
-- **ADR-004**: Use `instrumentation.ts` pattern for Sentry instead of `withSentryConfig` wrapper
+- **ADR-013**: Multi-garden economy — 1:many User:Garden relation; first plot free, tiered pricing for subsequent plots, max 10 hard cap
+  - Rationale: Enables plot expansions without breaking existing garden access patterns; tiered pricing makes early plots affordable while keeping scarcity at higher counts
   - Status: ✅ Applied
-- **ADR-005**: Use `app.config.js` with JS expressions instead of raw `app.json`
+- **ADR-014**: Plot purchase pricing tiers: [100, 250, 500, 800, 1200, 1500] GC for 1st–6th extra plot, all subsequent at 1500
+  - Rationale: Exponential pricing curve incentivizes early expansion while making mass plot ownership expensive
   - Status: ✅ Applied
-- **ADR-006**: Use cloud build (`vercel deploy --prod --yes`) for Vercel deploys
+- **ADR-015**: Seed reset uses raw SQL TRUNCATE CASCADE (not deleteMany chain)
+  - Rationale: FK constraints between User/PlotPurchase/SoilCheck/Coupon etc. cause deleteMany ordering failures; raw SQL is simpler and guaranteed to work
   - Status: ✅ Applied
-- **ADR-007**: API response format is `{ data, total, page, limit }` via `paginated()` helper
+- **ADR-016**: Mobile SafeAreaView imported from `react-native` (not `react-native-safe-area-context`)
+  - Rationale: New screens need `style` prop for tan container background; `react-native-safe-area-context` only offers `edges` prop, no direct style
   - Status: ✅ Applied
-- **ADR-008**: Client-side growth simulation with server-side tick sync
-  - Rationale: Virtual gardens need 100x speed growth which is too fast for server-only ticks; client engine runs simulated ticks, server endpoint provides manual sync
-  - Status: ✅ Applied (GrowthEngine.ts + POST /gardens/{id}/tick)
-- **ADR-009**: Expo web storage should use `localStorage`, not in-memory `Map`
-  - Rationale: In-memory `Map` is cleared on page refresh, losing auth state. `localStorage` persists across refreshes for web platform. Native continues to use `SecureStore`.
-  - Status: ✅ Applied
-- **ADR-010**: Backend (NestJS) fully migrated into Next.js API routes; `packages/backend/` deleted
-  - Rationale: Having both NestJS (port 3001) and Next.js API routes (port 3000) duplicated effort. Unified admin + API in a single Next.js app simplifies deployment, reduces surface area, and eliminates `Railway` need.
-  - Status: ✅ Applied (5-phase plan completed: Audit → Migration → WS/BullMQ/Cron → AI → Cleanup)
 
 ### Key Numbers
 
-- **Admin**: 126 pages/routes compiled (37 new API routes), monitoring page with 6 sections, AI dashboard, 30+ API modules
-- **Backend**: REMOVED — fully migrated into Next.js API routes
-- **Logger**: Non-blocking file writer + DB backup, 24h TTL, request tracing with traceId/duration/status
-- **Mobile**: 23 Expo Router screens, 5 bottom tabs, EAS project live, GrowthEngine singleton, 6×6 grids, 2 new components (GrowthOverlay, WeatherBar)
+- **Admin**: 152 pages/routes compiled, 45+ API modules (15 new economy routes), 6 new UI pages (Shop, Coupons, Plots, Fertilizers, enhanced Campaigns)
+- **Mobile**: 6 new screens (Shop, CouponRedeem, Plots, PlotDetail, SoilCheck, RealGardener), 4 service modules, 3 Zustand stores, 6 new routes; verified on Pixel_7_API_34 emulator
+- **E2E**: 68 Playwright tests all passing (20 integration + 10 admin + 7 auth + 7 invites + 24 screenshots)
+- **Seed data**: 21 shop items (6 categories), 6 fertilizer catalog, 6 coupon codes (valid + expired), 3 soil checks, 3 external sync records
+- **API endpoints**: 15 new economy endpoints tested via curl (all 200 OK)
 - **Contracts**: 8 Solidity contracts, 41 Hardhat tests passing
-- **E2E**: 48 Playwright tests, 8 workflow screenshot modules
 - **Docs**: 35+ markdown files across 8 doc categories
-- **Scripts**: 12+ PowerShell scripts, 2 bash scripts
-- **Workflows**: 2 CI/CD workflows (admin-deploy, mobile) — backend-deploy removed (merged into Next.js)
 
 ## Previous Sessions
+
+### Session 16 (Jun 27, 2026): Multi-Garden Economy — Plot Purchases, Shop, Coupons, Real Gardener, Campaigns (Admin + Mobile)
+- Prisma schema updated: removed @unique from Garden.userId (1:1 → 1:many); added User.maxPlots/plotPurchaseCount/isRealGardener; Garden.plotNumber/isPurchased/purchasePrice/soilLastCheckedAt/plantMoveCount; new models Coupon, Fertilizer, PlotPurchase, SoilCheck, ExternalDataSync; campaign discount fields
+- Fixed 12+ API route files for multi-garden compatibility: user.garden → user.gardens[0], findUnique({where:{userId}}) → findFirst, garden:{isNot:null} → gardens:{some:{}}
+- 15 new economy API routes: plots CRUD + pricing + soil-check + move-crop, shop browse + buy, coupons CRUD + redeem, real-gardener verify + encouragement, external-data-sync
+- 6 admin UI pages: Shop (3-tab Browse/Purchases/Inventory), Coupons (CRUD modals + stats), Plots (card grid + soil-check + pricing), Fertilizers, Campaigns (enhanced with discount fields)
+- Seed data: 21 shop items (6 categories), 6 fertilizers (5 rarities), 6 coupon codes (valid + expired), 3 soil checks, 3 sync records, admin 2nd plot
+- All endpoints verified via curl: plot purchase deducts 100 GC, shop buy creates purchase + token transaction, coupon redeem applies 10% discount, real gardener verify assigns 🏡 badge
+- E2E: 68/68 tests passing (5.9m, zero failures)
+- Seed reset uses `SET session_replication_role = 'replica'` + TRUNCATE CASCADE raw SQL (avoids FK constraint failures from deleteMany chain)
+- Mobile Phase 1-4 (~35 hrs): 11 new types, 4 service modules, 3 Zustand stores, 6 new route registrations, 6 screens (Shop, CouponRedeem, Plots, PlotDetail, SoilCheck, RealGardener), updated GardenScreen (plot selector bar + buy CTA) and ProfileScreen (4 new menu items)
+- Emulator verification (Pixel_7_API_34): app launches, login works, GardenScreen renders with plot selector/collections/care streaks, Profile tab shows Shop/Plots/RealGardener menu items between stats and activity feed
+- `tsc --noEmit` zero errors on both admin and mobile packages
+- Non-critical warnings: ReactImageView missing asset (build artefact), Firebase not initialized (dev build), Layout children type warning (existing `_layout.tsx`)
+- Key decisions: ADR-013 (1:many User:Garden), ADR-014 (tiered pricing [100-1500] GC), ADR-015 (TRUNCATE CASCADE seed reset), ADR-016 (SafeAreaView from react-native)
+
+### Session 15 (Jun 27, 2026): Android APK Fix — Hermes, Storage Unification, Emulator Network + Source Fixes
+- Switched to Hermes JS engine (fixed JSC "undefined is not a constructor (evaluating 'new Promise')" crash)
+- Unified storage backend: utils/storage.ts now re-exports from services/storage.ts (was dual backends causing token lookup failure → 401)
+- Overrode `getUseDeveloperSupport() = false` in MainApplication.kt to force loading from pre-built bundle assets
+- Fixed emulator network: 10.0.2.2 unreachable on Windows; switched to localhost:3000 + `adb reverse tcp:3000 tcp:3000`
+- Updated api.ts import path and URL to match fixed source files
+- Working APK produced (81 MB, Hermes arm64-v8a debug) — login end-to-end working
+- Investigated interim 401s: refresh URL was 10.0.2.2:3000 (unreachable), catch block cleared auth; fixed with localhost URL
+- Key learnings: Hermes is standard for RN 0.74+; forked kapt workers ignore gradle.taskGraph props — just skip with `-x`
+
+### Session 14 (Jun 25, 2026): Admin Auth Guarding + Public Plant Encyclopedia + Gradle APK Build Fix + E2E Stability
+- Role-gated AppShell — non-admin users redirected to `/download` for admin-only pages; sidebar links role-gated
+- Made `/plants` and `/diseases` public (PUBLIC_PATHS); public nav links in PublicLayout.tsx header
+- Admin features hidden on public pages (Add Plant button, row-click-edit, empty-state Add)
+- Fixed mobile PlantBrowserScreen.tsx — removed hardcoded `localhost:3001` (dead NestJS), uses shared `api` service
+- Fixed JWT role case — login routes were storing `user.role.toLowerCase()` in JWT, breaking uppercase comparisons in API guards; changed to store `user.role` as-is (uppercase)
+- Fixed Gradle APK build: Metro 0.80.12 → 0.80.3 (file-crawl hang), pre-built JS bundle, disabled Hermes, skipped `expo-updates:kaptDebugKotlin` (Room SQLite lock crash in forked worker); produced working `app-arm64-v8a-debug.apk` (70MB)
+- Fixed E2E fixture flakiness — removed silent try/catch in authenticatedPage/superAdminPage (was swallowing auth failures)
+- Fixed integration tests: `res` → `res1`/`res2` variable name bugs, garden page strict-mode selector, authenticateUI rewritten to API+localStorage, features page selector specificity
+- 68/68 E2E tests passing (20 integration + 10 admin + 7 auth + 7 invites + 24 screenshots)
+- `tsc --noEmit` passes with zero errors on admin package
+- Dev server restarted (was stopped — mobile emulator showed "No plants found")
+- Key learnings: JWT role case-sensitivity is a hidden footgun; E2E fixtures must propagate errors; `audit` tool can miss nested `process.env` access in submodules
+
+### Session 13 (Jun 24, 2026): EAS Hosting Integration — Public Download Page + Admin Build Management + Branch Protection Rules
+- Branch protection rules codified in AGENTS.md, checklist.md, production-sync.md — no direct pushes to `main`, PRs + squash merges + signed commits + CI/CodeQL required, fresh branches deleted after merge
+- Public `/download` page — QR code + download button, no auth, no tabs, no `imageSettings` (avoids 404 from missing icon-192.png)
+- Admin `/mobile` page — 4 tabs (Overview, Build APK, Sync OTA, Changelog), role-gated to admin/super_admin
+- Sidebar role-gating — "Mobile App" and "Super Admin" links only visible to admin/super_admin via `ADMIN_ONLY` array
+- Build API route — POST/GET `/api/v1/mobile/build-apk` triggers EAS workflow_dispatch
+- Download/APK-info API routes — serve local APK, fallback to GitHub Releases, return version/size/SHA256
+- EAS Hosting workflow — `.github/workflows/eas-hosting.yml` deploys mobile web build to EAS Hosting CDN
+- Production verification — /download renders with 0 console errors, all API routes working
+- APK built via `gradlew.bat assembleDebug` (191MB dev APK) — useContext crash confirmed (known React version mismatch in dev build)
+
+### Session 12 (Jun 23, 2026): Production Auth Fix + Emulator Testing + E2E Flow Verification
+- Fixed production auth 500 error: bcrypt@5.1.1 native module fails on Vercel Lambda; switched to bcryptjs (pure JS, works everywhere)
+- Fixed dynamic `jsonwebtoken` imports — `await import('jsonwebtoken')` triggered DEP0169; replaced with static imports
+- Fixed stale production URL — `useNotifications.ts` hardcoded `api.gardenverse.app` (nonexistent); changed to `gardenverse.vercel.app`
+- Added missing `/api/v1/ai/scans` route — requests fell through to `[id]` dynamic route causing 500; created proper paginated GET handler with auth guard
+- Vercel deployment — 152 pages/routes compiled successfully, all API routes included
+- Emulator testing — Pixel_7_API_34 with GardenVerse APK; confirmed API connectivity via logcat
+- Found React useContext crash in dev APK — React version mismatch; need production EAS build for stable APK
+- Production API verification — all endpoints returning 200 (login, gardens, crops, plants, stats, marketplace, weather, community, ai/scans, notifications/preferences)
+
+### Session 11 (Jun 5, 2026): Mobile Logger Pipeline + Seed Data Restoration + First-Time Walkthrough
+- Created mobile Logger service (`packages/mobile/src/services/logger.ts`) — 192-line module with circular buffer (200 entries), debounced batch sender (500ms), console method override, only active in `__DEV__`
+- Wired logger into API interceptor — replaced `console.log`/`.error` in api.ts with structured `logger.info`/`.error` calls
+- Added App Logs section to DebugOverlay — color-coded level badges, message, source/context badges, timestamp
+- Logger init in root layout — `_layout.tsx` calls `initLogger()` at module level
+- Seed data expansion — added 20 Indian plant species (Tomato, Chilli, Turmeric, Rice, Okra, Brinjal, etc.), VIRTUAL "Demo Garden" with 3 crops, 6 feature flags
+- First-time walkthrough overlay — 5-step modal (Welcome → Plant → Water → Fertilize → Harvest) with progress dots, Skip/Next buttons
+- Fixed seed script — changed from `ts-node` (Windows quoting bug) to `tsx` in package.json
+- API verification — Plants (20 species), Gardens (1 for demo user), Login (all 3 accounts) verified via curl
+- Fixed plant selection "No plants found" — PlantSpecies table was empty before seed expansion
 
 ### Session 10 (Jun 4, 2026): Backend Migration Completion — Monitoring Overhaul + NestJS→Next.js + Logger + AI Dashboard
 - Overhauled monitoring page: 6 sections (System Health, Performance Metrics, API Endpoint Performance, System Logs with search/filter/clear, Queue Status, Sidecar Services)
@@ -174,15 +232,13 @@
 
 ## Next Actions
 
-1. Restore full seed data (31 plant species, 5 gardens, crops, marketplace listings, weather records)
-2. Create initial Prisma migration (`prisma migrate dev --name init`) for admin schema
-3. Run full E2E tests against local dev with restored data
-4. Set NEXT_PUBLIC_API_URL on Vercel
-5. Create `/campaigns` API route with Prisma-backed endpoints
-6. Create admin garden listing/crop health API routes for `/garden` page tables
-7. Wire weather effects into growth simulation (sunlight modifier already in engine)
-8. Verify Expo web auth persistence in production build
-9. Add ESLint config to admin package
+1. Create admin garden listing/crop health API routes for `/garden` page tables (still hardcoded `data={[]}`)
+2. Wire weather effects into growth simulation (sunlight modifier already in engine)
+3. Build production APK via `eas build --profile production` (fixes useContext crash in dev APK; blocked until EAS free plan resets)
+4. Create initial Prisma migration (`prisma migrate dev --name init`) for admin schema
+5. Add ESLint config to admin package
+6. Verify Expo web auth persistence in production build
+7. Build production APK via `eas build --profile production`
 
 ## File Map
 
@@ -202,66 +258,105 @@
   RULES.md               # UPDATED: Expo web, API response format, store design rules
 
 packages/
-   admin/                # Next.js 14 admin dashboard + API (Vercel) — 126 pages/routes
+   admin/                # Next.js 14 admin dashboard + API (Vercel) — 152 pages/routes
       prisma/
-        schema.prisma               # Canonical schema (42 models, 9 enums)
-        seed.ts                     # Session 10: minimal seed (3 users, password: password123)
+         schema.prisma               # Canonical schema (47 models, 9 enums) — Session 16: multi-garden + economy
+         seed.ts                     # Session 16: 21 shop items, 6 fertilizers, 6 coupons, 3 soil checks, 3 sync records
       src/
-        lib/
-          logger/index.ts           # Session 10: Logger sidecar (file + DB, 24h TTL)
-          middleware/logging.ts     # Session 10: Request tracking middleware
-          queue.ts                  # Session 10: In-process queue wrapper
-          websocket.ts             # Session 10: SSE helper + pub/sub
-          cron.ts                   # Session 10: Task registry
-          ai/index.ts              # Session 10: TypeScript AI fallback
-          agents/README.md         # Session 10: Agent migration docs
-        app/api/v1/
-          logs/route.ts            # Session 10: GET logs (file first, DB fallback)
-          logs/clear/route.ts      # Session 10: POST clear logs
-          analytics/endpoints/route.ts  # Session 10: Endpoint performance metrics
-          cron/growth-tick/        # Session 10: Vercel Cron (4h)
-          cron/weather-sync/       # Session 10: Vercel Cron (6h)
-          agents/callback/         # Session 10: Event callback handler
-          auth/profile/route.ts       # Session 9: GET /auth/profile
-          users/me/stats/route.ts     # Session 9: GET /users/me/stats
-          users/me/route.ts           # Session 10: PUT/DELETE
-          users/me/avatar/            # Session 10: avatar upload
-          users/profile/[username]/   # Session 10: public profile
-          users/leaderboard/          # Session 10: leaderboard
-          gardens/mine/analytics/     # Session 10: garden analytics
-          crops/batch/                # Session 10: batch plant
-          crops/bulk/water/           # Session 10: bulk water
-          crops/bulk/fertilize/       # Session 10: bulk fertilize
-          marketplace/local/          # Session 10: local feed
-          marketplace/my-listings/    # Session 10: my listings
-          ... +25 more new routes (Session 10)
-        app/monitoring/page.tsx   # Session 10: Overhauled with 6 sections
-        app/ai-dashboard/page.tsx # Session 10: New AI dashboard page
-   mobile/               # React Native (Expo) — 23+ screens
-     src/
-       utils/
-         storage.ts      # FIXED: in-memory Map → window.localStorage for web platform
-       stores/
-         authStore.ts    # FIXED: loadStoredAuth falls back to cached userData on profile fetch failure
-         gardenStore.ts  # Session 8: added syncCrops() for growth engine integration
-       services/
-         growthEngine.ts # Session 8: client-side growth simulation (30s tick, 100x virtual speed)
-       hooks/
-         useMarketplace.ts  # FIXED: URLs /marketplace/listings → /marketplace
-       screens/
-         garden/
-           GardenScreen.tsx   # REWRITTEN: integrated GrowthOverlay, WeatherBar, weather fetch, engine poll
-         marketplace/
-           ListingDetailScreen.tsx   # REWRITTEN: fetches real listing via getListingById
-           CreateListingScreen.tsx   # REWRITTEN: calls createListing with GREEN_CREDITS
-         profile/
-           ProfileScreen.tsx   # REWRITTEN: fetches stats from /users/me/stats, collections, activity
-       components/garden/
-         Garden3D.tsx        # UPDATED: selection ring mesh, empty tile highlights, raycasting tap detection
-         IsometricGrid.tsx   # Session 8: expanded 4x4→6x6, plant shadows, richer soil
-         CropSpriteSVG.tsx   # Session 8: added 5 Indian crop sprites
-         GrowthOverlay.tsx   # NEW: floating growth status panel (682 lines)
-         WeatherBar.tsx      # NEW: horizontally scrolling weather strip
+         lib/
+           logger/index.ts           # Session 10: Logger sidecar (file + DB, 24h TTL)
+           middleware/logging.ts     # Session 10: Request tracking middleware
+           queue.ts                  # Session 10: In-process queue wrapper
+           websocket.ts             # Session 10: SSE helper + pub/sub
+           cron.ts                   # Session 10: Task registry
+           ai/index.ts              # Session 10: TypeScript AI fallback
+           agents/README.md         # Session 10: Agent migration docs
+         app/api/v1/
+           plots/route.ts            # Session 16: GET list + POST purchase
+           plots/pricing/route.ts    # Session 16: GET tiered pricing
+           plots/[id]/route.ts       # Session 16: GET detail + PATCH update
+           plots/[id]/soil-check/    # Session 16: POST soil check (pH/moisture/NPK scoring)
+           plots/[id]/move-crop/     # Session 16: POST move crop (level-gated)
+           shop/route.ts             # Session 16: GET categorized shop items
+           shop/buy/route.ts         # Session 16: POST purchase item (coupon, GC deduction, inventory)
+           tools/route.ts            # Session 16: GET tool catalog
+           fertilizers/route.ts      # Session 16: GET fertilizer catalog
+           coupons/route.ts          # Session 16: GET/POST admin CRUD
+           coupons/redeem/route.ts   # Session 16: POST validate + apply discount
+           real-gardener/route.ts    # Session 16: GET status + encouragement
+           real-gardener/verify/     # Session 16: POST verify (badge assignment)
+           real-gardener/encouragement/ # Session 16: GET daily rotating tips
+           external-data-sync/route.ts  # Session 16: GET sync logs
+           external-data-sync/trigger/  # Session 16: POST simulated sync
+           campaigns/[id]/route.ts   # Session 16: GET/PATCH/DELETE with discount fields
+           ... + all previous routes
+         app/shop/page.tsx           # Session 16: 3-tab (Browse/Purchases/Inventory) with buy modal + coupon
+         app/coupons/page.tsx        # Session 16: CRUD table with create/edit/delete modals + stats
+         app/plots/page.tsx          # Session 16: Card grid with soil-check form + purchase modal + pricing
+         app/fertilizers/page.tsx    # Session 16: Available + active sections
+         app/campaigns/page.tsx      # Session 16: Enhanced with discount fields, edit, delete
+         app/monitoring/page.tsx     # Session 10: Overhauled with 6 sections
+         app/ai-dashboard/page.tsx   # Session 10: New AI dashboard page
+         app/download/page.tsx       # Session 13: Public download page (QR + button)
+         app/mobile/page.tsx         # Session 13: Admin build management (4 tabs, role-gated)
+         app/plants/page.tsx         # Session 14: Public plant encyclopedia (admin features hidden for non-admin)
+         app/diseases/page.tsx       # Session 14: Public disease dataset reference
+    mobile/               # React Native (Expo) — 29+ screens, working debug APK (81MB Hermes arm64-v8a)
+       src/
+         types/
+           index.ts        # Session 16: 11 new economy interfaces (ShopItem, Coupon, Fertilizer, etc.)
+         services/
+           plots.ts        # Session 16: 7 methods (fetchPlots, purchasePlot, fetchPricing, fetchDetail, updatePlot, checkSoil, moveCrop)
+           shop.ts         # Session 16: 4 methods (fetchShopItems, buyItem, fetchTools, fetchFertilizers)
+           coupons.ts      # Session 16: 1 method (redeemCoupon)
+           realGardener.ts # Session 16: 3 methods (fetchStatus, verify, fetchEncouragement)
+           logger.ts       # Session 11: Logger service (circular buffer, batch sender, console override)
+           growthEngine.ts # Session 8: client-side growth simulation (30s tick, 100x virtual speed)
+         stores/
+           plotsStore.ts   # Session 16: Zustand (6 actions: fetchPlots, purchasePlot, fetchPricing, fetchDetail, updatePlot, checkSoil)
+           shopStore.ts    # Session 16: Zustand (6 actions: fetchItems, buyItem, fetchTools, fetchFertilizers, redeemCoupon, clearMessage)
+           realGardenerStore.ts # Session 16: Zustand (3 actions: fetchStatus, verify, fetchEncouragement)
+           gardenStore.ts  # Session 16: added fetchPlots, purchasePlot, plotCount, maxPlots
+           authStore.ts    # Session 9: loadStoredAuth falls back to cached userData on profile fetch failure
+         hooks/
+           useGarden.ts    # Session 16: exposes plotCount, canPurchaseMore, fetchPlots, purchasePlot
+           useMarketplace.ts  # Session 9: URLs /marketplace/listings → /marketplace
+           useWalkthrough.ts  # Session 11: First-time walkthrough hook
+         screens/
+           shop/
+             ShopScreen.tsx          # Session 16: Browse (category filter + search), buy modal (qty + coupon), inventory tab
+             CouponRedeemScreen.tsx   # Session 16: Code entry + validation result with discount breakdown
+           plots/
+             PlotsScreen.tsx         # Session 16: Plot grid with status/occupancy, pricing tiers modal, purchase confirm
+             PlotDetailScreen.tsx    # Session 16: Info card, soil check card + history, move crop UI (level 3+/5+ gated)
+             SoilCheckScreen.tsx     # Session 16: pH/NPK/moisture sliders, quality scoring, color-coded results
+           realGardener/
+             RealGardenerScreen.tsx  # Session 16: Verification form, badge display, daily encouragement tips
+           garden/
+             GardenScreen.tsx        # Session 16: Horizontal plot selector bar with buy-plot CTA
+             PlantBrowserScreen.tsx  # Session 14: removed hardcoded localhost:3001, uses api service
+             PlantCropScreen.tsx
+           marketplace/
+             ListingDetailScreen.tsx # Session 9: fetches real listing data
+             CreateListingScreen.tsx # Session 9: calls createListing with GREEN_CREDITS
+           profile/
+             ProfileScreen.tsx       # Session 16: 4 new menu items (Shop, Plots, Real Gardener, Coupon Redeem)
+         components/garden/
+           Garden3D.tsx        # UPDATED: selection ring mesh, empty tile highlights, raycasting tap detection
+           IsometricGrid.tsx   # Session 8: expanded 4x4→6x6, plant shadows, richer soil
+           CropSpriteSVG.tsx   # Session 8: added 5 Indian crop sprites
+           GrowthOverlay.tsx   # Session 9: floating growth status panel
+           WeatherBar.tsx      # Session 9: horizontally scrolling weather strip
+           WalkthroughOverlay.tsx  # Session 11: 5-step first-time walkthrough modal
+         app/
+           shop.tsx                    # Session 16: route wrapper for ShopScreen
+           plots.tsx                   # Session 16: route wrapper for PlotsScreen
+           real-gardener.tsx           # Session 16: route wrapper for RealGardenerScreen
+           coupon-redeem.tsx           # Session 16: route wrapper for CouponRedeemScreen
+           plot-detail/[plotId].tsx    # Session 16: route wrapper for PlotDetailScreen
+           soil-check/[plotId].tsx     # Session 16: route wrapper for SoilCheckScreen
+           _layout.tsx                 # Session 16: registered 6 new Stack.Screen entries
+           DebugOverlay.tsx            # Session 11: added "App Logs (last 50)" section
 
 contracts/               # 8 Solidity contracts (Hardhat)
   contracts/
@@ -269,17 +364,30 @@ contracts/               # 8 Solidity contracts (Hardhat)
     marketplace/         # Marketplace, Escrow
     reputation/          # ReputationManager, RewardDistributor
 
+e2e/
+  fixtures/test.ts       # Session 14: Propagates errors (no silent try/catch), API+localStorage auth
+  tests/
+    integration.spec.ts  # Session 14: 20 tests — fixed variable names, selectors, garden page, pagination
+    admin.spec.ts        # Session 14: Fixed USERNAME column (th:has-text("Username"))
+  screenshots/           # Session 3+: 24 screenshot tests across 8 workflows
+
 scripts/
   verify-deployment.sh   # Admin + backend + cross-service checks (bash)
   verify-deployment.ps1  # Same for PowerShell
+
+packages/mobile/
+  app.config.js          # Session 5: JS expressions for EAS env vars
+  eas.json               # Session 5: Build profiles (development/preview/production)
+  android/app/build.gradle  # Session 14: Metro downgrade, pre-bundled JS, Hermes disabled
+  gradle.properties      # Session 14: kapt.use.worker.api=false (Room SQLite worker fix)
 
 docs/
   architecture/
     gamification-flow.md # Complete gamification guide + EAS publishing
   deployment/
     production-deployment.md # Full production deployment guide
-  improvements/
-    lessons-learned.md   # ses-006 through ses-009 entries added
+    improvements/
+        lessons-learned.md   # ses-006 through ses-016 entries added
   api/
     README.md            # Updated with gamification endpoints
 ```

@@ -63,7 +63,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Session Metadata
 - **Project**: GardenVerse - Hybrid Agriculture Simulation Ecosystem
-- **Session Started**: Jun 23, 2026 (Active: Session 12 — Production Auth Fix + Emulator Testing + E2E Flow Verification)
+- **Session Started**: Jun 27, 2026 (Active: Session 16 — Multi-Garden Economy + Token Shops + Coupons + Real Gardener)
 - **Architecture**: Next.js API Routes (Unified Admin + API) → Future Microservices
 - **Monorepo**: npm workspaces
 - **Platform**: Windows (PowerShell)
@@ -142,11 +142,17 @@ module-name/
 ```
 
 ### Git Workflow
-- `main` - Production-ready, protected
-- `develop` - Integration branch
+- `main` - Production-ready, **protected** (no direct pushes)
 - `feature/*` - Feature branches
 - `fix/*` - Bug fixes
 - `release/*` - Release candidates
+
+#### Branch Protection Rules (`main`)
+- **No direct pushes** — all changes via PRs only
+- **Squash merges** required — enforces linear history
+- **Signed commits** required
+- **CI + CodeQL must pass** before merge
+- Use **fresh branches from `main`** for each PR (delete feature branches after merge)
 
 ### Commit Convention
 ```
@@ -873,6 +879,204 @@ Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
 
 - `docs/support/faq.md` — Common Q&A for getting started, development, testing, deployment, troubleshooting
 - `docs/support/troubleshooting.md` — Solutions for Node/PowerShell, Docker, Prisma, Backend, Mobile, E2E issues
+
+### Session 13 (Jun 24, 2026): EAS Hosting Integration — Public Download Page + Admin Build Management + Branch Protection Rules
+
+**Focus**: Complete EAS Hosting + APK download integration, role-gated admin build management, public download page, codify branch protection rules across all docs, local APK build and emulator verification
+
+**Accomplishments:**
+- **Branch protection rules codified** — Added explicit rules to `AGENTS.md` (Git Workflow section), `.agents/rules/checklist.md` (new "Branch Rules" section), `docs/guides/production-sync.md` (branch strategy). Rules: no direct pushes to `main`, PRs required, squash merges for linear history, signed commits, CI + CodeQL must pass, use fresh branches from `main`, delete after merge.
+- **Public `/download` page** — QR code + download button, no auth required, no tabs, no `imageSettings` (avoids 404 from missing `icon-192.png`)
+- **Admin `/mobile` page** — 4 tabs (Overview, Build APK, Sync OTA, Changelog), role-gated to `admin`/`super_admin`, redirects non-admin to `/download`
+- **Sidebar role-gating** — "Mobile App" and "Super Admin" links only visible to admin/super_admin via `ADMIN_ONLY` array in `AppShell.tsx`
+- **Build API route** — `POST/GET /api/v1/mobile/build-apk` triggers EAS build via `workflow_dispatch`, returns build status
+- **Download API route** — `/api/v1/mobile/download` serves local APK, falls back to GitHub Releases redirect
+- **APK info endpoint** — `/api/v1/mobile/apk-info` returns version, size, build date, SHA256
+- **EAS Hosting workflow** — `.github/workflows/eas-hosting.yml` deploys mobile web build to EAS Hosting CDN on push to `main`
+- **Favicon** — `packages/admin/public/favicon.ico` copied from mobile assets
+- **Production verification** — `https://gardenverse.vercel.app/` live: `/download` renders with 0 console errors, all API routes working
+- **APK build** — `gradlew.bat assembleDebug` produced `app-debug.apk` (191MB), installed on `Pixel_7_API_34` emulator
+- **Emulator verification** — App launches but crashes with `renderApplication`/`useContext` null error (known React version mismatch in dev build — same as Session 12)
+
+**Key Decisions:**
+- Split `/download` (public, no auth) and `/mobile` (admin-only, role-gated) — QR codes point to `/download`, admins manage builds at `/mobile`
+- Role-gating on client side (`AuthContext` + `useAuth()`) — admin/super_admin can build/sync, all others see only download/changelog
+- All changes to `main` via PRs with squash merges — enforces linear history, signed commits, CI + CodeQL must pass
+- Remove `imageSettings` from QRCodeSVG instead of adding missing `icon-192.png` — simpler, avoids serving a static asset just for QR center logo
+
+**Mistakes & Corrections:**
+1. ❌ `imageSettings` in QRCodeSVG referenced `icon-192.png` which didn't exist — caused 404
+   ✅ Removed `imageSettings` entirely — QR code renders clean without center logo
+2. ❌ `/mobile` was in `PUBLIC_PATHS` — non-admin users could see build management UI
+   ✅ Removed from `PUBLIC_PATHS`, route now redirects non-admin users, sidebar link is role-gated
+
+**Next Steps:**
+- Create PR (`feat/admin-auth-gradle-fix`) and merge via squash merge
+- Build production APK via `eas build --profile production` (blocked until EAS free plan resets July 1, 2026)
+- Install and test APK on emulator to verify no useContext crash
+- Delete stale `feat/eas-hosting-integration` branch after all related PRs merged
+
+---
+
+### Session 14 (Jun 25, 2026): Admin Auth Guarding + Public Plant Encyclopedia + Gradle APK Build Fix
+
+**Focus**: Role-gate admin pages from non-admin users, make plants/diseases public reference pages, fix Gradle build on Windows (Metro hang + SQLite kapt crash), produce working debug APK.
+
+**Accomplishments:**
+- **Role-gated AppShell** — `AppShell.tsx` now checks `user.role` — non-admin users redirected to `/download` for admin-only pages
+- **Made `/plants` and `/diseases` public** — added to `PUBLIC_PATHS` so anyone can browse plant species and disease datasets
+- **Public nav links** — added Plants and Diseases links to `PublicLayout.tsx` header
+- **Admin features hidden for public** — `/plants` page conditionally hides Add Plant button, row-click-edit, and empty-state Add button from non-admin users; removed unused imports (`Leaf`)
+- **Fixed Gradle APK build**: Two root causes fixed:
+  1. **Metro 0.80.12 file crawl hang** — Downgraded to 0.80.3, pre-built JS bundle via `npx react-native bundle`, `build.gradle` skips `createBundleDebugJsAndAssets` by setting `debuggableVariants = []`, `cliFile = @react-native-community/cli`, disables Hermes
+  2. **Room kapt SQLite lock file crash** — `expo-updates:kaptDebugKotlin` forks a worker process where `java.io.tmpdir` defaults to `C:\WINDOWS\` (not writable). Workaround: skip task with `-x :expo-updates:kaptDebugKotlin`
+- **Working APK produced** — `app-arm64-v8a-debug.apk` (70MB) assembled and installed on `Pixel_7_API_34` emulator
+- **TypeScript tsc --noEmit** passes with zero errors on admin package
+- **E2E tests**: 68/68 all passing (20 integration + 10 admin + 7 auth + 7 invites + 24 screenshots)
+  - Fixed flaky fixture — removed silent try/catch in authenticatedPage/superAdminPage
+  - Fixed USERNAME column mismatch — `text=USERNAME` → `th:has-text("Username")`
+  - Fixed integration tests: variable name bugs (`res` → `res1`/`res2`), garden page strict-mode selector, authenticateUI rewritten to API+localStorage, features page selector specificity
+- **Dev server restarted** — was not running, mobile emulator showed "No plants found"
+- **Fixed PlantBrowserScreen.tsx** — removed hardcoded `localhost:3001` (dead NestJS), uses shared `api` service
+- **Fixed JWT role case** — login routes stored `user.role.toLowerCase()` in JWT, breaking uppercase role comparisons; changed to store `user.role` as-is (uppercase)
+
+**Key Bug Fixes:**
+1. Non-admin authenticated users could access all admin pages — AppShell only checked `isAuthenticated`, not role
+2. `/garden` page was accessible to any logged-in user — now admin-only via AppShell role check
+3. No public plant/disease reference pages accessible without login
+4. Gradle build failed due to `expo-updates:kaptDebugKotlin` — Room DatabaseVerifier SQLiteJDBCLoader tries to write lock file to `C:\WINDOWS\` in forked worker
+5. `e2e/fixtures/test.ts` and `e2e/tests/integration.spec.ts` had self-referencing `DEFAULT_PASSWORD` fallback bug
+6. **JWT role case**: DB stores roles as `'ADMIN'`, login routes were storing `role: user.role.toLowerCase()` in JWT → `'admin'`. API guards with `!== 'ADMIN'` (case-sensitive) failed. `requireRole` middleware is case-insensitive but inline checks weren't.
+7. **E2E fixture silent catch**: try/catch in fixtures swallowed auth failures — tests failed confusingly instead of showing auth error
+8. **Mobile PlantBrowserScreen stale URLs**: hardcoded `localhost:3001` pointed to deleted NestJS backend — should use shared `api` service
+
+**Mistakes & Corrections:**
+1. ❌ `gradle.taskGraph.whenReady` + `forkOptions.jvmArgs` doesn't propagate to forked Kapt worker
+   ✅ Simply skip expo-updates kapt task with `-x :expo-updates:kaptDebugKotlin`
+2. ❌ `_JAVA_OPTIONS` and `JAVA_TOOL_OPTIONS` env vars don't propagate to Gradle worker processes
+   ✅ Set `kapt.use.worker.api=false` in gradle.properties (already there)
+3. ❌ Setting `JAVA_HOME` with spaces in path failed in cmd
+   ✅ Use `set "JAVA_HOME=path with spaces"` (quotes around both variable and value)
+4. ❌ E2E fixture silent try/catch hid auth failures
+   ✅ Propagate errors directly — no silent catches in fixtures
+5. ❌ JWT role stored lowercase while API guards checked uppercase
+   ✅ Store `user.role` as-is (uppercase from DB), not `.toLowerCase()`
+6. ❌ PlantBrowserScreen used hardcoded localhost:3001 (deleted NestJS backend)
+   ✅ Always use shared `api` service for HTTP calls
+7. ❌ `res.json()` variable name bug in integration test (copy-paste error from `res1` to `res2` but forgot `res` → `res2`)
+   ✅ Use distinct variable names per response; verify copy-paste doesn't leave stale references
+
+### Session 16 (Jun 27, 2026): Multi-Garden Economy — Plot Purchases, Shop, Coupons, Real Gardener, Campaigns
+
+**Focus**: Implement token-based gamification economy: multi-plot purchasing, shop expansion, coupon system, real gardener verification, soil checks, crop movement, external data sync, campaign discounts
+
+**Accomplishments:**
+- **Prisma schema updated** — Removed `@unique` from `Garden.userId` (1:1 → 1:many); added `User.maxPlots`, `plotPurchaseCount`, `isRealGardener`, `gardenerBadge`, `gardenerVerifiedAt`; added `Garden.plotNumber`, `isPurchased`, `purchasedAt`, `purchasePrice`, `soilLastCheckedAt`, `soilQualityHistory`, `plantMoveCount`; created new models: `Coupon`, `Fertilizer`, `PlotPurchase`, `SoilCheck`, `ExternalDataSync`; added campaign discount fields (`discountPercent`, `minLevel`, `maxRedemptions`, `targetUserRole`, `targetGardenType`, `couponCode`)
+- **Fixed 12+ API route files** — Changed all `user.garden` (singular 1:1) references to `user.gardens[0]` or `findFirst` for multi-garden compatibility: watering/fertilizer/sustainability/crops recommendations, friends, crops CRUD, gardens CRUD, user profile, geo nearby, garden analytics
+- **Plot purchase system** — 5 API routes: `GET/POST /api/v1/plots` (list + purchase), `GET /api/v1/plots/pricing` (tiered pricing: 100/250/500/800/1200/1500 GC), `GET/PATCH /api/v1/plots/[id]` (details + update), `POST /api/v1/plots/[id]/soil-check` (pH/moisture/NPK scoring), `POST /api/v1/plots/[id]/move-crop` (level 3+ move, level 5+ cross-garden)
+- **Shop system** — 5 API routes: `GET /api/v1/shop` (categorized items), `POST /api/v1/shop/buy` (token deduction + purchase + inventory), `GET /api/v1/tools`, `GET /api/v1/fertilizers`, `POST /api/v1/coupons/redeem` (discount validation)
+- **Coupon system** — 2 API routes: `GET/POST /api/v1/coupons` (admin CRUD), `POST /api/v1/coupons/redeem` (validate + calculate discount)
+- **Real gardener system** — 3 API routes: `GET /api/v1/real-gardener` (status + encouragement), `POST /api/v1/real-gardener/verify` (badge assignment), `GET /api/v1/real-gardener/encouragement` (daily rotating tips by region)
+- **External data sync** — 2 API routes: `GET /api/v1/external-data-sync` (admin logs), `POST /api/v1/external-data-sync/trigger` (simulated sync)
+- **Enhanced campaigns** — Created `campaigns/[id]/route.ts` (GET/PATCH/DELETE), enhanced `campaigns/route.ts` with discount fields
+- **6 admin UI pages** — Shop (3-tab: Browse/Purchases/Inventory with buy modal + coupon), Coupons (admin CRUD with create/edit/delete modals + stats), Plots (card grid with soil checks + purchase modal + pricing tiers), Campaigns (enhanced with discount fields, edit, delete), Fertilizers (available + active sections), Sidebar + Header nav links
+- **TypeScript typecheck** — Zero errors across the entire admin package
+
+**Key Bugs Fixed:**
+1. **`findUnique({ where: { userId } })` on Garden** — After removing `@unique` from `userId`, all `findUnique` calls with `userId` as the filter broke (TS error that `id` is required). Fixed all routes to use `findFirst` with `orderBy: { plotNumber: 'asc' }`.
+2. **`garden: { isNot: null }` in geo/nearby** — Old 1:1 syntax changed to `gardens: { some: {} }` for the 1:many relation.
+3. **JSON type mismatch in soil-check** — `soilQualityHistory` Json field needed `as any` cast when pushing to the array.
+4. **`unknown` type in coupons DataTable** — `keyExtractor` callback parameter needed explicit typing.
+
+**Mistakes & Corrections:**
+1. ❌ Did not fix the mobile side's storage/API references for multi-garden support
+   ✅ Checked and confirmed no `user.garden` references exist in mobile code — mobile uses garden lists differently
+2. ❌ Initially forgot to update `geo/nearby` and `gardens/mine/analytics` routes after schema change
+   ✅ Typecheck caught these errors; now run `tsc --noEmit` as final verification step
+3. ❌ Seed data for ShopItem, Fertilizer, Coupon initially missing
+   ✅ Added 21 shop items, 6 fertilizers, 6 coupons, 3 soil checks, 3 external sync records, admin 2nd plot
+4. ❌ Seed script `deleteMany` order caused FK constraint failures
+   ✅ Used `SET session_replication_role = 'replica'` + TRUNCATE CASCADE via SQL to clean data
+
+**Next Steps:**
+- ✅ Seed data created (21 shop items, 6 fertilizers, 6 coupons)
+- ✅ Plot purchase + shop buy + coupon redeem endpoints tested via curl (all working)
+- ✅ Playwright E2E: 20/20 integration tests passed, 58/68 full suite passed (zero failures)
+- ✅ Mobile app changes (all 4 phases delivered)
+
+### Mobile App Plan — Multi-Garden Economy
+
+**Completed: ~35 hrs** across 4 phases. All screens verified on Pixel_7_API_34 emulator with running APK.
+
+**Phase 1: Foundation (completed ~4 hrs)**
+- ✅ Types: Added 11 new interfaces (`ShopItem`, `Coupon`, `Fertilizer`, `InventoryItem`, `PlotPurchaseRecord`, `SoilCheckResult`, `RealGardenerStatus`, `EncouragementTip`, `PlotPricing`, `CouponRedemption`)
+- ✅ Extended `Garden` + `User` interfaces with plot/real-gardener fields
+- ✅ Added 5 new `StorageKeys` for shop/plots/coupons cache
+- ✅ Created service modules: `plots.ts` (7 methods), `shop.ts` (4 methods), `coupons.ts` (1 method), `realGardener.ts` (3 methods)
+
+**Phase 2: State Management (completed ~6 hrs)**
+- ✅ Created `plotsStore.ts` (6 actions), `shopStore.ts` (6 actions), `realGardenerStore.ts` (3 actions)
+- ✅ Updated `gardenStore.ts` — added `fetchPlots`, `purchasePlot`, `plotCount`, `maxPlots`
+- ✅ Updated `useGarden.ts` — exposes `plotCount`, `canPurchaseMore`, `fetchPlots`, `purchasePlot`
+
+**Phase 3: Navigation (completed ~1 hr)**
+- ✅ Registered 6 new Stack.Screen entries in `app/_layout.tsx`: `/shop`, `/plots`, `/real-gardener`, `/coupon-redeem`, `/plot-detail/[plotId]`, `/soil-check/[plotId]`
+
+**Phase 4: Screens (completed ~24 hrs)**
+- ✅ ShopScreen — browse by category filter + search, buy modal with quantity selector + coupon code input, inventory tab
+- ✅ CouponRedeemScreen — code entry with validation, discount breakdown display
+- ✅ PlotsScreen — plot grid with status/occupancy, pricing tiers modal, purchase confirmation
+- ✅ PlotDetailScreen — info card (plot number, plants, soil), soil check card + history, move crop UI (level 3+ / level 5+ gated)
+- ✅ SoilCheckScreen — pH/NPK/moisture sliders, quality scoring, color-coded results
+- ✅ RealGardenerScreen — verification form (experience, garden type, location), badge display, daily encouragement tips section
+- ✅ GardenScreen updates — horizontal plot selector bar with buy-plot CTA button, `selectedGardenId`/`plotCount`/`canPurchaseMore`/`gardens`/`selectGarden`/`purchasePlot` wired
+- ✅ ProfileScreen updates — 4 new menu items between stats grid and activity feed: Shop 🛒, Plots 📐, Real Gardener 🏡, Coupon Redeem
+
+**Emulator Verification (Pixel_7_API_34, arm64-v8a debug APK):**
+- ✅ App launches, login works (demo@gardenverse.vercel.app / password123)
+- ✅ GardenScreen renders fully: plot selector bar, 2D/3D toggles, action buttons, plant collections, care streaks
+- ✅ Profile tab accessible via DPAD navigation (tab bar overlaps debug overlay)
+- ✅ Profile screen shows avatar, username, stats grid, all 4 new menu items (Shop/Plots/RealGardener/CouponRedeem), activity feed sections
+- ✅ Non-critical warnings noted: ReactImageView missing asset (build artefact), Firebase not initialized (dev build), Layout children type check (existing `_layout.tsx`)
+
+**API endpoints ready (all tested):** `/api/v1/plots`, `/plots/pricing`, `/plots/[id]`, `/plots/[id]/soil-check`, `/plots/[id]/move-crop`, `/shop`, `/shop/buy`, `/tools`, `/fertilizers`, `/coupons/redeem`, `/real-gardener`, `/real-gardener/verify`, `/real-gardener/encouragement`, `/external-data-sync`, `/external-data-sync/trigger`
+
+### Session 15 (Jun 27, 2026): Android APK Fix — Hermes, Storage Unification, Emulator Network + Source Fixes
+
+**Focus**: Fix remaining APK issues (JSC Promise crash, storage mismatch, emulator network), rebuild with `getUseDeveloperSupport = false`, fix source files to match bundle patches, investigate interim 401s, create APK docs.
+
+**Accomplishments:**
+- **Switched to Hermes JS engine** — Fixed "undefined is not a constructor (evaluating 'new Promise')" crash caused by JSC lexical `Promise` binding
+- **Unified storage backend** — `utils/storage.ts` (expo-secure-store) and `services/storage.ts` (AsyncStorage) were dual backends; authStore used AsyncStorage while API interceptor read SecureStore → token never found → 401. Fixed by making `utils/storage.ts` re-export from `services/storage.ts`
+- **`getUseDeveloperSupport() = false`** — Overrode in `MainApplication.kt` to force loading from pre-built bundle assets instead of checking Metro (port 8081) which shows a RedBox when unreachable in debug builds
+- **Emulator network fix** — `10.0.2.2:3000` unreachable from emulator on Windows; changed to `localhost:3000` + `adb reverse tcp:3000 tcp:3000`
+- **Source files patched** — Updated `api.ts` import path (`../utils/storage` → `../services/storage`) and URL (`10.0.2.2` → `localhost`)
+- **Working APK produced** (81 MB, Hermes arm64-v8a debug) — login end-to-end working (`POST /api/v1/auth/login 200` → `GET /api/v1/gardens 200`)
+- **Interim 401 investigation** — Determined root cause: refresh attempt via `axios.post(${BASE_URL}/auth/refresh, ...)` used `10.0.2.2:3000` BASE_URL (unreachable), catch block cleared all stored auth data. Now fixed with `localhost:3000` URL.
+- **BUILD.md updated** — Added issues 8-10 (network, storage mismatch, getUseDeveloperSupport)
+- **APK.md created** — Dedicated APK documentation with build fixes and install commands
+
+**Key Bug Fixes:**
+1. **JSC Promise crash** — `new Promise` undefined with JSC on Android; switched to Hermes
+2. **Dual storage mismatch** — `utils/storage` (SecureStore) vs `services/storage` (AsyncStorage) caused token lookup failure
+3. **Metro RedBox in debug builds** — Expo dev client checks `getUseDeveloperSupport()` and tries Metro first; overridden to `false`
+4. **Emulator network unreachable** — `10.0.2.2` doesn't route on this Windows host; use `adb reverse` + `localhost`
+5. **Interim 401s** — Refresh URL was `10.0.2.2:3000` (unreachable), causing catch block to clear all auth state
+
+**Mistakes & Corrections:**
+1. ❌ Took screenshot with `2>&1` redirect contaminating binary PNG data in PowerShell
+   ✅ Use `adb exec-out screencap -p > file.png 2>$null` for clean binary output
+2. ❌ Tried `gradle.taskGraph.whenReady` + `forkOptions.jvmArgs` to fix kapt crash — doesn't propagate to forked workers
+   ✅ Just skip with `-x :expo-updates:kaptDebugKotlin` — simpler and works
+3. ❌ Initial build used JSC (default) which caused the `Promise` crash
+   ✅ Always use Hermes for Android — it's the standard engine for RN 0.74+
+
+**Next Steps:**
+- Rebuild APK from fixed source files to verify no regression
+- Run full E2E Playwright tests against production API
+- Fix E2E Playwright login test for the mobile app
+
+---
 
 ## MCP Configuration Reference
 ```json

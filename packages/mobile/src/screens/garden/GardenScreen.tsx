@@ -61,6 +61,10 @@ export function GardenScreen() {
     waterCrop,
     fertilizeCrop,
     harvestCrop,
+    gardens,
+    canPurchaseMore,
+    selectGarden,
+    selectedGardenId,
   } = useGarden();
   const user = useAuthStore((s) => s.user);
 
@@ -382,6 +386,56 @@ export function GardenScreen() {
         </View>
       </View>
 
+      {/* Plot Selector Bar */}
+      {gardens.length > 1 && (
+        <View style={{ backgroundColor: '#0a1f12', paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#1a4a2a' }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {gardens.map((g) => (
+              <TouchableOpacity
+                key={g.id}
+                onPress={() => selectGarden(g.id)}
+                style={{
+                  backgroundColor: g.id === selectedGardenId ? '#1a4a2a' : 'transparent',
+                  borderRadius: 20,
+                  paddingHorizontal: 14,
+                  paddingVertical: 6,
+                  borderWidth: 1,
+                  borderColor: g.id === selectedGardenId ? '#2d8a4e' : 'rgba(255,255,255,0.15)',
+                }}
+              >
+                <Text style={{ fontSize: 12, fontWeight: '600', color: g.id === selectedGardenId ? '#a5f0b0' : 'rgba(255,255,255,0.6)' }}>
+                  Plot #{g.plotNumber ?? gardens.indexOf(g) + 1}
+                </Text>
+                {g.isPurchased && (
+                  <Text style={{ fontSize: 9, color: 'rgba(255,215,0,0.6)', textAlign: 'center', marginTop: 1 }}>
+                    🪙
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ))}
+            {canPurchaseMore && (
+              <TouchableOpacity
+                onPress={() => router.push('/plots')}
+                style={{
+                  backgroundColor: 'rgba(99,102,241,0.2)',
+                  borderRadius: 20,
+                  paddingHorizontal: 14,
+                  paddingVertical: 6,
+                  borderWidth: 1,
+                  borderColor: 'rgba(99,102,241,0.3)',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#a5b4fc' }}>+</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#a5b4fc' }}>Buy Plot</Text>
+              </TouchableOpacity>
+            )}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Weather Bar */}
       <WeatherBar weather={weather} timezone={selectedGarden?.timezone} />
 
@@ -494,46 +548,48 @@ export function GardenScreen() {
           </View>
         )}
 
-        {/* Garden Grid */}
+        {/* Garden Grid — always visible */}
         <View className="px-4 mb-4">
-
           <Animated.View
             style={viewToggleStyle}
             className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100"
           >
-            {crops.length === 0 ? (
-              <View className="items-center py-12">
-                <Text className="text-4xl mb-3">🌱</Text>
-                <Text className="text-gray-500 text-sm mb-1">
-                  Your garden is empty
-                </Text>
-                <TouchableOpacity
-                  onPress={() => router.push('/plant-crop')}
-                  className="bg-primary-600 px-6 py-2.5 rounded-xl mt-2"
-                >
-                  <Text className="text-white font-semibold">
-                    Plant Your First Crop
-                  </Text>
-                </TouchableOpacity>
+            {viewMode === '2d' ? (
+              <View>
+                <IsometricGrid
+                  crops={crops}
+                  gridWidth={6}
+                  gridHeight={6}
+                  selectedCropId={selectedCropId}
+                  onTilePress={handleTilePress}
+                  onWaterCrop={(cid) => handleWater(cid)}
+                  onFertilizeCrop={(cid) => handleFertilize(cid)}
+                  soilQuality={soilQuality}
+                  irrigationLevel={irrigationLevel}
+                />
+                {crops.length === 0 && (
+                  <View className="items-center py-4">
+                    <Text className="text-gray-400 text-xs">
+                      Tap any empty plot or press + Plant to start growing
+                    </Text>
+                  </View>
+                )}
               </View>
-            ) : viewMode === '2d' ? (
-              <IsometricGrid
-                crops={crops}
-                gridWidth={6}
-                gridHeight={6}
-                selectedCropId={selectedCropId}
-                onTilePress={handleTilePress}
-                onWaterCrop={(cid) => handleWater(cid)}
-                onFertilizeCrop={(cid) => handleFertilize(cid)}
-                soilQuality={soilQuality}
-                irrigationLevel={irrigationLevel}
-              />
             ) : (
-              <Garden3D
-                selectedCropId={selectedCropId}
-                onTilePress={handleTilePress}
-                onPlantPress={(col, row) => router.push({ pathname: '/plant-crop', params: { plotX: String(col), plotY: String(row) } })}
-              />
+              <View>
+                <Garden3D
+                  selectedCropId={selectedCropId}
+                  onTilePress={handleTilePress}
+                  onPlantPress={(col, row) => router.push({ pathname: '/plant-crop', params: { plotX: String(col), plotY: String(row) } })}
+                />
+                {crops.length === 0 && (
+                  <View className="items-center py-4">
+                    <Text className="text-gray-400 text-xs">
+                      Tap any empty plot or press + Plant to start growing
+                    </Text>
+                  </View>
+                )}
+              </View>
             )}
           </Animated.View>
         </View>
@@ -548,14 +604,17 @@ export function GardenScreen() {
               <View className="flex-row justify-between gap-2">
                 <WaterButton
                   onPress={() => handleWater(selectedCrop.id)}
+                  crop={selectedCrop}
                   className="flex-1"
                 />
                 <FertilizeButton
                   onPress={() => handleFertilize(selectedCrop.id)}
+                  crop={selectedCrop}
                   className="flex-1"
                 />
                 <HarvestButton
                   onPress={() => handleHarvest(selectedCrop.id)}
+                  crop={selectedCrop}
                   className="flex-1"
                 />
               </View>

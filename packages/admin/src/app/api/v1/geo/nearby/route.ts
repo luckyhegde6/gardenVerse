@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const users = await prisma.user.findMany({
       where: {
         geohash: { startsWith: prefix },
-        garden: { isNot: null },
+        gardens: { some: {} },
       },
       take: limit,
       select: {

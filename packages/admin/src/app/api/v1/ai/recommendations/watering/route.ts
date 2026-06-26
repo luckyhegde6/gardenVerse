@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { id: auth.payload.userId },
       include: {
-        garden: {
+        gardens: {
           include: {
             crops: {
               ...(cropId ? { where: { id: cropId } } : {}),
@@ -31,12 +31,16 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    if (!user?.garden) {
+    const firstGarden = user?.gardens?.[0]
+
+    if (!firstGarden) {
       finishRequestLog(ctx, request, 400)
       return badRequest('No garden found')
     }
 
-    if (user.garden.crops.length === 0) {
+    const crops = firstGarden.crops ?? []
+
+    if (crops.length === 0) {
       finishRequestLog(ctx, request, 400)
       return badRequest('No crops found')
     }
@@ -48,7 +52,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate watering recommendations for each crop
-    const recommendations = user.garden.crops.map((crop) => {
+    const recommendations = crops.map((crop) => {
       const moistureDeficit = OPTIMAL_MOISTURE - crop.hydration
       const shouldWater = moistureDeficit > 20
 

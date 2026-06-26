@@ -387,7 +387,10 @@ export function Garden3D({ selectedCropId, onTilePress, onPlantPress }: Garden3D
 
     const group = new THREE.Group()
     const highlightMat = new THREE.MeshBasicMaterial({
-      color: 0x22c55e, transparent: true, opacity: 0.15, side: THREE.DoubleSide,
+      color: 0xfbbf24, transparent: true, opacity: 0.2, side: THREE.DoubleSide,
+    })
+    const crossMat = new THREE.MeshBasicMaterial({
+      color: 0xa0825a, transparent: true, opacity: 0.4,
     })
     for (let col = 0; col < GRID_SIZE; col++) {
       for (let row = 0; row < GRID_SIZE; row++) {
@@ -399,6 +402,14 @@ export function Garden3D({ selectedCropId, onTilePress, onPlantPress }: Garden3D
         hTile.rotation.x = -Math.PI / 2
         hTile.position.set(x, 0.04, z)
         group.add(hTile)
+
+        // Cross (plus) indicator
+        const barH = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.01, 0.03), crossMat)
+        barH.position.set(x, 0.05, z)
+        group.add(barH)
+        const barV = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.15), crossMat)
+        barV.position.set(x, 0.05, z)
+        group.add(barV)
       }
     }
     scene.add(group)

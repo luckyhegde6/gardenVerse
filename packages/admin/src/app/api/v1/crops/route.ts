@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const auth = requireAuth(request)
     if ('error' in auth) return auth.error
 
-    const garden = await prisma.garden.findUnique({ where: { userId: auth.payload.userId } })
+    const garden = await prisma.garden.findFirst({ where: { userId: auth.payload.userId }, orderBy: { plotNumber: 'asc' } })
     if (!garden) {
       return notFound('User has no garden')
     }

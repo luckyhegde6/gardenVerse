@@ -60,7 +60,7 @@ test.describe('Admin Data Table', () => {
     await page.goto('/users', { waitUntil: 'networkidle' });
     await page.waitForURL(/users/, { timeout: 15000 }).catch(() => page.goto('/users'));
     await page.waitForURL(/users/, { timeout: 10000 });
-    const usernameHeader = page.locator('text=USERNAME').first();
+    const usernameHeader = page.locator('th:has-text("Username")').first();
     await expect(usernameHeader).toBeVisible({ timeout: 10000 });
   });
 

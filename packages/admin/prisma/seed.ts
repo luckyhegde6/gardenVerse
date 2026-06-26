@@ -19,11 +19,12 @@ async function main() {
     'message', 'groupMember', 'group', 'invite', 'aiScan',
     'notification', 'gardenPlanPlant', 'gardenPlan', 'cropVariety',
     'crop', 'weatherRecord', 'garden', 'plantCollection', 'speciesMastery', 'plantHybrid', 'plantSpecies', 'featureFlag',
-    'dailyReward', 'userEnergy', 'userAchievement', 'achievement', 'userPurchase', 'shopItem', 'user',
-    'quest', 'campaignReward', 'campaign',
-  ];
+    'dailyReward', 'userEnergy', 'userAchievement', 'achievement', 'userPurchase', 'userInventory',
+    'plotPurchase', 'soilCheck', 'coupon', 'fertilizer', 'externalDataSync',
+    'shopItem', 'user', 'quest', 'campaignReward', 'campaign',
+  ]
   for (const t of tables) {
-    try { await (prisma as any)[t].deleteMany(); } catch { }
+    try { await (prisma as any)[t].deleteMany() } catch { }
   }
 
   const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'password123'
@@ -547,6 +548,166 @@ async function main() {
   ];
   for (const inv of inviteData) { await prisma.invite.create({ data: inv }); }
   console.log(`Created ${inviteData.length} invite codes`);
+
+  // ─── Shop Items ────────────────────────────────────────────────────────────
+  const shopItems = [
+    { name: 'Watering Can (Basic)', description: 'Standard watering can for daily hydration.', category: 'TOOL', price: 50, currency: 'GREEN_CREDITS', icon: '🚿', levelRequired: 1, itemType: 'TOOL', effect: { hydrationBoost: 5 } },
+    { name: 'Watering Can (Pro)', description: 'Professional-grade watering can with wider spread.', category: 'TOOL', price: 200, currency: 'GREEN_CREDITS', icon: '🚿', levelRequired: 5, itemType: 'TOOL', effect: { hydrationBoost: 15 } },
+    { name: 'Fertilizer Spreader', description: 'Evenly distributes fertilizer across your plots.', category: 'TOOL', price: 150, currency: 'GREEN_CREDITS', icon: '🧂', levelRequired: 3, itemType: 'TOOL', effect: { nutrientEfficiency: 1.2 } },
+    { name: 'Pruning Shears', description: 'Keep your plants healthy by trimming dead growth.', category: 'TOOL', price: 100, currency: 'GREEN_CREDITS', icon: '✂️', levelRequired: 2, itemType: 'TOOL', effect: { healthBonus: 10 } },
+    { name: 'Garden Gloves', description: 'Protect your hands while working in the garden.', category: 'TOOL', price: 30, currency: 'GREEN_CREDITS', icon: '🧤', levelRequired: 1, itemType: 'TOOL', effect: {} },
+    { name: 'Soil pH Meter', description: 'Measure soil acidity for optimal crop growth.', category: 'TOOL', price: 80, currency: 'GREEN_CREDITS', icon: '📏', levelRequired: 1, itemType: 'TOOL', effect: { phAccuracy: 0.9 } },
+
+    { name: 'Tomato Seeds (Premium)', description: 'High-yield hybrid tomato seeds.', category: 'SEED', price: 25, currency: 'GREEN_CREDITS', icon: '🌱', levelRequired: 1, stock: 50, itemType: 'SEED', effect: { yieldBoost: 1.5 } },
+    { name: 'Chilli Seeds (Spicy)', description: 'Extra spicy Indian chilli variety.', category: 'SEED', price: 20, currency: 'GREEN_CREDITS', icon: '🌶️', levelRequired: 1, stock: 50, itemType: 'SEED', effect: { growthBoost: 1.2 } },
+    { name: 'Organic Mint Cuttings', description: 'Ready-to-plant mint stem cuttings.', category: 'SEED', price: 15, currency: 'GREEN_CREDITS', icon: '🌿', levelRequired: 1, stock: 30, itemType: 'SEED', effect: { growthBoost: 1.3 } },
+    { name: 'Rare Golden Tomato', description: 'Exclusive golden heirloom tomato seeds.', category: 'SEED', price: 100, currency: 'GREEN_CREDITS', icon: '🌟', levelRequired: 10, stock: 10, isLimited: true, itemType: 'SEED', effect: { yieldBoost: 2.0, rarity: 'legendary' } },
+
+    { name: 'Organic Compost', description: 'Nutrient-rich compost for all plant types.', category: 'FERTILIZER', price: 20, currency: 'GREEN_CREDITS', icon: '🧫', levelRequired: 1, stock: 100, itemType: 'CONSUMABLE', effect: { nutrientBoost: 15, durationHours: 48 } },
+    { name: 'NPK 10-10-10', description: 'Balanced nitrogen, phosphorus, potassium fertilizer.', category: 'FERTILIZER', price: 35, currency: 'GREEN_CREDITS', icon: '🧪', levelRequired: 2, stock: 80, itemType: 'CONSUMABLE', effect: { nitrogen: 10, phosphorus: 10, potassium: 10, durationHours: 72 } },
+    { name: 'Seaweed Extract', description: 'Organic seaweed concentrate for root development.', category: 'FERTILIZER', price: 50, currency: 'GREEN_CREDITS', icon: '🌊', levelRequired: 3, stock: 40, itemType: 'CONSUMABLE', effect: { rootBoost: 20, healthBonus: 15, durationHours: 96 } },
+    { name: 'Vermicompost', description: 'Earthworm compost — nature\'s best fertilizer.', category: 'FERTILIZER', price: 30, currency: 'GREEN_CREDITS', icon: '🪱', levelRequired: 1, stock: 60, itemType: 'CONSUMABLE', effect: { nutrientBoost: 20, soilHealth: 10, durationHours: 120 } },
+    { name: 'Liquid Nitrogen Booster', description: 'Fast-acting nitrogen for leafy growth.', category: 'FERTILIZER', price: 40, currency: 'GREEN_CREDITS', icon: '💧', levelRequired: 3, stock: 50, itemType: 'CONSUMABLE', effect: { nitrogen: 25, durationHours: 48 } },
+
+    { name: 'Garden Gnome', description: 'A lucky garden gnome for your plot.', category: 'DECORATION', price: 75, currency: 'GREEN_CREDITS', icon: '⛰️', levelRequired: 1, stock: 20, itemType: 'COSMETIC', effect: {} },
+    { name: 'Solar Lantern', description: 'Beautiful solar-powered garden lighting.', category: 'DECORATION', price: 120, currency: 'GREEN_CREDITS', icon: '🏮', levelRequired: 2, stock: 15, itemType: 'COSMETIC', effect: {} },
+    { name: 'Wind Chime', description: 'Soothing bamboo wind chime for your garden.', category: 'DECORATION', price: 60, currency: 'GREEN_CREDITS', icon: '🎐', levelRequired: 1, stock: 25, itemType: 'COSMETIC', effect: {} },
+    { name: 'Bird Bath', description: 'Attract birds to help with natural pest control.', category: 'DECORATION', price: 200, currency: 'GREEN_CREDITS', icon: '🦜', levelRequired: 5, stock: 10, isLimited: true, itemType: 'COSMETIC', effect: { pestReduction: 0.1 } },
+
+    { name: 'Plot Expansion', description: 'Unlock an additional plot in your garden.', category: 'PLOT_UPGRADE', price: 100, currency: 'GREEN_CREDITS', icon: '📐', levelRequired: 2, stock: 5, isLimited: true, itemType: 'PLOT', effect: { plotIncrease: 1 } },
+    { name: 'Irrigation System', description: 'Auto-water your crops daily.', category: 'PLOT_UPGRADE', price: 500, currency: 'GREEN_CREDITS', icon: '💦', levelRequired: 8, stock: 3, isLimited: true, itemType: 'UPGRADE', effect: { autoWater: true, wateringEfficiency: 0.8 } },
+  ];
+  for (const item of shopItems) {
+    await prisma.shopItem.create({ data: { id: uuidv4(), ...item } });
+  }
+  console.log(`Created ${shopItems.length} shop items`);
+
+  // ─── Fertilizer Catalog ─────────────────────────────────────────────────────
+  const fertilizers = [
+    { name: 'Cow Dung Compost', description: 'Traditional organic fertilizer rich in nutrients.', category: 'ORGANIC', price: 15, icon: '🐄', rarity: 'COMMON', levelRequired: 1, stock: 100, effect: { growthBoost: 1.3, healthBonus: 5, hydrationBonus: 2, durationHours: 48 } },
+    { name: 'Neem Cake', description: 'Natural pest repellent and soil conditioner.', category: 'ORGANIC', price: 25, icon: '🌳', rarity: 'UNCOMMON', levelRequired: 2, stock: 60, effect: { growthBoost: 1.4, healthBonus: 10, pestResistance: 20, durationHours: 72 } },
+    { name: 'Bone Meal', description: 'Phosphorus-rich fertilizer for strong root growth.', category: 'ORGANIC', price: 35, icon: '🦴', rarity: 'UNCOMMON', levelRequired: 3, stock: 40, effect: { growthBoost: 1.5, phosphorus: 15, durationHours: 96 } },
+    { name: 'Fish Emulsion', description: 'Fast-acting liquid fertilizer for leafy greens.', category: 'ORGANIC', price: 45, icon: '🐟', rarity: 'RARE', levelRequired: 4, stock: 25, effect: { growthBoost: 1.7, nitrogen: 20, healthBonus: 8, durationHours: 72 } },
+    { name: 'Bio-Enzyme Fertilizer', description: 'Advanced bio-enzyme formula for maximum yield.', category: 'BIO', price: 80, icon: '🧬', rarity: 'EPIC', levelRequired: 7, stock: 15, effect: { growthBoost: 2.0, healthBonus: 20, hydrationBonus: 10, nutrientBoost: 25, durationHours: 120 } },
+    { name: 'Moonlight Dew Concentrate', description: 'Legendary fertilizer made from rare mineral deposits.', category: 'SPECIAL', price: 200, icon: '🌙', rarity: 'LEGENDARY', levelRequired: 12, stock: 5, effect: { growthBoost: 3.0, healthBonus: 40, hydrationBonus: 20, nutrientBoost: 50, pestResistance: 30, durationHours: 168 } },
+  ];
+  for (const f of fertilizers) {
+    await prisma.fertilizer.create({ data: { id: uuidv4(), ...f } });
+  }
+  console.log(`Created ${fertilizers.length} fertilizer catalog items`);
+
+  // ─── Coupons ────────────────────────────────────────────────────────────────
+  const coupons = [
+    { code: 'WELCOME10', description: '10% off your first purchase', discountType: 'PERCENTAGE', discountValue: 10, minPurchase: 0, maxRedemptions: 100, usedCount: 5, minLevel: 1, appliesTo: 'ALL', isActive: true, expiresAt: new Date(now.getTime() + 90 * 86400000) },
+    { code: 'FERTILIZER25', description: '25% off any fertilizer', discountType: 'PERCENTAGE', discountValue: 25, minPurchase: 20, maxRedemptions: 50, usedCount: 12, minLevel: 2, appliesTo: 'FERTILIZER', isActive: true, expiresAt: new Date(now.getTime() + 60 * 86400000) },
+    { code: 'TOOL50', description: '50 GC off any tool', discountType: 'FIXED', discountValue: 50, minPurchase: 30, maxRedemptions: 30, usedCount: 3, minLevel: 3, appliesTo: 'TOOL', isActive: true, expiresAt: new Date(now.getTime() + 45 * 86400000) },
+    { code: 'SEEDFARMER', description: '20% off all seeds for experienced farmers', discountType: 'PERCENTAGE', discountValue: 20, minPurchase: 15, maxRedemptions: 20, usedCount: 0, minLevel: 5, appliesTo: 'SEED', isActive: true, expiresAt: new Date(now.getTime() + 30 * 86400000) },
+    { code: 'VIP200', description: '200 GC flat discount on premium items', discountType: 'FIXED', discountValue: 200, minPurchase: 500, maxRedemptions: 10, usedCount: 0, minLevel: 10, appliesTo: 'PREMIUM', isActive: true, expiresAt: new Date(now.getTime() + 120 * 86400000) },
+    { code: 'EXPIRED50', description: 'This coupon has expired (test)', discountType: 'PERCENTAGE', discountValue: 50, minPurchase: 0, maxRedemptions: 100, usedCount: 0, minLevel: 1, appliesTo: 'ALL', isActive: true, expiresAt: new Date(now.getTime() - 10 * 86400000) },
+  ];
+  for (const c of coupons) {
+    await prisma.coupon.create({ data: { id: uuidv4(), ...c } });
+  }
+  console.log(`Created ${coupons.length} coupon codes`);
+
+  // ─── Second Plot for Admin User ────────────────────────────────────────────
+  const adminPlot2Id = uuidv4();
+  await prisma.garden.create({
+    data: {
+      id: adminPlot2Id,
+      name: 'Admin Plot 2',
+      type: 'VIRTUAL',
+      description: 'Admin user\'s second purchased plot.',
+      soilQuality: 50,
+      irrigationLevel: 50,
+      sunlightExposure: 60,
+      gridWidth: 6,
+      gridHeight: 6,
+      plotNumber: 2,
+      isPurchased: true,
+      purchasedAt: new Date(now.getTime() - 7 * 86400000),
+      purchasePrice: 100,
+      userId: adminId,
+    },
+  });
+  await prisma.plotPurchase.create({
+    data: {
+      id: uuidv4(),
+      price: 100,
+      tokenType: 'GREEN_CREDITS',
+      plotNumber: 2,
+      userId: adminId,
+      gardenId: adminPlot2Id,
+    },
+  });
+  // Record token transaction for admin's plot purchase
+  const adminUser = await prisma.user.findUnique({ where: { id: adminId } });
+  if (adminUser) {
+    await prisma.tokenTransaction.create({
+      data: {
+        type: 'GREEN_CREDITS',
+        amount: -100,
+        balanceBefore: adminUser.greenCredits,
+        balanceAfter: adminUser.greenCredits - 100,
+        action: 'plot_purchase',
+        referenceType: 'plot_purchase',
+        userId: adminId,
+      },
+    });
+    await prisma.user.update({
+      where: { id: adminId },
+      data: { plotPurchaseCount: 1, maxPlots: 2 },
+    });
+  }
+  console.log('Created second plot for admin user with purchase record');
+
+  // ─── Soil Check Records for Demo Garden ────────────────────────────────────
+  await prisma.soilCheck.create({
+    data: {
+      id: uuidv4(), phLevel: 6.5, moisture: 60, nitrogen: 45, phosphorus: 35, potassium: 50, organicMatter: 4.2,
+      quality: 72, notes: 'Regular monthly soil check. pH slightly acidic — optimal.', checkedAt: new Date(now.getTime() - 14 * 86400000),
+      gardenId: demoGardenId, userId: demoId,
+    },
+  });
+  await prisma.soilCheck.create({
+    data: {
+      id: uuidv4(), phLevel: 6.8, moisture: 55, nitrogen: 40, phosphorus: 30, potassium: 45, organicMatter: 3.8,
+      quality: 68, notes: 'Early season check. Nitrogen slightly low — consider compost.', checkedAt: new Date(now.getTime() - 7 * 86400000),
+      gardenId: demoGardenId, userId: demoId,
+    },
+  });
+  await prisma.soilCheck.create({
+    data: {
+      id: uuidv4(), phLevel: 6.2, moisture: 70, nitrogen: 50, phosphorus: 40, potassium: 55, organicMatter: 4.5,
+      quality: 75, notes: 'Post-monsoon check. Soil moisture good, nutrients adequate.', checkedAt: new Date(now.getTime() - 1 * 86400000),
+      gardenId: demoGardenId, userId: demoId,
+    },
+  });
+  console.log('Created 3 soil check records for demo garden');
+
+  // ─── External Data Sync Records ────────────────────────────────────────────
+  await prisma.externalDataSync.create({
+    data: {
+      id: uuidv4(), source: 'WEATHER', status: 'SUCCESS', recordsFetched: 45, recordsUpdated: 45,
+      message: 'Weather data synced successfully from OpenWeatherMap',
+      startedAt: new Date(now.getTime() - 2 * 3600000), completedAt: new Date(now.getTime() - 2 * 3600000 + 30000),
+    },
+  });
+  await prisma.externalDataSync.create({
+    data: {
+      id: uuidv4(), source: 'PLANT_DB', status: 'SUCCESS', recordsFetched: 26, recordsUpdated: 26,
+      message: 'Plant species database updated from OpenFarm',
+      startedAt: new Date(now.getTime() - 24 * 3600000), completedAt: new Date(now.getTime() - 24 * 3600000 + 45000),
+    },
+  });
+  await prisma.externalDataSync.create({
+    data: {
+      id: uuidv4(), source: 'MARKET_DATA', status: 'FAILED', recordsFetched: 0, recordsUpdated: 0,
+      message: 'Market data sync failed: API rate limit exceeded',
+      startedAt: new Date(now.getTime() - 4 * 3600000), completedAt: new Date(now.getTime() - 4 * 3600000 + 5000),
+    },
+  });
+  console.log('Created 3 external data sync records');
 
   console.log('');
   console.log('=== SEED COMPLETE - GardenVerse database populated! ===');

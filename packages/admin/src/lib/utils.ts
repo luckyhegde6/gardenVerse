@@ -97,6 +97,23 @@ export function getStatusColor(status: string): string {
   return colors[status.toLowerCase()] || 'text-slate-400 bg-slate-400/10'
 }
 
+export function generatePlantThumbnail(name: string, difficulty?: string, edible?: boolean): string {
+  const colors: Record<string, string> = {
+    EASY: '22c55e',
+    MEDIUM: 'eab308',
+    HARD: 'ef4444',
+  }
+  const bgColor = difficulty ? (colors[difficulty] ?? '22c55e') : '22c55e'
+  const accentColor = edible ? '86efac' : 'fde047'
+  const initial = (name || '?').charAt(0).toUpperCase()
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">
+    <rect width="80" height="80" rx="16" fill="#${bgColor}" opacity="0.15"/>
+    <text x="40" y="44" text-anchor="middle" dominant-baseline="central" font-family="system-ui, sans-serif" font-size="32" font-weight="700" fill="#${bgColor}">${initial}</text>
+    <path d="M40 18c-4 0-8 3-8 8v12l-6-4c-3-2-7-1-9 2-2 3-1 7 2 9l12 8v5h10v-5l12-8c3-2 4-6 2-9-2-3-6-4-9-2l-6 4V26c0-5-4-8-8-8z" fill="#${accentColor}" opacity="0.8" transform="translate(0, 6) scale(0.5) translate(20, 0)"/>
+  </svg>`
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+}
+
 export function getRoleColor(role: string): string {
   const colors: Record<string, string> = {
     admin: 'text-purple-400 bg-purple-400/10',

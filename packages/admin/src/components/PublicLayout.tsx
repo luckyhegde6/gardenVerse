@@ -11,9 +11,11 @@ import { Button } from '@/components/Button'
 const publicLinks = [
   { href: '/', label: 'Home' },
   { href: '/onboarding', label: 'Getting Started' },
+  { href: '/marketplace', label: 'Marketplace' },
+  { href: '/plants', label: 'Plants' },
+  { href: '/diseases', label: 'Diseases' },
   { href: '/about', label: 'About' },
   { href: '/support', label: 'Support' },
-  { href: '/mobile', label: 'Mobile App' },
   { href: '/download', label: 'Download App' },
 ]
 
@@ -128,7 +130,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 <Link href="/onboarding" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">Getting Started</Link>
                 <Link href="/about" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">About</Link>
                 <Link href="/support" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">Support</Link>
-                <Link href="/mobile" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">Mobile App</Link>
+                <Link href="/marketplace" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">Marketplace</Link>
                 <Link href="/download" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">Download App</Link>
               </div>
             </div>

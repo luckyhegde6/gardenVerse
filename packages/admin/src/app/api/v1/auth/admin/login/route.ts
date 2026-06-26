@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     })
 
     const accessToken = signToken(
-      { userId: user.id, email: user.email, role: user.role.toLowerCase() },
+      { userId: user.id, email: user.email, role: user.role },
       '15m'
     )
 
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!refreshSecret) {
       return serverError('JWT_REFRESH_SECRET environment variable is required')
     }
-    const tokenPayload = { userId: user.id, email: user.email, role: user.role.toLowerCase() }
+    const tokenPayload = { userId: user.id, email: user.email, role: user.role }
     const refreshToken = jwt.sign(tokenPayload, refreshSecret, { expiresIn: '7d' })
 
     await prisma.session.create({

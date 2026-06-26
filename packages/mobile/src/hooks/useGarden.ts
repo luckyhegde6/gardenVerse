@@ -10,6 +10,8 @@ export function useGarden() {
     isLoading,
     error,
     fetchGardens,
+    fetchPlots,
+    purchasePlot,
     selectGarden,
     plantCrop,
     waterCrop,
@@ -25,6 +27,12 @@ export function useGarden() {
   }, [gardens.length, fetchGardens]);
 
   const selectedGarden = gardens.find((g) => g.id === selectedGardenId);
+
+  /** Number of purchased/owned plots */
+  const plotCount = gardens.filter((g) => g.plotNumber).length;
+
+  /** Whether the user can purchase additional plots */
+  const canPurchaseMore = plotCount < 10;
 
   const handlePlantCrop = useCallback(
     async (name: string, species: string, plotX: number, plotY: number) => {
@@ -69,7 +77,11 @@ export function useGarden() {
     crops,
     isLoading,
     error,
+    plotCount,
+    canPurchaseMore,
     refreshGardens: fetchGardens,
+    fetchPlots,
+    purchasePlot,
     selectGarden,
     plantCrop: handlePlantCrop,
     waterCrop: handleWaterCrop,
