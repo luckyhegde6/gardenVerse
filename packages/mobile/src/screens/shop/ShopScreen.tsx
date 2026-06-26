@@ -9,10 +9,9 @@ import {
   Modal,
   Dimensions,
   ActivityIndicator,
-  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native";
 import { useAuthStore } from "../../stores/authStore";
 import { useShopStore } from "../../stores/shopStore";
 import { ShopItem, InventoryItem, CouponRedemption } from "../../types";

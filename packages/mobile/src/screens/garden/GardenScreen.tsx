@@ -62,11 +62,9 @@ export function GardenScreen() {
     fertilizeCrop,
     harvestCrop,
     gardens,
-    plotCount,
     canPurchaseMore,
     selectGarden,
     selectedGardenId,
-    purchasePlot,
   } = useGarden();
   const user = useAuthStore((s) => s.user);
 

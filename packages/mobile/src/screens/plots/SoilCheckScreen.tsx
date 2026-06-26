@@ -73,7 +73,6 @@ function SliderInput({
   unit?: string;
   color?: string;
 }) {
-  const steps = Math.round((max - min) / step);
   const percentage = ((value - min) / (max - min)) * 100;
 
   const handlePress = (direction: "up" | "down") => {

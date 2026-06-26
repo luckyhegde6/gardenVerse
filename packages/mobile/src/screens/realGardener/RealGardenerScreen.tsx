@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useRealGardenerStore } from "../../stores/realGardenerStore";
-import type { RealGardenerStatus, EncouragementTip } from "../../types";
 
 function formatDate(iso?: string): string {
   if (!iso) return "—";

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,10 +12,9 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { usePlotsStore } from "../../stores/plotsStore";
 import { useGardenStore } from "../../stores/gardenStore";
 import { useAuthStore } from "../../stores/authStore";
-import { Garden, GardenType, Crop, SoilCheckResult } from "../../types";
+import { GardenType, Crop, SoilCheckResult } from "../../types";
 import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
 import { Badge } from "../../components/ui/Badge";
-import { Divider } from "../../components/ui/Divider";
 
 function getSoilColor(quality: number): string {
   if (quality >= 70) return "#22c55e";
@@ -51,7 +50,6 @@ export function PlotDetailScreen() {
   const { gardens, crops: storeCrops } = useGardenStore();
   const {
     moveCrop,
-    isLoading: isMoving,
     error: storeError,
     clearError,
   } = usePlotsStore();
@@ -204,13 +202,6 @@ export function PlotDetailScreen() {
       </SafeAreaView>
     );
   }
-
-  const typeColor =
-    plot.type === GardenType.VIRTUAL
-      ? "#3b82f6"
-      : plot.type === GardenType.REAL
-        ? "#22c55e"
-        : "#a855f7";
 
   const typeVariant =
     plot.type === GardenType.VIRTUAL
