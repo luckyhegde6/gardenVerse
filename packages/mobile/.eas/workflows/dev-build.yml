@@ -6,7 +6,7 @@ on:
       platform:
         description: 'Platform to build'
         type: choice
-        options: [ios, android, all]
+        options: [android]
         default: android
 
 jobs:
