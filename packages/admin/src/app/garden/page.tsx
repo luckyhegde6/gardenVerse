@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Sprout, Trees, Bug, Droplets, Loader2, AlertCircle,
   Grid3X3, Info, Search, MapPin, Settings, GripVertical,
-  ToggleLeft, ToggleRight, RotateCcw,
+  ToggleLeft, ToggleRight, RotateCcw, User, Heart,
+  CheckCircle2, AlertTriangle, XCircle,
 } from 'lucide-react'
 import { StatCard } from '@/components/StatCard'
 import { DataTable } from '@/components/DataTable'
@@ -157,6 +158,21 @@ function soilColor(sq: number): string {
 
 const GRID = 6
 
+const SPECIES_EMOJI: Record<string, string> = {
+  TOMATO: '🍅', CHILLI: '🌶️', TURMERIC: '🟡', RICE: '🌾',
+  OKRA: '🫑', BRINJAL: '🍆', MINT: '🌿', CORIANDER: '🌿',
+  SPINACH: '🥬', LETTUCE: '🥬', CARROT: '🥕', BEETROOT: '🥔',
+  ONION: '🧅', GARLIC: '🧄', GINGER: '🫚', POTATO: '🥔',
+  CAULIFLOWER: '🥦', CABBAGE: '🥬', PEA: '🫛', BEAN: '🫘',
+  PUMPKIN: '🎃', WATERMELON: '🍉', CUCUMBER: '🥒', SUGARCANE: '🎋',
+  COTTON: '🌱', COCONUT: '🥥', BANANA: '🍌', MANGO: '🥭',
+  PAPAYA: '🧡', GUAVA: '🍐',
+}
+
+function speciesEmoji(species: string | undefined): string {
+  return SPECIES_EMOJI[species?.toUpperCase() ?? ''] ?? '🌱'
+}
+
 /* ───────────────────────────────────────────
    Page component
    ─────────────────────────────────────────── */
@@ -204,7 +220,7 @@ export default function GardenPage() {
 
     try {
       const [statsRes, gardensRes, cropsRes, usersRes] = await Promise.all([
-        api.get('/admin'),
+        api.get('/admin').catch(() => null),
         api.get('/gardens', { params: gardensParams }),
         api.get('/crops', { params: { limit: 50 } }),
         api.get('/users', { params: { limit: 100 } }).catch(() => null),
@@ -221,19 +237,21 @@ export default function GardenPage() {
       }
 
       /* stats */
-      const d = statsRes.data as Record<string, unknown>
-      setStats({
-        totalUsers: (d.totalUsers as number) ?? 0,
-        verifiedUsers: (d.verifiedUsers as number) ?? 0,
-        verificationRate: (d.verificationRate as string) ?? '0%',
-        totalGardens: (d.activeGardens as number) ?? 0,
-        totalCrops: (d.totalCrops as number) ?? 0,
-        activeListings: (d.marketplaceVolume as number) ?? 0,
-        completedTransactions: (d.marketplaceTransactions as number) ?? 0,
-        totalRevenue: (d.revenue as number) ?? 0,
-        reportsPending: (d.pendingReports as number) ?? 0,
-        activeSessions: (d.activeSessions as number) ?? 0,
-      } as DashboardStats)
+      if (statsRes) {
+        const d = statsRes.data as Record<string, unknown>
+        setStats({
+          totalUsers: (d.totalUsers as number) ?? 0,
+          verifiedUsers: (d.verifiedUsers as number) ?? 0,
+          verificationRate: (d.verificationRate as string) ?? '0%',
+          totalGardens: (d.activeGardens as number) ?? 0,
+          totalCrops: (d.totalCrops as number) ?? 0,
+          activeListings: (d.marketplaceVolume as number) ?? 0,
+          completedTransactions: (d.marketplaceTransactions as number) ?? 0,
+          totalRevenue: (d.revenue as number) ?? 0,
+          reportsPending: (d.pendingReports as number) ?? 0,
+          activeSessions: (d.activeSessions as number) ?? 0,
+        } as DashboardStats)
+      }
 
       /* gardens table */
       const gardensBody = gardensRes.data as { data?: Record<string, unknown>[] }
@@ -354,6 +372,10 @@ export default function GardenPage() {
     return Math.round(selectedGarden.crops.reduce((s, c) => s + c.hydration, 0) / selectedGarden.crops.length)
   })()
 
+  const healthyCount = selectedGarden?.crops.filter(c => c.health >= 70).length ?? 0
+  const warningCount = selectedGarden?.crops.filter(c => c.health >= 40 && c.health < 70).length ?? 0
+  const errorCount = selectedGarden?.crops.filter(c => c.health < 40).length ?? 0
+
   /* ── save garden settings ── */
   const handleSaveSettings = useCallback(async () => {
     if (!selectedGarden) return
@@ -435,6 +457,99 @@ export default function GardenPage() {
             <StatCard title="Diseased Crops" value={diseasedCount} change={diseasedCount > 0 ? 0 : undefined} trend={diseasedCount > 0 ? 'up' : undefined} icon={<Bug className="w-6 h-6" />} changeLabel="current" />
             <StatCard title="Avg Soil Quality" value={avgSoilQuality !== null ? `${avgSoilQuality}%` : 'N/A'} icon={<Droplets className="w-6 h-6" />} />
           </div>
+
+          {/* ── garden info panel ── */}
+          {selectedGarden && (
+            <div className="rounded-lg bg-slate-800/30 border border-slate-700/50 p-4 space-y-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">{speciesEmoji(selectedGarden.crops[0]?.species)}</div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-100">{selectedGarden.name}</h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant={selectedGarden.type === 'VIRTUAL' ? 'info' : selectedGarden.type === 'REAL' ? 'success' : 'warning'}>
+                        {selectedGarden.type}
+                      </Badge>
+                      <Badge variant={selectedGarden.status === 'active' ? 'active' : selectedGarden.status === 'suspended' ? 'suspended' : 'inactive'} dot>
+                        {selectedGarden.status}
+                      </Badge>
+                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        {selectedGarden.user?.displayName ?? selectedGarden.user?.username ?? 'Unknown'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* quick action badges */}
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">
+                    <CheckCircle2 className="w-3 h-3" />
+                    {healthyCount} Healthy
+                  </span>
+                  <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-amber-400/10 text-amber-400 border border-amber-400/20">
+                    <AlertTriangle className="w-3 h-3" />
+                    {warningCount} Warning
+                  </span>
+                  <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-red-400/10 text-red-400 border border-red-400/20">
+                    <XCircle className="w-3 h-3" />
+                    {errorCount} Error
+                  </span>
+                </div>
+              </div>
+
+              {/* soil quality + irrigation bars */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-slate-400">Soil Quality</span>
+                    <span className={selectedGarden.soilQuality >= 70 ? 'text-emerald-400' : selectedGarden.soilQuality >= 40 ? 'text-amber-400' : 'text-red-400'}>
+                      {selectedGarden.soilQuality}%
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${selectedGarden.soilQuality >= 70 ? 'bg-emerald-500' : selectedGarden.soilQuality >= 40 ? 'bg-amber-500' : 'bg-red-500'}`}
+                      style={{ width: `${selectedGarden.soilQuality}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-slate-400">Irrigation Level</span>
+                    <span className={selectedGarden.irrigationLevel >= 70 ? 'text-sky-400' : selectedGarden.irrigationLevel >= 40 ? 'text-amber-400' : 'text-red-400'}>
+                      {selectedGarden.irrigationLevel}%
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${selectedGarden.irrigationLevel >= 70 ? 'bg-sky-500' : selectedGarden.irrigationLevel >= 40 ? 'bg-amber-500' : 'bg-red-500'}`}
+                      style={{ width: `${selectedGarden.irrigationLevel}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* quick stats row */}
+              <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-slate-400 border-t border-slate-700/40">
+                <span className="flex items-center gap-1">
+                  <Grid3X3 className="w-3.5 h-3.5 text-slate-500" />
+                  Occupied <strong className="text-slate-200">{occupiedCount}/{totalPlots}</strong>
+                </span>
+                <span className="flex items-center gap-1">
+                  <Heart className="w-3.5 h-3.5 text-emerald-500" />
+                  Avg Health <strong className={avgHealth !== null && avgHealth >= 70 ? 'text-emerald-400' : avgHealth !== null && avgHealth >= 40 ? 'text-amber-400' : 'text-red-400'}>{avgHealth !== null ? `${avgHealth}%` : '—'}</strong>
+                </span>
+                <span className="flex items-center gap-1">
+                  <Droplets className="w-3.5 h-3.5 text-sky-500" />
+                  Avg Hydration <strong className={avgHydration !== null && avgHydration >= 70 ? 'text-sky-400' : avgHydration !== null && avgHydration >= 40 ? 'text-amber-400' : 'text-red-400'}>{avgHydration !== null ? `${avgHydration}%` : '—'}</strong>
+                </span>
+                <span className="flex items-center gap-1">
+                  <Sprout className="w-3.5 h-3.5 text-slate-500" />
+                  Plots <strong className="text-slate-200">{totalPlots}</strong>
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* ── user filter bar ── */}
           <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-slate-800/20 border border-slate-700/40">
@@ -595,43 +710,54 @@ export default function GardenPage() {
                 {/* ── stats summary ── */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="rounded-lg bg-slate-800/40 border border-slate-700/50 p-3 text-center">
+                    <Grid3X3 className="w-4 h-4 mx-auto mb-1 text-slate-500" />
                     <p className="text-xs text-slate-500 uppercase tracking-wide">Total Plots</p>
                     <p className="text-xl font-semibold text-slate-100 mt-1">{totalPlots}</p>
                   </div>
                   <div className="rounded-lg bg-slate-800/40 border border-slate-700/50 p-3 text-center">
+                    <Sprout className="w-4 h-4 mx-auto mb-1 text-emerald-400" />
                     <p className="text-xs text-slate-500 uppercase tracking-wide">Occupied</p>
                     <p className="text-xl font-semibold text-emerald-400 mt-1">{occupiedCount}</p>
                   </div>
                   <div className="rounded-lg bg-slate-800/40 border border-slate-700/50 p-3 text-center">
+                    <span className="block text-lg mb-0.5">⬜</span>
                     <p className="text-xs text-slate-500 uppercase tracking-wide">Empty</p>
                     <p className="text-xl font-semibold text-slate-400 mt-1">{emptyCount}</p>
                   </div>
                   <div className="rounded-lg bg-slate-800/40 border border-slate-700/50 p-3 text-center">
+                    <Heart className={`w-4 h-4 mx-auto mb-1 ${avgHealth !== null && avgHealth >= 70 ? 'text-emerald-400' : avgHealth !== null && avgHealth >= 40 ? 'text-amber-400' : 'text-red-400'}`} />
                     <p className="text-xs text-slate-500 uppercase tracking-wide">Avg Health</p>
                     <p className={`text-xl font-semibold mt-1 ${avgHealth !== null && avgHealth >= 70 ? 'text-emerald-400' : avgHealth !== null && avgHealth >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
                       {avgHealth !== null ? `${avgHealth}%` : '—'}
                     </p>
                   </div>
                   <div className="rounded-lg bg-slate-800/40 border border-slate-700/50 p-3 text-center">
+                    <Droplets className={`w-4 h-4 mx-auto mb-1 ${avgHydration !== null && avgHydration >= 70 ? 'text-sky-400' : avgHydration !== null && avgHydration >= 40 ? 'text-amber-400' : 'text-red-400'}`} />
                     <p className="text-xs text-slate-500 uppercase tracking-wide">Avg Hydration</p>
                     <p className={`text-xl font-semibold mt-1 ${avgHydration !== null && avgHydration >= 70 ? 'text-sky-400' : avgHydration !== null && avgHydration >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
                       {avgHydration !== null ? `${avgHydration}%` : '—'}
                     </p>
                   </div>
                   <div className="rounded-lg bg-slate-800/40 border border-slate-700/50 p-3 text-center">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide">Irrigation Type</p>
-                    <p className="text-base font-semibold text-cyan-400 mt-1">{selectedGarden?.irrigationType ?? 'DRIP'}</p>
+                    <Settings className="w-4 h-4 mx-auto mb-1 text-cyan-400" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide">Irrigation</p>
+                    <p className="text-sm font-semibold text-cyan-400 mt-1">{selectedGarden?.irrigationType ?? 'DRIP'}</p>
                   </div>
                   <div className="rounded-lg bg-slate-800/40 border border-slate-700/50 p-3 text-center">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide">Watering Mode</p>
-                    <p className={`text-base font-semibold mt-1 ${selectedGarden?.wateringMode === 'AUTO' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {selectedGarden?.wateringMode === 'AUTO' ? <ToggleRight className="w-4 h-4 mx-auto mb-1 text-emerald-400" /> : <ToggleLeft className="w-4 h-4 mx-auto mb-1 text-amber-400" />}
+                    <p className="text-xs text-slate-500 uppercase tracking-wide">Watering</p>
+                    <p className={`text-sm font-semibold mt-1 ${selectedGarden?.wateringMode === 'AUTO' ? 'text-emerald-400' : 'text-amber-400'}`}>
                       {selectedGarden?.wateringMode ?? 'MANUAL'}
                     </p>
                   </div>
                   <div className="rounded-lg bg-slate-800/40 border border-slate-700/50 p-3 text-center">
+                    {selectedGarden?.hasMotorPump
+                      ? <CheckCircle2 className="w-4 h-4 mx-auto mb-1 text-emerald-400" />
+                      : <XCircle className="w-4 h-4 mx-auto mb-1 text-slate-500" />
+                    }
                     <p className="text-xs text-slate-500 uppercase tracking-wide">Motor Pump</p>
-                    <p className={`text-base font-semibold mt-1 ${selectedGarden?.hasMotorPump ? 'text-emerald-400' : 'text-slate-400'}`}>
-                      {selectedGarden?.hasMotorPump ? 'YES' : 'NO'}
+                    <p className={`text-sm font-semibold mt-1 ${selectedGarden?.hasMotorPump ? 'text-emerald-400' : 'text-slate-400'}`}>
+                      {selectedGarden?.hasMotorPump ? 'ACTIVE' : 'OFF'}
                     </p>
                   </div>
                 </div>
@@ -658,11 +784,10 @@ export default function GardenPage() {
                     </div>
 
                     {/* grid */}
-                    <div className={`flex-1 grid grid-cols-${activeGridSize} gap-1`}>
+                    <div className="flex-1 grid gap-1" style={{ gridTemplateColumns: `repeat(${activeGridSize}, 1fr)` }}>
                       {gridCells.map(({ x, y, crop }) => {
                         const sq = selectedGarden.soilQuality
                         const bg = soilColor(sq)
-                        const isHydrated = crop !== null && crop.hydration >= 60
                         const dotCount = crop ? stageToDots(crop.status) : 0
 
                         return (
@@ -691,53 +816,57 @@ export default function GardenPage() {
                               overflow-hidden group
                             `}
                             style={{ backgroundColor: bg }}
-                            title={crop ? `${crop.name} (${STATUS_LABELS[crop.status] ?? crop.status})` : `Empty plot (${x},${y})`}
+                            title={crop ? `${speciesEmoji(crop.species)} ${crop.name} (${STATUS_LABELS[crop.status] ?? crop.status}) · H:${crop.health}% W:${crop.hydration}% N:${crop.nutrientLevel}%` : `Empty plot (${x},${y})`}
                           >
-                            {/* hydration overlay */}
-                            {isHydrated && (
-                              <div className="absolute inset-0 bg-blue-500/15 pointer-events-none" />
-                            )}
-
                             {/* crop content */}
                             {crop ? (
-                              <div className="absolute inset-0 flex flex-col items-center justify-center p-0.5">
-                                {/* species icon placeholder */}
-                                <span className="text-[8px] leading-tight text-slate-100 font-semibold text-center truncate w-full px-0.5">
-                                  {crop.name.length > 8 ? crop.name.slice(0, 7) + '…' : crop.name}
+                              <div className="absolute inset-0 flex flex-col items-center justify-center p-1">
+                                {/* species emoji */}
+                                <span className="text-xl leading-none">{speciesEmoji(crop.species)}</span>
+
+                                {/* crop name */}
+                                <span className="text-[10px] leading-tight text-slate-100 font-semibold text-center truncate w-full px-0.5 mt-0.5">
+                                  {crop.name.length > 10 ? crop.name.slice(0, 9) + '…' : crop.name}
                                 </span>
 
                                 {/* growth stage dots */}
-                                <div className="flex items-center gap-[2px] mt-0.5">
-                                  {Array.from({ length: dotCount }, (_, d) => (
+                                <div className="flex items-center gap-[3px] mt-1">
+                                  {Array.from({ length: 4 }, (_, d) => (
                                     <span
                                       key={d}
-                                      className={`w-1.5 h-1.5 rounded-full ${DOT_COLORS[dotCount] ?? DOT_COLORS[1]}`}
+                                      className={`w-1.5 h-1.5 rounded-full ${d < dotCount ? (DOT_COLORS[dotCount] ?? 'bg-slate-500') : 'bg-slate-800/60'}`}
                                     />
                                   ))}
                                 </div>
 
                                 {/* health bar */}
-                                <div className="w-full px-1 mt-0.5">
-                                  <div className="h-1 rounded-full bg-slate-900/50 overflow-hidden">
+                                <div className="w-full px-0.5 mt-1">
+                                  <div className="h-1.5 rounded-full bg-slate-900/60 overflow-hidden">
                                     <div
                                       className={`h-full rounded-full ${crop.health >= 70 ? 'bg-emerald-500' : crop.health >= 40 ? 'bg-amber-500' : 'bg-red-500'}`}
                                       style={{ width: `${crop.health}%` }}
                                     />
                                   </div>
                                 </div>
+
+                                {/* hydration + nutrient mini indicators */}
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="text-[8px] font-bold text-sky-300/90">{crop.hydration}%💧</span>
+                                  <span className="text-[8px] font-bold text-emerald-300/90">🧪{crop.nutrientLevel}%</span>
+                                </div>
                               </div>
                             ) : (
                               /* empty plot decorative pattern */
                               <div className="absolute inset-0 flex items-center justify-center opacity-20">
-                                <div className="w-3 h-3 rounded-sm border border-amber-700/40" />
+                                <div className="w-4 h-4 rounded-sm border border-amber-700/40" />
                               </div>
                             )}
 
                             {/* hover info — badge at the bottom */}
                             {crop && (
-                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                <p className="text-[7px] text-center text-slate-300 leading-tight">
-                                  H:{crop.health} · W:{crop.hydration}
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                <p className="text-[8px] text-center text-slate-300 leading-tight font-medium">
+                                  ❤️{crop.health} · {speciesEmoji(crop.species)}{crop.status}
                                 </p>
                               </div>
                             )}
@@ -752,49 +881,64 @@ export default function GardenPage() {
                 <div className="flex flex-wrap items-center gap-4 p-3 rounded-lg bg-slate-800/30 border border-slate-700/40 text-xs text-slate-400">
                   <span className="text-slate-500 font-semibold uppercase tracking-wider">Legend</span>
 
+                  <span className="flex items-center gap-1">
+                    <span className="text-sm">🍅</span>
+                    <span className="text-[10px] text-slate-500">Crop</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="text-sm">💧80%</span>
+                    <span className="text-[10px] text-slate-500">Hydration</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="text-sm">🧪60%</span>
+                    <span className="text-[10px] text-slate-500">Nutrients</span>
+                  </span>
+
                   <div className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded border-2 border-amber-800/50" style={{ backgroundColor: soilColor(60) }} />
                     <span>Soil</span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded bg-blue-500/25 border border-blue-500/50" />
-                    <span>Hydrated</span>
                   </div>
 
                   <span className="w-px h-4 bg-slate-700" />
 
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-slate-500" />
-                    <span>Seed</span>
+                    <span>● Seed</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-sky-400" />
-                    <span>Sprouting</span>
+                    <span>● Sprout</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    <span>Growing</span>
+                    <span>● Growing</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-amber-400" />
-                    <span>Mature</span>
+                    <span>● Mature</span>
                   </div>
 
                   <span className="w-px h-4 bg-slate-700" />
 
                   <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-sm border-2 border-emerald-500" />
-                    <span>≥ 70%</span>
+                    <span className="w-3 h-3 rounded-sm border-2 border-emerald-500 bg-emerald-500/20" />
+                    <span>Healthy ≥70%</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-sm border-2 border-amber-500" />
-                    <span>40-69%</span>
+                    <span className="w-3 h-3 rounded-sm border-2 border-amber-500 bg-amber-500/20" />
+                    <span>Warning 40-69%</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-sm border-2 border-red-500" />
-                    <span>&lt; 40%</span>
+                    <span className="w-3 h-3 rounded-sm border-2 border-red-500 bg-red-500/20" />
+                    <span>Error &lt;40%</span>
                   </div>
+
+                  <span className="w-px h-4 bg-slate-700" />
+
+                  <span className="flex items-center gap-1 text-slate-500">
+                    <span className="text-xs">🍅🌶️🌾🥕</span>
+                    <span>Species</span>
+                  </span>
                 </div>
               </div>
             )}

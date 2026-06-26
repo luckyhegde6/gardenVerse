@@ -1095,3 +1095,109 @@ Replaced hardcoded URLs with `api.get("/plants?season=...")` and `api.get("/plan
 - The shared `api` service (with base URL, auth interceptor, logging) should be the ONLY way to make API calls
 - After any backend migration (NestJS → Next.js), audit mobile screens for stale port references
 - Any new screen that needs API access should use the `api` service from the start
+
+---
+
+## 2026-06-27: Multi-Garden Schema Change Broke 12+ API Routes
+
+**Session**: ses-016
+**Category**: Database, API
+**Impact**: High
+
+### Situation
+Changed the Prisma schema from 1:1 (User:Garden with `@unique` on `userId`) to 1:many (User → many Gardens/plots). This broke every API route that used `findUnique({ where: { userId } })` on the Garden model, since `findUnique` requires the table's `@id` field (not a unique relation field).
+
+### Problem
+12+ route files broke with TypeScript errors like `Unknown argument 'userId'. Available arguments: where: GardenWhereUniqueInput ...`. Routes also had incorrect `user.garden` (singular) reference patterns.
+
+### Root Cause
+The schema change was straightforward but the ripple effect touched watering, fertilizer, sustainability, and crop recommendations, plus friends, crops CRUD, gardens CRUD, user profile, geo nearby, and garden analytics routes. Each used a different pattern of accessing the user's garden.
+
+### Solution
+- All `findUnique({ where: { userId } })` → `findFirst({ where: { userId }, orderBy: { plotNumber: 'asc' } })`
+- All `user.garden` → `user.gardens[0]`
+- All `garden: { isNot: null }` → `gardens: { some: {} }`
+
+### Prevention
+- Run `tsc --noEmit` after any schema change to catch broken query patterns
+- Grep for `user.garden` and `findUnique(.*userId)` after changing Garden relation
+- Use `findFirst` with `orderBy` when switching from 1:1 to 1:many
+
+---
+
+## 2026-06-27: Seed Script `deleteMany` Fails With FK Constraints After Multi-Model Additions
+
+**Session**: ses-016
+**Category**: Database, Seed
+**Impact**: Medium
+
+### Situation
+After adding PlotPurchase, SoilCheck, ExternalDataSync, Coupon, and Fertilizer models, the seed script's `deleteMany` chain failed with foreign key constraint violations.
+
+### Problem
+The proper `deleteMany` ordering would need to be: TokenTransaction → PlotPurchase → SoilCheck → ExternalDataSync → Garden → ... → User. But with 47 models and complex cross-references, getting the order right is brittle and breaks when new models are added.
+
+### Root Cause
+`deleteMany` respects FK constraints — you must delete child records before parents. When models have `userId` references, `deleteMany({ where: { userId: ... } })` fails if child records reference the same user.
+
+### Solution
+```sql
+SET session_replication_role = 'replica';  -- disable FK checks
+TRUNCATE TABLE "User", "Garden", ... CASCADE;  -- bulk truncate
+SET session_replication_role = 'origin';  -- re-enable FK checks
+```
+This is simpler, faster, and doesn't need re-ordering when models change.
+
+### Prevention
+- Use raw SQL TRUNCATE CASCADE for seed data cleanup, not `deleteMany` chains
+- Wrap in `$transaction` for atomicity
+- Reset sequences after truncation with `ALTER SEQUENCE ... RESTART WITH 1`
+
+---
+
+## 2026-06-27: Mobile `findUnique({ where: { id } })` Not Needed in Multi-Garden Store
+
+**Session**: ses-016
+**Category**: Mobile, TypeScript
+**Impact**: Medium
+
+### Situation
+The mobile `gardenStore.ts` used `useGardenStore.getState().gardens.find(g => g.id === id)` to find a garden, but TypeScript couldn't narrow the type and defaulted to `Garden | undefined`, causing spread-on-undefined errors.
+
+### Solution
+Cast the result explicitly:
+```typescript
+const existingPlot = useGardenStore.getState().gardens.find(g => g.id === id) as Garden | undefined;
+```
+
+### Prevention
+- TypeScript strict mode means `.find()` returns `T | undefined`; always handle the `undefined` case or cast when you know it exists
+- Prefer `find` from the store over separate API calls when data is already cached
+
+---
+
+## 2026-06-27: Tab Navigation DPAD Overlap With Debug Overlay in Emulator
+
+**Session**: ses-016
+**Category**: Mobile, Testing
+**Impact**: Low
+
+### Situation
+Trying to tap the bottom tab bar's Profile icon by coordinate on the emulator failed — the tap hit the debug overlay button instead.
+
+### Problem
+The debug overlay button (`__FAB` bounds [923,2159][1038,2274]) overlapped with the Profile tab icon position. Coordinate-based tapping couldn't reach the tab bar.
+
+### Solution
+Use DPAD key events for tab navigation:
+```bash
+# Navigate right through tabs
+adb shell input keyevent 22  # DPAD_RIGHT
+# Activate focused tab
+adb shell input keyevent 23  # DPAD_CENTER
+```
+
+### Prevention
+- For tab navigation in Expo dev builds, use DPAD keys instead of coordinate taps
+- The debug overlay button intercepts taps in the bottom-right quadrant of the screen
+- In production builds (no debug overlay), coordinate taps will work normally

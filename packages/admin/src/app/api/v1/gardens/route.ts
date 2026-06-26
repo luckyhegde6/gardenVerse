@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, type, description, size, soilQuality, irrigationLevel, sunlightExposure, latitude, longitude, address, timezone, theme, gridWidth, gridHeight, irrigationType, wateringMode } = body
 
-    const existing = await prisma.garden.findUnique({ where: { userId: auth.payload.userId } })
+    const existing = await prisma.garden.findFirst({ where: { userId: auth.payload.userId }, orderBy: { plotNumber: 'asc' } })
     if (existing) {
       return badRequest('User already has a garden')
     }

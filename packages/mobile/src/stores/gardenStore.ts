@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import api from "../services/api";
+import PlotsService from "../services/plots";
 import { Garden, Crop, CropStatus } from "../types";
 import { HapticFeedback } from "../utils/haptics";
 
@@ -24,6 +25,8 @@ interface GardenState {
   harvestCrop: (cropId: string) => Promise<void>;
   updateCropGrowth: (cropId: string, growthStage: number) => void;
   syncCrops: (crops: Crop[]) => void;
+  fetchPlots: () => Promise<void>;
+  purchasePlot: () => Promise<any>;
   clearError: () => void;
 }
 
@@ -157,6 +160,51 @@ export const useGardenStore = create<GardenState>()(
 
     syncCrops: (crops: Crop[]) => {
       set({ crops });
+    },
+
+    fetchPlots: async () => {
+      set({ isLoading: true, error: null });
+      try {
+        const result = await PlotsService.getPlots();
+        const plots = result.data ?? [];
+        set((state) => {
+          // Merge plot data into existing gardens, preferring server data
+          const plotMap = new Map(plots.map((p: Garden) => [p.id, p]));
+          const merged = state.gardens.map((g) =>
+            plotMap.has(g.id) ? { ...g, ...(plotMap.get(g.id) as Garden) } : g,
+          );
+          // Add any new plots not already in gardens
+          const existingIds = new Set(state.gardens.map((g) => g.id));
+          const newPlots = plots.filter((p: Garden) => !existingIds.has(p.id));
+          return {
+            gardens: [...merged, ...newPlots],
+            isLoading: false,
+          };
+        });
+      } catch (error: any) {
+        set({
+          error: error.response?.data?.message || "Failed to fetch plots",
+          isLoading: false,
+        });
+      }
+    },
+
+    purchasePlot: async () => {
+      set({ isLoading: true, error: null });
+      try {
+        const result = await PlotsService.purchasePlot();
+        set((state) => ({
+          gardens: [...state.gardens, result.garden],
+          isLoading: false,
+        }));
+        return result;
+      } catch (error: any) {
+        set({
+          error: error.response?.data?.message || "Failed to purchase plot",
+          isLoading: false,
+        });
+        throw error;
+      }
     },
 
     clearError: () => set({ error: null }),

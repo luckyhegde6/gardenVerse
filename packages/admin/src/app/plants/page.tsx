@@ -33,6 +33,7 @@ interface PlantSpecies {
   genus: string | null
   species: string | null
   imageUrl: string | null
+  thumbnailUrl?: string
   description: string | null
   growingDays: number | null
   difficulty: string
@@ -126,7 +127,7 @@ const SEASONS_LIST = ['spring', 'summer', 'fall', 'winter'] as const
 
 export default function PlantsPage() {
   const { isAuthenticated, user } = useAuth()
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
+  const isAdmin = user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'super_admin'
   const [plants, setPlants] = useState<PlantSpecies[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -425,10 +426,14 @@ export default function PlantsPage() {
           <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-admin-500/5 blur-3xl" />
           <div className="relative flex flex-col lg:flex-row items-start lg:items-center gap-6">
             <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/20 shrink-0">
-              <Sprout className="w-8 h-8 text-emerald-400" />
+              <span className="text-3xl">🌱</span>
             </div>
             <div className="flex-1 space-y-2">
-              <h2 className="text-2xl font-bold text-slate-100">Plant Species Encyclopedia</h2>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🌱</span>
+                <h1 className="text-2xl font-bold text-slate-100">GardenVerse</h1>
+              </div>
+              <h2 className="text-xl font-semibold text-slate-200">Plant Species Encyclopedia</h2>
               <p className="text-slate-400 max-w-2xl leading-relaxed">
                 Browse our comprehensive catalog of plant species with detailed growing information, seasonal data, and identification guides.
                 Use the filters below to find plants by difficulty, season, or growing conditions.
@@ -570,14 +575,11 @@ export default function PlantsPage() {
                 sortable: true,
                 render: (r) => (
                   <div className="flex items-center gap-2.5">
-                    {(r.imageUrl as string) ? (
+                    {(r.thumbnailUrl as string) ? (
                       <img
-                        src={r.imageUrl as string}
+                        src={r.thumbnailUrl as string}
                         alt={r.commonName as string}
                         className="w-7 h-7 rounded-full object-cover border border-slate-700"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none'
-                        }}
                       />
                     ) : (
                       <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">

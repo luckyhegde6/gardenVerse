@@ -37,8 +37,8 @@ export async function GET(
       return notFound('User not found')
     }
 
-    // Count gardens separately (gardens is optional 1:1, not an array)
-    const garden = await prisma.garden.findUnique({
+    // Count gardens (now one-to-many)
+    const gardens = await prisma.garden.findMany({
       where: { userId: user.id },
       select: { id: true },
     })
@@ -53,7 +53,7 @@ export async function GET(
       isVerified: user.isVerified,
       region: user.region,
       createdAt: user.createdAt,
-      gardenCount: garden ? 1 : 0,
+      gardenCount: gardens.length,
       cropCount: user._count?.crops ?? 0,
     }
 

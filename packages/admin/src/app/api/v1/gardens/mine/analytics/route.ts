@@ -10,8 +10,9 @@ export async function GET(request: NextRequest) {
     const auth = requireAuth(request)
     if ('error' in auth) return auth.error
 
-    const garden = await prisma.garden.findUnique({
+    const garden = await prisma.garden.findFirst({
       where: { userId: auth.payload.userId },
+      orderBy: { plotNumber: 'asc' },
       include: {
         crops: {
           orderBy: { createdAt: 'desc' },

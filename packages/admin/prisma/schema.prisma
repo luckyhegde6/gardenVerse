@@ -111,11 +111,17 @@ model User {
   longestStreak           Int                        @default(0)
   lastActiveAt            DateTime?
 
+  maxPlots                Int                        @default(1)
+  plotPurchaseCount       Int                        @default(0)
+  isRealGardener          Boolean                    @default(false)
+  gardenerBadge           String?
+  gardenerVerifiedAt      DateTime?
+
   createdAt               DateTime                   @default(now())
   updatedAt               DateTime                   @updatedAt
   deletedAt               DateTime?
 
-  garden                  Garden?
+  gardens                 Garden[]                   @relation("UserGardens")
   crops                   Crop[]
   inventory               Inventory[]
   userPurchases           UserPurchase[]
@@ -168,6 +174,9 @@ model User {
   gardenDecorations       UserGardenDecoration[]
   referralMade            Referral[]                 @relation("ReferralsMade")
   referralReceived        Referral?                  @relation("ReferralReceived")
+
+  plotPurchases           PlotPurchase[]
+  soilChecks              SoilCheck[]
 
   @@index([email])
   @@index([username])
@@ -313,6 +322,14 @@ model Garden {
   wateringMode     String     @default("MANUAL")
   hasMotorPump     Boolean    @default(false)
 
+  plotNumber       Int        @default(1)
+  isPurchased      Boolean    @default(false)
+  purchasedAt      DateTime?
+  purchasePrice    Float      @default(0)
+  soilLastCheckedAt DateTime?
+  soilQualityHistory Json?
+  plantMoveCount   Int        @default(0)
+
   latitude         Float?
   longitude        Float?
   address          String?
@@ -323,16 +340,21 @@ model Garden {
   planId           String?    @db.Uuid
   plan             GardenPlan? @relation(fields: [planId], references: [id])
 
-  userId           String     @unique @db.Uuid
-  user             User       @relation(fields: [userId], references: [id])
+  userId           String     @db.Uuid
+  user             User       @relation("UserGardens", fields: [userId], references: [id])
 
   crops            Crop[]
   inventoryItems   UserInventory[]
+  plotPurchases    PlotPurchase[]
+  soilChecks       SoilCheck[]
   visits           GardenVisit[]
   userDecorations  UserGardenDecoration[]
 
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([plotNumber, userId])
 }
 
 model Crop {
@@ -1044,21 +1066,28 @@ model Session {
 }
 
 model Campaign {
-  id            String           @id @default(uuid()) @db.Uuid
-  name          String
-  type          String
-  status        String           @default("draft")
-  startDate     DateTime
-  endDate       DateTime
-  participants  Int              @default(0)
-  rewards       String?
-  schedule      String           @default("one-time")
-  description   String?
+  id                String           @id @default(uuid()) @db.Uuid
+  name              String
+  type              String
+  status            String           @default("draft")
+  startDate         DateTime
+  endDate           DateTime
+  participants      Int              @default(0)
+  rewards           String?
+  schedule          String           @default("one-time")
+  description       String?
 
-  rewardsConfig CampaignReward[]
+  discountPercent   Float?
+  minLevel          Int?
+  maxRedemptions    Int?
+  targetUserRole    String?
+  targetGardenType  String?
+  couponCode        String?
 
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  rewardsConfig     CampaignReward[]
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@index([status])
   @@index([type])
@@ -1076,6 +1105,109 @@ model CampaignReward {
   campaign   Campaign @relation(fields: [campaignId], references: [id])
 
   @@index([campaignId])
+}
+
+// --- Coupon System ---------------------------------------------------------
+
+model Coupon {
+  id              String    @id @default(uuid()) @db.Uuid
+  code            String    @unique
+  description     String?
+  discountType    String    @default("PERCENTAGE")
+  discountValue   Float
+  minPurchase     Float     @default(0)
+  maxRedemptions  Int?
+  usedCount       Int       @default(0)
+  minLevel        Int       @default(1)
+  appliesTo       String?
+  isActive        Boolean   @default(true)
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([code])
+  @@index([isActive])
+}
+
+// --- Fertilizer Catalog ----------------------------------------------------
+
+model Fertilizer {
+  id              String    @id @default(uuid()) @db.Uuid
+  name            String
+  description     String?
+  category        String    @default("ORGANIC")
+  effect          Json      @default("{\"growthBoost\":1.5,\"healthBonus\":10,\"hydrationBonus\":5,\"durationHours\":24}")
+  price           Float
+  currency        String    @default("GREEN_CREDITS")
+  icon            String?
+  rarity          String    @default("COMMON")
+  levelRequired   Int       @default(1)
+  isActive        Boolean   @default(true)
+  stock           Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([category])
+  @@index([rarity])
+}
+
+// --- Plot Purchases ---------------------------------------------------------
+
+model PlotPurchase {
+  id              String    @id @default(uuid()) @db.Uuid
+  price           Float
+  tokenType       String    @default("GREEN_CREDITS")
+  plotNumber      Int
+  purchasedAt     DateTime  @default(now())
+
+  userId          String    @db.Uuid
+  user            User      @relation(fields: [userId], references: [id])
+
+  gardenId        String    @db.Uuid
+  garden          Garden    @relation(fields: [gardenId], references: [id])
+
+  @@index([userId])
+  @@index([gardenId])
+}
+
+// --- Soil Check Records ----------------------------------------------------
+
+model SoilCheck {
+  id              String    @id @default(uuid()) @db.Uuid
+  phLevel         Float?
+  moisture        Float?
+  nitrogen        Float?
+  phosphorus      Float?
+  potassium       Float?
+  organicMatter   Float?
+  quality         Float
+  notes           String?
+  checkedAt       DateTime  @default(now())
+
+  gardenId        String    @db.Uuid
+  garden          Garden    @relation(fields: [gardenId], references: [id])
+
+  userId          String    @db.Uuid
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([gardenId])
+  @@index([checkedAt])
+}
+
+// --- External Data Sync Log -------------------------------------------------
+
+model ExternalDataSync {
+  id              String    @id @default(uuid()) @db.Uuid
+  source          String
+  status          String    @default("PENDING")
+  recordsFetched  Int       @default(0)
+  recordsUpdated  Int       @default(0)
+  message         String?
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+
+  @@index([source])
+  @@index([startedAt])
 }
 
 // --- Quest System ----------------------------------------------------------

@@ -12,6 +12,10 @@ export interface User {
   trustScore: number;
   currentStreak: number;
   role: UserRole;
+  maxPlots?: number;
+  plotPurchaseCount?: number;
+  isRealGardener?: boolean;
+  gardenerBadge?: string;
 }
 
 export enum UserRole {
@@ -28,6 +32,14 @@ export interface Garden {
   irrigationLevel: number;
   sunlightExposure: number;
   crops: Crop[];
+  plotNumber?: number;
+  isPurchased?: boolean;
+  purchasedAt?: string;
+  purchasePrice?: number;
+  soilLastCheckedAt?: string;
+  lastSoilCheck?: SoilCheckResult;
+  plantMoveCount?: number;
+  cropCount?: number;
   latitude?: number;
   longitude?: number;
   address?: string;
@@ -238,6 +250,12 @@ export interface GardenStackParamList {
    CropDetail: { cropId: string };
    PlantCrop: { plotX?: number; plotY?: number };
    GardenSettings: undefined;
+   Plots: undefined;
+   PlotDetail: { plotId: string };
+   SoilCheck: { plotId: string };
+   Shop: undefined;
+   CouponRedeem: { purchaseAmount?: number };
+   RealGardener: undefined;
  }
 
 export interface MarketplaceStackParamList {
@@ -264,6 +282,9 @@ export interface ProfileStackParamList {
    Invites: undefined;
    DailyRewards: undefined;
    Quests: undefined;
+   Shop: undefined;
+   Plots: undefined;
+   RealGardener: undefined;
  }
 
 export interface PlantSpecies {
@@ -272,6 +293,7 @@ export interface PlantSpecies {
   scientificName: string;
   family?: string;
   imageUrl?: string;
+  thumbnailUrl?: string;
   description?: string;
   growingDays?: number;
   difficulty: string;
@@ -279,6 +301,7 @@ export interface PlantSpecies {
   sunlightNeeds: string;
   seasons: string[];
   edible: boolean;
+  medicinal?: boolean;
   tags: string[];
 }
 
@@ -388,3 +411,122 @@ export interface RootStackParamList {
    GardenMap: undefined;
    PlantBrowser: undefined;
  }
+
+// Multi-Garden Economy Types
+
+export interface ShopItem {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  price: number;
+  currency: string;
+  icon?: string;
+  isLimited?: boolean;
+  stock?: number;
+  levelRequired: number;
+  isOnSale?: boolean;
+  discountPrice?: number;
+  effectivePrice: number;
+  onSale: boolean;
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  description?: string;
+  discountType: string;
+  discountValue: number;
+  minPurchase: number;
+  appliesTo?: string;
+  isActive: boolean;
+  expiresAt?: string;
+}
+
+export interface CouponRedemption {
+  valid: boolean;
+  code: string;
+  discountType: string;
+  discountValue: number;
+  discountAmount: number;
+  originalAmount: number;
+  finalAmount: number;
+  description?: string;
+  errors?: string[];
+}
+
+export interface Fertilizer {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  effectivePrice: number;
+  currency: string;
+  icon?: string;
+  rarity?: string;
+  levelRequired: number;
+  effect: Record<string, unknown>;
+  stock?: number;
+  onSale: boolean;
+  source: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  itemId: string;
+  itemName: string;
+  itemIcon?: string;
+  isActive: boolean;
+  purchasedAt: string;
+  expiresAt?: string;
+  gardenId?: string;
+  quantity: number;
+}
+
+export interface PlotPurchaseRecord {
+  id: string;
+  price: number;
+  tokenType: string;
+  plotNumber: number;
+  purchasedAt: string;
+}
+
+export interface SoilCheckResult {
+  id: string;
+  phLevel?: number;
+  moisture?: number;
+  nitrogen?: number;
+  phosphorus?: number;
+  potassium?: number;
+  organicMatter?: number;
+  quality: number;
+  notes?: string;
+  checkedAt: string;
+}
+
+export interface RealGardenerStatus {
+  isRealGardener: boolean;
+  badge?: string;
+  verifiedAt?: string;
+  gardenCount: number;
+  soilCheckCount: number;
+  encouragement?: string;
+}
+
+export interface EncouragementTip {
+  category: string;
+  title: string;
+  content: string;
+  icon: string;
+  isRealGardener: boolean;
+  badge?: string;
+}
+
+export interface PlotPricing {
+  currentPlots: number;
+  maxPlots: number;
+  nextPlotPrice: number;
+  pricingTiers: number[];
+  canPurchase: boolean;
+  userLevel: number;
+}

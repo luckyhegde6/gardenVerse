@@ -45,9 +45,10 @@ react {
     cliFile = new File(["node", "--print", "require.resolve('@react-native-community/cli/build/index.js')"].execute(["NODE_PATH=" + nodeModulesPath], rootDir).text.trim())
     bundleCommand = "bundle"
     nodeExecutableAndArgs = ["node"]
-    // Hermes disabled for debug builds because the Metro Bundler hang prevents
-    // generating the Hermes bytecode. Use pre-built JS bundle instead.
-    hermesEnabled = false
+    // Hermes enabled: Hermes JS engine has native Promise support, fixing the
+    // "undefined is not a constructor (evaluating 'new Promise')" crash on JSC.
+    // Pre-built JS bundle is loaded in source mode (Hermes accepts JS source).
+    hermesEnabled = true
 
     /* Folders */
     //   The root of your project, i.e. where "package.json" lives. Default is '..'
@@ -110,7 +111,7 @@ def enableProguardInReleaseBuilds = (findProperty('android.enableProguardInRelea
  * give correct results when using with locales other than en-US. Note that
  * this variant is about 6MiB larger per architecture than default.
  */
-def jscFlavor = 'org.webkit:android-jsc:+'
+def jscFlavor = 'org.webkit:android-jsc-intl:+'
 
 android {
     ndkVersion rootProject.ext.ndkVersion

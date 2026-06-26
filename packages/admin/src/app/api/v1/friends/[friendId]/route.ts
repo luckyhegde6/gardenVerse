@@ -41,7 +41,7 @@ export async function GET(
         longestStreak: true,
         lastActiveAt: true,
         region: true,
-        garden: {
+        gardens: {
           select: {
             id: true,
             name: true,
@@ -90,7 +90,7 @@ export async function GET(
           : false,
         region: friendProfile.region,
         achievementsCount: friendProfile._count.userAchievements,
-        garden: friendProfile.garden,
+        garden: friendProfile.gardens?.[0] ?? null,
       },
     })
   } catch (error) {

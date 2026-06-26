@@ -61,6 +61,12 @@ export function GardenScreen() {
     waterCrop,
     fertilizeCrop,
     harvestCrop,
+    gardens,
+    plotCount,
+    canPurchaseMore,
+    selectGarden,
+    selectedGardenId,
+    purchasePlot,
   } = useGarden();
   const user = useAuthStore((s) => s.user);
 
@@ -381,6 +387,56 @@ export function GardenScreen() {
           </View>
         </View>
       </View>
+
+      {/* Plot Selector Bar */}
+      {gardens.length > 1 && (
+        <View style={{ backgroundColor: '#0a1f12', paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#1a4a2a' }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {gardens.map((g) => (
+              <TouchableOpacity
+                key={g.id}
+                onPress={() => selectGarden(g.id)}
+                style={{
+                  backgroundColor: g.id === selectedGardenId ? '#1a4a2a' : 'transparent',
+                  borderRadius: 20,
+                  paddingHorizontal: 14,
+                  paddingVertical: 6,
+                  borderWidth: 1,
+                  borderColor: g.id === selectedGardenId ? '#2d8a4e' : 'rgba(255,255,255,0.15)',
+                }}
+              >
+                <Text style={{ fontSize: 12, fontWeight: '600', color: g.id === selectedGardenId ? '#a5f0b0' : 'rgba(255,255,255,0.6)' }}>
+                  Plot #{g.plotNumber ?? gardens.indexOf(g) + 1}
+                </Text>
+                {g.isPurchased && (
+                  <Text style={{ fontSize: 9, color: 'rgba(255,215,0,0.6)', textAlign: 'center', marginTop: 1 }}>
+                    🪙
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ))}
+            {canPurchaseMore && (
+              <TouchableOpacity
+                onPress={() => router.push('/plots')}
+                style={{
+                  backgroundColor: 'rgba(99,102,241,0.2)',
+                  borderRadius: 20,
+                  paddingHorizontal: 14,
+                  paddingVertical: 6,
+                  borderWidth: 1,
+                  borderColor: 'rgba(99,102,241,0.3)',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#a5b4fc' }}>+</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#a5b4fc' }}>Buy Plot</Text>
+              </TouchableOpacity>
+            )}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Weather Bar */}
       <WeatherBar weather={weather} timezone={selectedGarden?.timezone} />

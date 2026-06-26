@@ -41,6 +41,13 @@ export async function GET(request: NextRequest) {
       participants: c.participants,
       rewards: c.rewards || '',
       schedule: c.schedule,
+      description: c.description,
+      discountPercent: c.discountPercent,
+      minLevel: c.minLevel,
+      maxRedemptions: c.maxRedemptions,
+      targetUserRole: c.targetUserRole,
+      targetGardenType: c.targetGardenType,
+      couponCode: c.couponCode,
       rewardsCount: c._count.rewardsConfig,
     }))
 
@@ -56,7 +63,22 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { name, type, status, startDate, endDate, rewards, schedule, description } = body
+    const {
+      name,
+      type,
+      status,
+      startDate,
+      endDate,
+      rewards,
+      schedule,
+      description,
+      discountPercent,
+      minLevel,
+      maxRedemptions,
+      targetUserRole,
+      targetGardenType,
+      couponCode,
+    } = body
 
     if (!name || !type || !startDate || !endDate) {
       return badRequest('name, type, startDate, and endDate are required')
@@ -82,6 +104,12 @@ export async function POST(request: NextRequest) {
         rewards: rewards || null,
         schedule: schedule || 'one-time',
         description: description || null,
+        discountPercent: discountPercent ?? null,
+        minLevel: minLevel ?? null,
+        maxRedemptions: maxRedemptions ?? null,
+        targetUserRole: targetUserRole ?? null,
+        targetGardenType: targetGardenType ?? null,
+        couponCode: couponCode ?? null,
       },
     })
 

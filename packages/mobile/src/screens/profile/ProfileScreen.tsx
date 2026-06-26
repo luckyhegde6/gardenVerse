@@ -80,6 +80,9 @@ export function ProfileScreen() {
     { icon: "🎒", label: "Inventory", path: "/inventory" },
     { icon: "🏆", label: "Achievements", path: "/achievements" },
     { icon: "🤝", label: "Friends", path: "/friends" },
+    { icon: "🛒", label: "Shop", path: "/shop" },
+    { icon: "📐", label: "Plots", path: "/plots" },
+    { icon: "🏡", label: "Real Gardener", path: "/real-gardener" },
     { icon: "📨", label: "Invites", path: "/invites" },
     { icon: "⚙️", label: "Settings", path: "/settings" },
   ];

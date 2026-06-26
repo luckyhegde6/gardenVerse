@@ -120,6 +120,12 @@ function RootContent() {
             <Stack.Screen name="invites" options={{ headerShown: false, presentation: 'card' }} />
             <Stack.Screen name="settings" options={{ headerShown: false, presentation: 'card' }} />
             <Stack.Screen name="admin" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="shop" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="plots" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="plot-detail/[plotId]" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="real-gardener" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="coupon-redeem" options={{ headerShown: false, presentation: 'card' }} />
+            <Stack.Screen name="soil-check/[plotId]" options={{ headerShown: false, presentation: 'card' }} />
           </>
         ) : (
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />

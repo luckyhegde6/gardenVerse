@@ -63,7 +63,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Session Metadata
 - **Project**: GardenVerse - Hybrid Agriculture Simulation Ecosystem
-- **Session Started**: Jun 23, 2026 (Active: Session 14 — Admin Auth Guarding + Public Plants + Gradle APK + E2E Stability)
+- **Session Started**: Jun 27, 2026 (Active: Session 16 — Multi-Garden Economy + Token Shops + Coupons + Real Gardener)
 - **Architecture**: Next.js API Routes (Unified Admin + API) → Future Microservices
 - **Monorepo**: npm workspaces
 - **Platform**: Windows (PowerShell)
@@ -965,6 +965,116 @@ Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
    ✅ Always use shared `api` service for HTTP calls
 7. ❌ `res.json()` variable name bug in integration test (copy-paste error from `res1` to `res2` but forgot `res` → `res2`)
    ✅ Use distinct variable names per response; verify copy-paste doesn't leave stale references
+
+### Session 16 (Jun 27, 2026): Multi-Garden Economy — Plot Purchases, Shop, Coupons, Real Gardener, Campaigns
+
+**Focus**: Implement token-based gamification economy: multi-plot purchasing, shop expansion, coupon system, real gardener verification, soil checks, crop movement, external data sync, campaign discounts
+
+**Accomplishments:**
+- **Prisma schema updated** — Removed `@unique` from `Garden.userId` (1:1 → 1:many); added `User.maxPlots`, `plotPurchaseCount`, `isRealGardener`, `gardenerBadge`, `gardenerVerifiedAt`; added `Garden.plotNumber`, `isPurchased`, `purchasedAt`, `purchasePrice`, `soilLastCheckedAt`, `soilQualityHistory`, `plantMoveCount`; created new models: `Coupon`, `Fertilizer`, `PlotPurchase`, `SoilCheck`, `ExternalDataSync`; added campaign discount fields (`discountPercent`, `minLevel`, `maxRedemptions`, `targetUserRole`, `targetGardenType`, `couponCode`)
+- **Fixed 12+ API route files** — Changed all `user.garden` (singular 1:1) references to `user.gardens[0]` or `findFirst` for multi-garden compatibility: watering/fertilizer/sustainability/crops recommendations, friends, crops CRUD, gardens CRUD, user profile, geo nearby, garden analytics
+- **Plot purchase system** — 5 API routes: `GET/POST /api/v1/plots` (list + purchase), `GET /api/v1/plots/pricing` (tiered pricing: 100/250/500/800/1200/1500 GC), `GET/PATCH /api/v1/plots/[id]` (details + update), `POST /api/v1/plots/[id]/soil-check` (pH/moisture/NPK scoring), `POST /api/v1/plots/[id]/move-crop` (level 3+ move, level 5+ cross-garden)
+- **Shop system** — 5 API routes: `GET /api/v1/shop` (categorized items), `POST /api/v1/shop/buy` (token deduction + purchase + inventory), `GET /api/v1/tools`, `GET /api/v1/fertilizers`, `POST /api/v1/coupons/redeem` (discount validation)
+- **Coupon system** — 2 API routes: `GET/POST /api/v1/coupons` (admin CRUD), `POST /api/v1/coupons/redeem` (validate + calculate discount)
+- **Real gardener system** — 3 API routes: `GET /api/v1/real-gardener` (status + encouragement), `POST /api/v1/real-gardener/verify` (badge assignment), `GET /api/v1/real-gardener/encouragement` (daily rotating tips by region)
+- **External data sync** — 2 API routes: `GET /api/v1/external-data-sync` (admin logs), `POST /api/v1/external-data-sync/trigger` (simulated sync)
+- **Enhanced campaigns** — Created `campaigns/[id]/route.ts` (GET/PATCH/DELETE), enhanced `campaigns/route.ts` with discount fields
+- **6 admin UI pages** — Shop (3-tab: Browse/Purchases/Inventory with buy modal + coupon), Coupons (admin CRUD with create/edit/delete modals + stats), Plots (card grid with soil checks + purchase modal + pricing tiers), Campaigns (enhanced with discount fields, edit, delete), Fertilizers (available + active sections), Sidebar + Header nav links
+- **TypeScript typecheck** — Zero errors across the entire admin package
+
+**Key Bugs Fixed:**
+1. **`findUnique({ where: { userId } })` on Garden** — After removing `@unique` from `userId`, all `findUnique` calls with `userId` as the filter broke (TS error that `id` is required). Fixed all routes to use `findFirst` with `orderBy: { plotNumber: 'asc' }`.
+2. **`garden: { isNot: null }` in geo/nearby** — Old 1:1 syntax changed to `gardens: { some: {} }` for the 1:many relation.
+3. **JSON type mismatch in soil-check** — `soilQualityHistory` Json field needed `as any` cast when pushing to the array.
+4. **`unknown` type in coupons DataTable** — `keyExtractor` callback parameter needed explicit typing.
+
+**Mistakes & Corrections:**
+1. ❌ Did not fix the mobile side's storage/API references for multi-garden support
+   ✅ Checked and confirmed no `user.garden` references exist in mobile code — mobile uses garden lists differently
+2. ❌ Initially forgot to update `geo/nearby` and `gardens/mine/analytics` routes after schema change
+   ✅ Typecheck caught these errors; now run `tsc --noEmit` as final verification step
+3. ❌ Seed data for ShopItem, Fertilizer, Coupon initially missing
+   ✅ Added 21 shop items, 6 fertilizers, 6 coupons, 3 soil checks, 3 external sync records, admin 2nd plot
+4. ❌ Seed script `deleteMany` order caused FK constraint failures
+   ✅ Used `SET session_replication_role = 'replica'` + TRUNCATE CASCADE via SQL to clean data
+
+**Next Steps:**
+- ✅ Seed data created (21 shop items, 6 fertilizers, 6 coupons)
+- ✅ Plot purchase + shop buy + coupon redeem endpoints tested via curl (all working)
+- ✅ Playwright E2E: 20/20 integration tests passed, 58/68 full suite passed (zero failures)
+- ✅ Mobile app changes (all 4 phases delivered)
+
+### Mobile App Plan — Multi-Garden Economy
+
+**Completed: ~35 hrs** across 4 phases. All screens verified on Pixel_7_API_34 emulator with running APK.
+
+**Phase 1: Foundation (completed ~4 hrs)**
+- ✅ Types: Added 11 new interfaces (`ShopItem`, `Coupon`, `Fertilizer`, `InventoryItem`, `PlotPurchaseRecord`, `SoilCheckResult`, `RealGardenerStatus`, `EncouragementTip`, `PlotPricing`, `CouponRedemption`)
+- ✅ Extended `Garden` + `User` interfaces with plot/real-gardener fields
+- ✅ Added 5 new `StorageKeys` for shop/plots/coupons cache
+- ✅ Created service modules: `plots.ts` (7 methods), `shop.ts` (4 methods), `coupons.ts` (1 method), `realGardener.ts` (3 methods)
+
+**Phase 2: State Management (completed ~6 hrs)**
+- ✅ Created `plotsStore.ts` (6 actions), `shopStore.ts` (6 actions), `realGardenerStore.ts` (3 actions)
+- ✅ Updated `gardenStore.ts` — added `fetchPlots`, `purchasePlot`, `plotCount`, `maxPlots`
+- ✅ Updated `useGarden.ts` — exposes `plotCount`, `canPurchaseMore`, `fetchPlots`, `purchasePlot`
+
+**Phase 3: Navigation (completed ~1 hr)**
+- ✅ Registered 6 new Stack.Screen entries in `app/_layout.tsx`: `/shop`, `/plots`, `/real-gardener`, `/coupon-redeem`, `/plot-detail/[plotId]`, `/soil-check/[plotId]`
+
+**Phase 4: Screens (completed ~24 hrs)**
+- ✅ ShopScreen — browse by category filter + search, buy modal with quantity selector + coupon code input, inventory tab
+- ✅ CouponRedeemScreen — code entry with validation, discount breakdown display
+- ✅ PlotsScreen — plot grid with status/occupancy, pricing tiers modal, purchase confirmation
+- ✅ PlotDetailScreen — info card (plot number, plants, soil), soil check card + history, move crop UI (level 3+ / level 5+ gated)
+- ✅ SoilCheckScreen — pH/NPK/moisture sliders, quality scoring, color-coded results
+- ✅ RealGardenerScreen — verification form (experience, garden type, location), badge display, daily encouragement tips section
+- ✅ GardenScreen updates — horizontal plot selector bar with buy-plot CTA button, `selectedGardenId`/`plotCount`/`canPurchaseMore`/`gardens`/`selectGarden`/`purchasePlot` wired
+- ✅ ProfileScreen updates — 4 new menu items between stats grid and activity feed: Shop 🛒, Plots 📐, Real Gardener 🏡, Coupon Redeem
+
+**Emulator Verification (Pixel_7_API_34, arm64-v8a debug APK):**
+- ✅ App launches, login works (demo@gardenverse.vercel.app / password123)
+- ✅ GardenScreen renders fully: plot selector bar, 2D/3D toggles, action buttons, plant collections, care streaks
+- ✅ Profile tab accessible via DPAD navigation (tab bar overlaps debug overlay)
+- ✅ Profile screen shows avatar, username, stats grid, all 4 new menu items (Shop/Plots/RealGardener/CouponRedeem), activity feed sections
+- ✅ Non-critical warnings noted: ReactImageView missing asset (build artefact), Firebase not initialized (dev build), Layout children type check (existing `_layout.tsx`)
+
+**API endpoints ready (all tested):** `/api/v1/plots`, `/plots/pricing`, `/plots/[id]`, `/plots/[id]/soil-check`, `/plots/[id]/move-crop`, `/shop`, `/shop/buy`, `/tools`, `/fertilizers`, `/coupons/redeem`, `/real-gardener`, `/real-gardener/verify`, `/real-gardener/encouragement`, `/external-data-sync`, `/external-data-sync/trigger`
+
+### Session 15 (Jun 27, 2026): Android APK Fix — Hermes, Storage Unification, Emulator Network + Source Fixes
+
+**Focus**: Fix remaining APK issues (JSC Promise crash, storage mismatch, emulator network), rebuild with `getUseDeveloperSupport = false`, fix source files to match bundle patches, investigate interim 401s, create APK docs.
+
+**Accomplishments:**
+- **Switched to Hermes JS engine** — Fixed "undefined is not a constructor (evaluating 'new Promise')" crash caused by JSC lexical `Promise` binding
+- **Unified storage backend** — `utils/storage.ts` (expo-secure-store) and `services/storage.ts` (AsyncStorage) were dual backends; authStore used AsyncStorage while API interceptor read SecureStore → token never found → 401. Fixed by making `utils/storage.ts` re-export from `services/storage.ts`
+- **`getUseDeveloperSupport() = false`** — Overrode in `MainApplication.kt` to force loading from pre-built bundle assets instead of checking Metro (port 8081) which shows a RedBox when unreachable in debug builds
+- **Emulator network fix** — `10.0.2.2:3000` unreachable from emulator on Windows; changed to `localhost:3000` + `adb reverse tcp:3000 tcp:3000`
+- **Source files patched** — Updated `api.ts` import path (`../utils/storage` → `../services/storage`) and URL (`10.0.2.2` → `localhost`)
+- **Working APK produced** (81 MB, Hermes arm64-v8a debug) — login end-to-end working (`POST /api/v1/auth/login 200` → `GET /api/v1/gardens 200`)
+- **Interim 401 investigation** — Determined root cause: refresh attempt via `axios.post(${BASE_URL}/auth/refresh, ...)` used `10.0.2.2:3000` BASE_URL (unreachable), catch block cleared all stored auth data. Now fixed with `localhost:3000` URL.
+- **BUILD.md updated** — Added issues 8-10 (network, storage mismatch, getUseDeveloperSupport)
+- **APK.md created** — Dedicated APK documentation with build fixes and install commands
+
+**Key Bug Fixes:**
+1. **JSC Promise crash** — `new Promise` undefined with JSC on Android; switched to Hermes
+2. **Dual storage mismatch** — `utils/storage` (SecureStore) vs `services/storage` (AsyncStorage) caused token lookup failure
+3. **Metro RedBox in debug builds** — Expo dev client checks `getUseDeveloperSupport()` and tries Metro first; overridden to `false`
+4. **Emulator network unreachable** — `10.0.2.2` doesn't route on this Windows host; use `adb reverse` + `localhost`
+5. **Interim 401s** — Refresh URL was `10.0.2.2:3000` (unreachable), causing catch block to clear all auth state
+
+**Mistakes & Corrections:**
+1. ❌ Took screenshot with `2>&1` redirect contaminating binary PNG data in PowerShell
+   ✅ Use `adb exec-out screencap -p > file.png 2>$null` for clean binary output
+2. ❌ Tried `gradle.taskGraph.whenReady` + `forkOptions.jvmArgs` to fix kapt crash — doesn't propagate to forked workers
+   ✅ Just skip with `-x :expo-updates:kaptDebugKotlin` — simpler and works
+3. ❌ Initial build used JSC (default) which caused the `Promise` crash
+   ✅ Always use Hermes for Android — it's the standard engine for RN 0.74+
+
+**Next Steps:**
+- Rebuild APK from fixed source files to verify no regression
+- Run full E2E Playwright tests against production API
+- Fix E2E Playwright login test for the mobile app
 
 ---
 

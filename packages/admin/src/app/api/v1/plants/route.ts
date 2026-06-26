@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma/client'
 import { requireAuth, requireRole } from '@/lib/middleware/auth'
 import { success, badRequest, serverError, paginated } from '@/lib/middleware/auth'
 import { sanitizeLike } from '@/lib/sanitize'
+import { generatePlantThumbnail } from '@/lib/utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,7 +41,12 @@ export async function GET(request: NextRequest) {
       prisma.plantSpecies.count({ where }),
     ])
 
-    return paginated(plants, total, page, limit)
+    const plantsWithThumbnails = plants.map((p) => ({
+      ...p,
+      thumbnailUrl: p.imageUrl || generatePlantThumbnail(p.commonName, p.difficulty, p.edible),
+    }))
+
+    return paginated(plantsWithThumbnails, total, page, limit)
   } catch (error) {
     return serverError(error)
   }
