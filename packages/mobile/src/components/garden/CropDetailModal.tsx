@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,6 @@ import { ProgressBar } from "../ui/ProgressBar";
 import { Badge } from "../ui/Badge";
 import {
   formatDate,
-  formatRelativeTime,
   formatGrowthStage,
 } from "../../utils/formatting";
 

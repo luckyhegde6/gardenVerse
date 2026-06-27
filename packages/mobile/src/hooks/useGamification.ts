@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { QuestProgress } from '../types';
 import api from '../services/api';
 
 export interface DailyQuest {

@@ -15,7 +15,6 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withDelay,
-  useAnimatedProps,
   withRepeat,
   withTiming,
   Easing,
