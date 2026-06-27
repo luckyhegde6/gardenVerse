@@ -154,6 +154,15 @@ module-name/
 - **CI + CodeQL must pass** before merge
 - Use **fresh branches from `main`** for each PR (delete feature branches after merge)
 
+#### AI Agent Commit Workflow (MANDATORY)
+1. **Create a new branch** from `main` (`feature/*` or `fix/*`)
+2. **Fix all lint errors** — run `npm run lint` in the affected package and fix every `Error:` before committing
+3. **Run typecheck** — `npm run typecheck` must pass with zero errors
+4. **Stage and commit** with conventional commit message
+5. **Push branch** to remote
+6. **Create PR** with proper title and body description
+7. **DO NOT merge the PR** — leave it for the user to review and approve
+
 ### Commit Convention
 ```
 type(scope): description
