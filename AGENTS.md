@@ -154,6 +154,18 @@ module-name/
 - **CI + CodeQL must pass** before merge
 - Use **fresh branches from `main`** for each PR (delete feature branches after merge)
 
+#### AI Agent Commit Workflow (MANDATORY)
+1. **Create a new branch** from `main` (`feature/*` or `fix/*`)
+2. **Fix all lint errors** — run `npm run lint` in the affected package and fix every `Error:` before committing
+3. **Run typecheck** — `npm run typecheck` must pass with zero errors
+4. **Run admin E2E tests** — `npm run test:e2e` must pass (verify all existing Playwright tests)
+5. **Run mobile APK build + emulator A2B testing** — build APK, install on emulator, verify core flows (login, garden render, navigation tabs) render without crash
+6. **Analyze findings** — if any test/check fails, fix the issue before proceeding
+7. **Stage and commit** with conventional commit message
+8. **Push branch** to remote
+9. **Create PR** with proper title and body description
+10. **DO NOT merge the PR** — leave it for the user to review and approve
+
 ### Commit Convention
 ```
 type(scope): description
