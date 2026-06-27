@@ -1219,3 +1219,49 @@ Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
 - Fix sound asset placeholder to actually generate usable audio (currently 44-byte headers with 0-length data)
 - Phase 2: XP floating numbers, level-up celebration, crop detail modal, daily quest API integration
 - Phase 3: Seasonal themes, weather particles, drag-to-water gesture
+
+---
+
+## Session Feedback & Improvements
+
+### Session 18 (Jun 27, 2026): Orchestration Validation — Lint Fix + E2E + A2B + Agent Process Management
+**Focus**: Fix final lint error, validate commit workflow with E2E + A2B testing via subagents, fine-tune agent process management rules
+
+**Key Finding — Orchestration Works Correctly:**
+1. ✅ Subagents launched in parallel (testing + mobile-dev) completed independently
+2. ✅ Testing agent ran 73 Playwright tests against test DB and returned structured results
+3. ✅ Mobile agent captured screenshot, UI dump, logcat, PID check, crash analysis
+4. ✅ Both returned actionable findings for main agent to analyze
+
+**E2E Results: 68/73 PASS (93%)**
+- auth.spec.ts: 7/7 ✅
+- admin.spec.ts: 10/10 ✅
+- invites.spec.ts: 7/7 ✅
+- screenshots.spec.ts: 24/24 ✅
+- integration.spec.ts: 20/20 ✅
+- garden-game-feel.spec.ts: 0/5 ❌ (all fail on login redirect — tests expect `/garden` but admin login redirects to `/dashboard`)
+
+**A2B Results: PARTIAL PASS**
+- APK installs: ✅
+- App launches without crash: ✅ (PID 5973, no FATAL_EXCEPTION)
+- Splash screen visible: ✅ (🌿 + "GardenVerse" text)
+- Login/garden screens: ❌ (stuck on splash — pre-existing debug APK issue, noted in Sessions 12/17)
+- HapticFeedback crash: ❌ (PID 5413 had `HapticFeedback.action is not a function` — known issue)
+
+**Lessons Learned & Agent Profile Improvements:**
+1. ❌ `start /B` still outputs to parent console — blocks the agent
+   ✅ Always use `start "Title" cmd /c "command"` for new windows (fully non-blocking)
+2. ❌ Dev server picks up `.env.local` DATABASE_URL over shell env var
+   ✅ Modify `.env.local` directly for test DB, restore after testing
+3. ❌ garden-game-feel tests written for wrong redirect target
+   ✅ Tests should use admin auth fixture (API + localStorage) not form-based login for admin pages
+4. ✅ Subagents ran in parallel and returned structured findings — orchestration pattern works
+5. ✅ E2E tests proved no regression: all 68 pre-existing tests still pass
+6. ❌ A2B splash screen stuck — debug APK with `debuggableVariants = []` has JS bundle issues
+   ✅ Build with `eas build --profile production` for production APK, not gradlew assembleDebug
+
+**Agent Profile Updates Made:**
+- AGENTS.md: Added orchestration rules, Windows process management cheat sheet, agent selection guide
+- testing.md: Added non-blocking patterns with separate window launch + polling
+- mobile-build.md: Added Gradle + emulator launch patterns with flag-file polling
+- mobile-e2e.md: Added self-healing patterns and process management rules
