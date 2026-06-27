@@ -34,6 +34,9 @@ import { GrowthOverlay } from '../../components/garden/GrowthOverlay';
 import { WeatherBar } from '../../components/garden/WeatherBar';
 import { WalkthroughOverlay, useWalkthrough } from '../../components/garden/WalkthroughOverlay';
 import { PlantSelectionSheet } from '../../components/garden/PlantSelectionSheet';
+import { CropDetailModal } from '../../components/garden/CropDetailModal';
+import { LevelUpModal } from '../../components/garden/LevelUpModal';
+import { XPFloatingManager } from '../../components/garden/XPFloatingText';
 import { ParticleProvider } from '../../components/garden/ParticleSystem';
 import { QuestTrackerWidget } from '../../components/garden/QuestTrackerWidget';
 import { useGameFeedback } from '../../utils/gameFeedback';
@@ -103,6 +106,22 @@ export function GardenScreen() {
   // ─── Save & Sync ────────────────────────────────────────────────────────
   const { show: showToast, hide: _hideToast, ToastComponent } = useToast();
   const autoSaveDone = useRef(false);
+
+  // ─── Crop Detail Modal ──────────────────────────────────────────────────
+  const [showCropDetail, setShowCropDetail] = useState(false);
+
+  // ─── XP Floating Events ────────────────────────────────────────────────
+  const [xpEvents, setXpEvents] = useState<Array<{ id: string; amount: number; position: { x: number; y: number } }>>([]);
+  const xpCounterRef = useRef(0);
+
+  // ─── Level-Up Modal ────────────────────────────────────────────────────
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [newLevel, setNewLevel] = useState(1);
+
+  const addXpEvent = useCallback((amount: number, position?: { x: number; y: number }) => {
+    const id = `xp-${++xpCounterRef.current}`;
+    setXpEvents(prev => [...prev, { id, amount, position: position || { x: 150, y: 300 } }]);
+  }, []);
 
   // Auto-save on app background/resume
   useEffect(() => {
@@ -300,7 +319,7 @@ export function GardenScreen() {
       HapticFeedback.light();
       if (crop) {
         if (selectedCropId === crop.id) {
-          router.push({ pathname: '/crop-detail/[cropId]', params: { cropId: crop.id } });
+          setShowCropDetail(true);
         } else {
           setSelectedCropId(crop.id);
         }
@@ -344,42 +363,65 @@ export function GardenScreen() {
 
   // ─── Action Handlers ─────────────────────────────────────────────────────
 
+  const prevExpRef = useRef(user?.experience ?? 0);
+
   const handleWater = useCallback(
     async (cropId: string) => {
       try {
+        const before = prevExpRef.current;
         await waterCrop(cropId);
         growthEngine.onCropAction(cropId, 'water');
         feedback.trigger('water', { x: 150, y: 300 }).catch(() => {});
+        addXpEvent(10, { x: 150, y: 250 });
+        const crop = crops.find(c => c.id === cropId);
+        if (crop && crop.plotX !== undefined && crop.plotY !== undefined) {
+          const pos = { x: 50 + crop.plotX * 60, y: 50 + crop.plotY * 60 };
+          addXpEvent(10, pos);
+        }
       } catch {
         // Error handled upstream
       }
     },
-    [waterCrop, feedback],
+    [waterCrop, feedback, addXpEvent, crops],
   );
 
   const handleFertilize = useCallback(
     async (cropId: string) => {
       try {
+        const before = prevExpRef.current;
         await fertilizeCrop(cropId);
         growthEngine.onCropAction(cropId, 'fertilize');
         feedback.trigger('fertilize', { x: 150, y: 300 }).catch(() => {});
+        addXpEvent(15, { x: 150, y: 250 });
+        const crop = crops.find(c => c.id === cropId);
+        if (crop && crop.plotX !== undefined && crop.plotY !== undefined) {
+          const pos = { x: 50 + crop.plotX * 60, y: 50 + crop.plotY * 60 };
+          addXpEvent(15, pos);
+        }
       } catch {
         // Error handled upstream
       }
     },
-    [fertilizeCrop, feedback],
+    [fertilizeCrop, feedback, addXpEvent, crops],
   );
 
   const handleHarvest = useCallback(
     async (cropId: string) => {
       try {
+        const before = prevExpRef.current;
         await harvestCrop(cropId);
         feedback.trigger('harvest', { x: 150, y: 300 }).catch(() => {});
+        addXpEvent(50, { x: 150, y: 250 });
+        const crop = crops.find(c => c.id === cropId);
+        if (crop && crop.plotX !== undefined && crop.plotY !== undefined) {
+          const pos = { x: 50 + crop.plotX * 60, y: 50 + crop.plotY * 60 };
+          addXpEvent(50, pos);
+        }
       } catch {
         // Error handled upstream
       }
     },
-    [harvestCrop, feedback],
+    [harvestCrop, feedback, addXpEvent, crops],
   );
 
   const selectedCropForOverlay = selectedCropId
@@ -454,7 +496,6 @@ export function GardenScreen() {
               </Text>
             </View>
             <View style={styles.headerRight}>
-              <QuestTrackerWidget onPress={() => router.push('/quests')} />
               <SyncStatusIndicator compact />
               <View style={styles.collectionBadge}>
                 <Text style={styles.collectionBadgeText}>
@@ -1014,6 +1055,9 @@ export function GardenScreen() {
       {/* ─── Save Game FAB ──────────────────────────────────────────────────── */}
       <SaveGameButton />
 
+      {/* ─── XP Floating Text Manager ────────────────────────────────────────── */}
+      <XPFloatingManager xpEvents={xpEvents} />
+
       {/* ─── Auto-save Toast ────────────────────────────────────────────────── */}
       {ToastComponent}
     </View>
@@ -1024,6 +1068,16 @@ export function GardenScreen() {
       plotX={plantSheetPosition?.plotX ?? 0}
       plotY={plantSheetPosition?.plotY ?? 0}
       availableSeeds={availableSeeds}
+    />
+    <CropDetailModal
+      visible={showCropDetail}
+      crop={selectedCrop ?? null}
+      onClose={() => setShowCropDetail(false)}
+    />
+    <LevelUpModal
+      visible={showLevelUp}
+      newLevel={newLevel}
+      onClose={() => setShowLevelUp(false)}
     />
   </ParticleProvider>
   );
