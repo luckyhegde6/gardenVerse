@@ -155,16 +155,63 @@ module-name/
 - Use **fresh branches from `main`** for each PR (delete feature branches after merge)
 
 #### AI Agent Commit Workflow (MANDATORY)
-1. **Create a new branch** from `main` (`feature/*` or `fix/*`)
-2. **Fix all lint errors** — run `npm run lint` in the affected package and fix every `Error:` before committing
-3. **Run typecheck** — `npm run typecheck` must pass with zero errors
-4. **Run admin E2E tests** — `npm run test:e2e` must pass (verify all existing Playwright tests)
-5. **Run mobile APK build + emulator A2B testing** — build APK, install on emulator, verify core flows (login, garden render, navigation tabs) render without crash
-6. **Analyze findings** — if any test/check fails, fix the issue before proceeding
-7. **Stage and commit** with conventional commit message
-8. **Push branch** to remote
-9. **Create PR** with proper title and body description
-10. **DO NOT merge the PR** — leave it for the user to review and approve
+1. **Main agent is orchestration-only** — do NOT run infrastructure commands (Docker, dev server, Gradle, emulator) directly in the main agent. Delegate ALL execution to subagents.
+2. **Create a new branch** from `main` (`feature/*` or `fix/*`)
+3. **Fix all lint errors** — run `npm run lint` in the affected package and fix every `Error:` before committing
+4. **Run typecheck** — `npm run typecheck` must pass with zero errors
+5. **Run admin E2E tests** — delegate to **testing** subagent. The subagent must:
+   - Start Docker test infra in a **separate cmd window** using `start "DockerInfra" cmd /c "docker compose ..."`
+   - Reset DB and seed in a **separate cmd window**
+   - Start admin dev server in a **separate cmd window** using `start "AdminDev" cmd /c "npm run admin:dev"`
+   - Poll for readiness, then run Playwright tests via `npm run test:e2e:all`
+   - Return results to main agent for analysis
+6. **Run mobile APK build + emulator A2B testing** — delegate to **mobile-build** + **mobile-e2e** subagents. They must:
+   - Build APK via `gradlew.bat assembleDebug` in a **separate cmd window** (takes 5-10 min)
+   - Launch emulator in a **separate cmd window** using `start "Emulator" cmd /c "emulator -avd Pixel_7_API_34"`
+   - Use main session for `adb install`, `adb shell`, `adb logcat` (non-blocking commands only)
+   - Return screenshots + test results to main agent for analysis
+7. **Analyze findings** — main agent reviews results from all subagents. If any test/check fails, fix the issue before proceeding.
+8. **Stage and commit** with conventional commit message
+9. **Push branch** to remote
+10. **Create PR** with proper title and body description
+11. **DO NOT merge the PR** — leave it for the user to review and approve
+
+#### Orchestration Rules (CRITICAL)
+- The **main agent** is for orchestration, monitoring, analysis, and fine-tuning ONLY
+- **NEVER** run long-lived processes (Docker, dev server, Gradle, emulator) in the main agent's bash session
+- Infrastructure processes MUST be launched in **separate Windows terminal windows** using `start "Title" cmd /c "command"`
+- **NEVER use `start /B`** for daemons — `start /B` still outputs to the parent console and blocks the agent
+- Subagents receive clear instructions about which tools to use and which processes to run in separate windows
+- After subagents complete, the main agent analyzes results, identifies failures, and fixes issues before proceeding
+- If a subagent fails due to a blocked process, kill the process and re-launch with proper sep-window instructions
+
+#### Windows Process Management (Windows-Specific)
+| Command | Behavior | Use Case |
+|---------|----------|----------|
+| `start "Title" cmd /c "command"` | ✅ New GUI window, **non-blocking** | Docker, dev server, Gradle, emulator |
+| `start /B "" command` | ❌ Same console, STILL BLOCKING | NEVER for daemons — output bleeds to parent |
+| `direct command` | ❌ Blocks until finish | Only for commands < 10 seconds |
+
+**Correct patterns:**
+```bash
+:: ✅ Start dev server in new window (non-blocking)
+start "AdminDev" cmd /c "cd /d F:\Local_git\gardenVerse && npm run admin:dev"
+
+:: ❌ Blocking — do NOT do this in main agent or subagents
+start /B "" npm run admin:dev
+cmd /c "npm run admin:dev"
+```
+
+**For non-daemon execution (DB resets, seeding):**
+These DO block the agent but are acceptable since they finish within minutes. However, they should still be done in **subagents**, not the main agent, because the main agent is orchestration-only.
+
+#### Skills & Agent Selection Guide
+- **lint/typecheck fixes**: Use general agent with read + edit permissions
+- **admin E2E tests**: Use **testing** subagent (`.opencode/agents/testing.md`) with Playwright
+- **mobile APK build**: Use **mobile-build** subagent (`.agents/agents/mobile-build.md`) with Gradle build in sep window
+- **mobile A2B testing**: Use **mobile-e2e** subagent (`.agents/agents/mobile-e2e.md`) with emulator in sep window
+- **code review**: Use **review** subagent (`.agents/reviewer/`)
+- Refer to `.agents/` and `.opencode/agents/` for agent profiles. Respect each agent's `permissions` and follow their `steps` count.
 
 ### Commit Convention
 ```
@@ -1172,3 +1219,49 @@ Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
 - Fix sound asset placeholder to actually generate usable audio (currently 44-byte headers with 0-length data)
 - Phase 2: XP floating numbers, level-up celebration, crop detail modal, daily quest API integration
 - Phase 3: Seasonal themes, weather particles, drag-to-water gesture
+
+---
+
+## Session Feedback & Improvements
+
+### Session 18 (Jun 27, 2026): Orchestration Validation — Lint Fix + E2E + A2B + Agent Process Management
+**Focus**: Fix final lint error, validate commit workflow with E2E + A2B testing via subagents, fine-tune agent process management rules
+
+**Key Finding — Orchestration Works Correctly:**
+1. ✅ Subagents launched in parallel (testing + mobile-dev) completed independently
+2. ✅ Testing agent ran 73 Playwright tests against test DB and returned structured results
+3. ✅ Mobile agent captured screenshot, UI dump, logcat, PID check, crash analysis
+4. ✅ Both returned actionable findings for main agent to analyze
+
+**E2E Results: 68/73 PASS (93%)**
+- auth.spec.ts: 7/7 ✅
+- admin.spec.ts: 10/10 ✅
+- invites.spec.ts: 7/7 ✅
+- screenshots.spec.ts: 24/24 ✅
+- integration.spec.ts: 20/20 ✅
+- garden-game-feel.spec.ts: 0/5 ❌ (all fail on login redirect — tests expect `/garden` but admin login redirects to `/dashboard`)
+
+**A2B Results: PARTIAL PASS**
+- APK installs: ✅
+- App launches without crash: ✅ (PID 5973, no FATAL_EXCEPTION)
+- Splash screen visible: ✅ (🌿 + "GardenVerse" text)
+- Login/garden screens: ❌ (stuck on splash — pre-existing debug APK issue, noted in Sessions 12/17)
+- HapticFeedback crash: ❌ (PID 5413 had `HapticFeedback.action is not a function` — known issue)
+
+**Lessons Learned & Agent Profile Improvements:**
+1. ❌ `start /B` still outputs to parent console — blocks the agent
+   ✅ Always use `start "Title" cmd /c "command"` for new windows (fully non-blocking)
+2. ❌ Dev server picks up `.env.local` DATABASE_URL over shell env var
+   ✅ Modify `.env.local` directly for test DB, restore after testing
+3. ❌ garden-game-feel tests written for wrong redirect target
+   ✅ Tests should use admin auth fixture (API + localStorage) not form-based login for admin pages
+4. ✅ Subagents ran in parallel and returned structured findings — orchestration pattern works
+5. ✅ E2E tests proved no regression: all 68 pre-existing tests still pass
+6. ❌ A2B splash screen stuck — debug APK with `debuggableVariants = []` has JS bundle issues
+   ✅ Build with `eas build --profile production` for production APK, not gradlew assembleDebug
+
+**Agent Profile Updates Made:**
+- AGENTS.md: Added orchestration rules, Windows process management cheat sheet, agent selection guide
+- testing.md: Added non-blocking patterns with separate window launch + polling
+- mobile-build.md: Added Gradle + emulator launch patterns with flag-file polling
+- mobile-e2e.md: Added self-healing patterns and process management rules

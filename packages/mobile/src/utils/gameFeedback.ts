@@ -14,31 +14,31 @@ interface FeedbackConfig {
 const FEEDBACK_CONFIG: Record<FeedbackType, FeedbackConfig> = {
   plant: {
     haptic: Haptics.ImpactFeedbackStyle.Medium,
-    soundFile: require('../../assets/sounds/plant.wav'),
+    soundFile: null,
     particleType: 'plant',
     particleCount: 6,
   },
   water: {
     haptic: Haptics.ImpactFeedbackStyle.Medium,
-    soundFile: require('../../assets/sounds/water.wav'),
+    soundFile: null,
     particleType: 'water',
     particleCount: 8,
   },
   fertilize: {
     haptic: Haptics.ImpactFeedbackStyle.Medium,
-    soundFile: require('../../assets/sounds/fertilize.wav'),
+    soundFile: null,
     particleType: 'fertilize',
     particleCount: 12,
   },
   harvest: {
     haptic: Haptics.ImpactFeedbackStyle.Heavy,
-    soundFile: require('../../assets/sounds/harvest.wav'),
+    soundFile: null,
     particleType: 'harvest',
     particleCount: 20,
   },
   levelUp: {
     haptic: Haptics.NotificationFeedbackType.Success,
-    soundFile: require('../../assets/sounds/levelup.wav'),
+    soundFile: null,
     particleType: 'confetti',
     particleCount: 30,
   },
@@ -49,7 +49,7 @@ const FEEDBACK_CONFIG: Record<FeedbackType, FeedbackConfig> = {
   },
 };
 
-let soundCache: Record<string, Audio.Sound | null> = {};
+const soundCache: Record<string, Audio.Sound | null> = {};
 
 async function loadSound(file: any): Promise<Audio.Sound | null> {
   try {

@@ -35,6 +35,70 @@ You are a testing and QA specialist for the GardenVerse project.
 - WebM recordings for demo videos
 - HTML pages with animated galleries for workflow visualization
 
+## ⚠️ Critical: Process Management on Windows (Non-Blocking)
+
+### The Golden Rule
+**NEVER** run long-lived processes (Docker, dev server, Gradle, emulator) directly in this agent's bash session. They will **block the agent permanently** and prevent iteration.
+
+### Windows Process Launch Cheat Sheet
+
+| Command | Behavior | Use Case |
+|---------|----------|----------|
+| `start "Title" cmd /c "command"` | ✅ New window, **non-blocking** | Docker, dev server, Gradle, emulator |
+| `start /B "" command` | ❌ Same console, **still blocks** (output goes to parent) | NEVER use for long-lived processes |
+| `command` | ❌ Blocks until done | Only for quick commands (< 10s) |
+| `cmd /c "npx prisma db push"` | ✅ Blocks but finishes | DB operations (non-daemon) |
+
+### How to Start Infrastructure (Always Use New Windows)
+
+```batch
+:: ✅ CORRECT — Opens new window, agent continues
+start "DockerInfra" cmd /c "docker compose -f e2e/docker/docker-compose.test.yml up -d"
+
+:: ✅ CORRECT — Opens new window, agent continues
+start "AdminDev" cmd /c "cd /d F:\Local_git\gardenVerse && npm run admin:dev"
+
+:: ❌ WRONG — Blocks the agent forever!
+cmd /c "npm run admin:dev"
+
+:: ❌ WRONG — Still blocks (output bleeds into parent)
+start /B "" npm run admin:dev
+```
+
+### Polling Pattern (Run in Main Session — Non-Blocking)
+After starting infra in separate windows, poll for readiness using short-lived commands:
+
+```bash
+:: Poll for PostgreSQL
+docker ps --format "{{.Names}}" | findstr "postgres"
+
+:: Poll for dev server (loop with timeout)
+for /l %i in (1,1,30) do (curl -s http://localhost:3000/api/v1/health >nul 2>&1 && echo ready! && exit /b) & timeout /t 2 /nobreak >nul
+
+:: Poll for DB seed completion (flag file)
+if exist F:\Local_git\gardenVerse\db_seed_done.flag (echo DB ready)
+
+:: Poll for APK build completion (flag file)
+if exist F:\Local_git\gardenVerse\apk_build_done.flag (echo APK ready)
+```
+
+### Self-Healing Loop Pattern
+```bash
+:: Check if service is running; if not, start it in a new window
+netstat -ano | findstr ":3000" | findstr "LISTENING" >nul
+if errorlevel 1 (
+  start "AdminDev" cmd /c "cd /d F:\Local_git\gardenVerse && npm run admin:dev"
+  :: now poll for readiness...
+)
+```
+
+### Summary
+- Start daemons → `start "Title" cmd /c "command"` (new window)
+- Run short commands → direct execution (blocks briefly)
+- Poll for readiness → use `curl`/`docker ps`/`if exist` loop
+- Never use `start /B` for daemons
+- This agent can manage its own infra lifecycle, as long as it uses new windows for daemons
+
 ## E2E Testing Patterns
 ```typescript
 // Use separate browser context for each workflow

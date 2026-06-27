@@ -1,4 +1,4 @@
-import { Skia, Color } from '@shopify/react-native-skia';
+import { Skia } from '@shopify/react-native-skia';
 
 export type ParticleType =
   | 'water'

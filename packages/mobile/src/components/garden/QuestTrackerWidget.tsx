@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -26,7 +26,7 @@ interface DailyQuest {
 }
 
 export function QuestTrackerWidget({ onPress }: QuestTrackerWidgetProps) {
-  const { dailyQuests, claimQuest, refreshQuests } = useGamification();
+  const { dailyQuests, claimQuest } = useGamification();
   const [activeQuest, setActiveQuest] = useState<DailyQuest | null>(null);
   const [progressAnim] = useState(() => new Animated.Value(0));
 

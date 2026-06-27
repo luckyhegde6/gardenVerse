@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React from 'react'
 import { Text, ActivityIndicator, Pressable } from 'react-native'
 import Animated, {
   useSharedValue,
@@ -6,7 +6,6 @@ import Animated, {
   withSpring,
   withSequence,
 } from 'react-native-reanimated'
-import { HapticFeedback } from '../../utils/haptics'
 import { useParticleSystem } from './ParticleSystem'
 
 interface AnimatedActionButtonProps {
@@ -36,7 +35,6 @@ export function AnimatedActionButton({
 }: AnimatedActionButtonProps) {
   const scale = useSharedValue(1)
   const { emit } = useParticleSystem()
-  const pressCountRef = useRef(0)
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],

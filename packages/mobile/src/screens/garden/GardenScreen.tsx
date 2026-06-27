@@ -116,7 +116,7 @@ export function GardenScreen() {
 
   // ─── Level-Up Modal ────────────────────────────────────────────────────
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [newLevel, setNewLevel] = useState(1);
+  const [newLevel] = useState(1);
 
   const addXpEvent = useCallback((amount: number, position?: { x: number; y: number }) => {
     const id = `xp-${++xpCounterRef.current}`;
@@ -363,12 +363,9 @@ export function GardenScreen() {
 
   // ─── Action Handlers ─────────────────────────────────────────────────────
 
-  const prevExpRef = useRef(user?.experience ?? 0);
-
   const handleWater = useCallback(
     async (cropId: string) => {
       try {
-        const before = prevExpRef.current;
         await waterCrop(cropId);
         growthEngine.onCropAction(cropId, 'water');
         feedback.trigger('water', { x: 150, y: 300 }).catch(() => {});
@@ -388,7 +385,6 @@ export function GardenScreen() {
   const handleFertilize = useCallback(
     async (cropId: string) => {
       try {
-        const before = prevExpRef.current;
         await fertilizeCrop(cropId);
         growthEngine.onCropAction(cropId, 'fertilize');
         feedback.trigger('fertilize', { x: 150, y: 300 }).catch(() => {});
@@ -408,7 +404,6 @@ export function GardenScreen() {
   const handleHarvest = useCallback(
     async (cropId: string) => {
       try {
-        const before = prevExpRef.current;
         await harvestCrop(cropId);
         feedback.trigger('harvest', { x: 150, y: 300 }).catch(() => {});
         addXpEvent(50, { x: 150, y: 250 });

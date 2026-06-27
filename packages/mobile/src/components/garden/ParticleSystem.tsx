@@ -3,8 +3,6 @@ import { Canvas, Circle, Rect, Group, Skia } from '@shopify/react-native-skia';
 import { StyleSheet } from 'react-native';
 import { Particle, ParticleType, createWaterParticle, createFertilizeParticle, createHarvestParticle, createPlantParticle, createConfettiParticle, createGrowthTickParticle } from './ParticlePresets';
 
-const PARTICLE_Z_INDEX = 1000;
-
 const styles = StyleSheet.create({
   absolute: {
     position: 'absolute',

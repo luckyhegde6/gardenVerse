@@ -8,10 +8,9 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { Crop, PlantSpecies } from '../../types';
-import { useParticleSystem } from './ParticleSystem';
+import { PlantSpecies } from '../../types';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: _SCREEN_WIDTH } = Dimensions.get('window');
 const SHEET_HEIGHT = 280;
 const CARD_WIDTH = 120;
 const CARD_HEIGHT = 200;
@@ -40,7 +39,6 @@ export function PlantSelectionSheet({
 }: PlantSelectionSheetProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [animation] = useState(() => new Animated.Value(0));
-  const { emit } = useParticleSystem();
 
   useEffect(() => {
     if (visible) {
