@@ -37,6 +37,7 @@ export interface WeatherState {
 const DEFAULT_WEATHER: WeatherState = { condition: "clear", temperature: 25, humidity: 50, rainfall: 0 }
 
 export type GrowthEventCallback = (updatedCrops: Crop[]) => void
+export type GrowthTickCallback = (growingCropIds: string[]) => void
 
 export class GrowthEngine {
   private timer: ReturnType<typeof setInterval> | null = null
@@ -45,13 +46,15 @@ export class GrowthEngine {
   private sunlightExposure: number = 50
   private weather: WeatherState = DEFAULT_WEATHER
   private onUpdate: GrowthEventCallback | null = null
+  private onGrowthTick: GrowthTickCallback | null = null
   private paused = false
 
-  start(crops: Crop[], gardenType: GardenType, sunlightExposure: number, callback: GrowthEventCallback) {
+  start(crops: Crop[], gardenType: GardenType, sunlightExposure: number, callback: GrowthEventCallback, growthTickCallback?: GrowthTickCallback) {
     this.crops = crops
     this.gardenType = gardenType
     this.sunlightExposure = sunlightExposure
     this.onUpdate = callback
+    this.onGrowthTick = growthTickCallback ?? null
 
     if (this.timer) clearInterval(this.timer)
     this.timer = setInterval(() => this.tick(), TICK_INTERVAL_MS)
@@ -84,7 +87,7 @@ export class GrowthEngine {
     this.weather = weather
   }
 
-  onCropAction(cropId: string, action: 'water' | 'fertilize') {
+  onCropAction(cropId: string, action: 'water' | 'fertilize' | 'plant') {
     this.crops = this.crops.map(c => {
       if (c.id !== cropId) return c
       if (action === 'water') {
@@ -92,6 +95,10 @@ export class GrowthEngine {
       }
       if (action === 'fertilize') {
         return { ...c, nutrientLevel: Math.min(100, c.nutrientLevel + 30), _growthBoost: (c as any)._growthBoost ? (c as any)._growthBoost + 2 : 2 }
+      }
+      if (action === 'plant') {
+        // Plant action - reset growth boost for new crop
+        return { ...c, _growthBoost: 0 }
       }
       return c
     })
@@ -188,6 +195,14 @@ export class GrowthEngine {
 
     if (changed && this.onUpdate) {
       this.onUpdate(this.crops)
+    }
+
+    // Emit growth tick event for visual feedback
+    const growingCropIds = this.crops
+      .filter(c => c.status === CropStatus.SPROUTING || c.status === CropStatus.GROWING)
+      .map(c => c.id)
+    if (growingCropIds.length > 0 && this.onGrowthTick) {
+      this.onGrowthTick(growingCropIds)
     }
   }
 }

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { Text, ActivityIndicator, Pressable } from 'react-native'
 import Animated, {
   useSharedValue,
@@ -7,6 +7,7 @@ import Animated, {
   withSequence,
 } from 'react-native-reanimated'
 import { HapticFeedback } from '../../utils/haptics'
+import { useParticleSystem } from './ParticleSystem'
 
 interface AnimatedActionButtonProps {
   onPress: () => void
@@ -16,6 +17,10 @@ interface AnimatedActionButtonProps {
   label: string
   bgColor: string
   className?: string
+  /** Action type for haptic/particle/sound feedback */
+  actionType?: 'water' | 'fertilize' | 'harvest' | 'plant' | 'confetti'
+  /** Screen position for particle emission */
+  particlePosition?: { x: number; y: number }
 }
 
 export function AnimatedActionButton({
@@ -26,12 +31,41 @@ export function AnimatedActionButton({
   label,
   bgColor,
   className = '',
+  actionType,
+  particlePosition,
 }: AnimatedActionButtonProps) {
   const scale = useSharedValue(1)
+  const { emit } = useParticleSystem()
+  const pressCountRef = useRef(0)
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }))
+
+  const handlePress = () => {
+    if (disabled || isLoading) return
+
+    // Haptic feedback based on action type
+    const hapticMap: Record<string, () => Promise<void>> = {
+      water: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
+      fertilize: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
+      harvest: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy),
+      plant: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
+      levelUp: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+    }
+
+    const hapticFn = hapticMap[actionType || '']
+    if (hapticFn) {
+      hapticFn().catch(() => {})
+    }
+
+    // Emit particles
+    if (actionType && particlePosition) {
+      emit(actionType, particlePosition)
+    }
+
+    onPress()
+  }
 
   return (
     <Pressable
@@ -44,12 +78,7 @@ export function AnimatedActionButton({
           withSpring(1, { damping: 10, stiffness: 250 }),
         )
       }}
-      onPress={() => {
-        if (!disabled && !isLoading) {
-          HapticFeedback.light()
-          onPress()
-        }
-      }}
+      onPress={handlePress}
       disabled={disabled || isLoading}
     >
       <Animated.View
@@ -68,3 +97,6 @@ export function AnimatedActionButton({
     </Pressable>
   )
 }
+
+// Need to import Haptics
+import * as Haptics from 'expo-haptics'

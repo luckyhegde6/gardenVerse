@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import { View, Text } from 'react-native'
 import { AnimatedActionButton } from './AnimatedActionButton'
 import { Crop, CropStatus } from '../../types'
-import { HapticFeedback } from '../../utils/haptics'
+
 
 interface HarvestButtonProps {
   onPress: () => void
@@ -41,7 +41,6 @@ export function HarvestButton({ onPress, crop, isLoading = false, disabled = fal
 
   const handlePress = () => {
     if (canHarvest) {
-      HapticFeedback.harvest()
       onPress()
     }
   }
@@ -55,6 +54,7 @@ export function HarvestButton({ onPress, crop, isLoading = false, disabled = fal
         icon={icon}
         label={label}
         bgColor={bgColor}
+        actionType="harvest"
         className={className}
       />
       {!isMature && !isHarvested && growthStage > 0 && (

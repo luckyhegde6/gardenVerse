@@ -15,6 +15,11 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withDelay,
+  useAnimatedProps,
+  withRepeat,
+  withTiming,
+  Easing,
+  interpolate,
 } from "react-native-reanimated";
 import { Crop, CropStatus } from "../../types";
 import HapticFeedback from "../../utils/haptics";
@@ -242,6 +247,16 @@ export function IsometricGrid({
   const offsetX = vbWidth / 2;
   const offsetY = (gridHeight + 1) * HALF_H + 20;
 
+  // ─── Pulse animation for empty plots ───────────────────────────────────────
+  const pulseAnim = useSharedValue(0);
+  useEffect(() => {
+    pulseAnim.value = withRepeat(
+      withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+  }, []);
+
   // ─── Cross-platform grid press handler ────────────────────────────────
   function isInsideDiamond(px: number, py: number, cx: number, sy: number, hw: number, hh: number): boolean {
     return Math.abs((px - cx) / hw) + Math.abs((py - sy) / hh) <= 1
@@ -366,6 +381,38 @@ export function IsometricGrid({
                   fill="#a0825a"
                   opacity={0.6}
                 />
+                {/* Pulsing hint for center plot on empty garden */}
+                {crops.length === 0 && col === Math.floor(gridWidth / 2) && row === Math.floor(gridHeight / 2) && (
+                  <G>
+                    <Rect
+                      x={sx - 8}
+                      y={sy - 8}
+                      width={16}
+                      height={16}
+                      rx={4}
+                      fill="#3b82f6"
+                      opacity={0.3}
+                    />
+                    <Rect
+                      x={sx - 6}
+                      y={sy - 1}
+                      width={12}
+                      height={2}
+                      rx={1}
+                      fill="#3b82f6"
+                      opacity={interpolate(pulseAnim.value, [0, 1], [0.3, 0.9])}
+                    />
+                    <Rect
+                      x={sx - 1}
+                      y={sy - 6}
+                      width={2}
+                      height={12}
+                      rx={1}
+                      fill="#3b825a"
+                      opacity={interpolate(pulseAnim.value, [0, 1], [0.3, 0.9])}
+                    />
+                  </G>
+                )}
               </G>
             )}
 

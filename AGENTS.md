@@ -1102,3 +1102,61 @@ Located in `docs/architecture/sequence-diagrams.md` — 11 Mermaid diagrams:
   }
 }
 ```
+
+---
+
+## Session Feedback & Improvements
+
+### Session 17 (Jun 27, 2026): Garden Screen Enhancement Plan — Mobile Game Design
+
+**Focus**: Comprehensive redesign of GardenScreen for playability — interactive planting, action feedback, 3D parity, progression visualization, quest integration.
+
+**Plan Created**:
+- **Phase 1.5 (Week 1-2)**: Core game feel — guided first plant, haptic/particle/sound feedback, 3D tap interaction, empty state gamification, growth tick pulse, quest widget, Skia particle system
+- **Phase 2 (Week 2-3)**: Progression — XP floating numbers, level-up celebration, crop detail modal, daily quest integration
+- **Phase 3 (Week 3-4)**: Polish — seasonal themes, weather particles, advanced interactions, social elements
+
+**Technical Decisions**:
+- Particles: React Native Skia (programmatic, GPU-accelerated) over Lottie
+- Quest tracking: Use existing `/gamification/quests` endpoints — no new API needed
+- Sound: expo-av with generated/provided .wav assets
+- Scope: Phase 1.5 = GardenScreen only; plant-crop screen separate
+
+**E2E Test Coverage**: 7 critical paths including first plant flow, action buttons, 2D/3D toggle, growth overlay, quest widget
+
+**Accomplishments (This Session):**
+- **Installed dependencies**: `@shopify/react-native-skia@2.6.8`, `expo-av@16.0.8`, `expo-haptics`
+- **Created Skia particle system** (`ParticlePresets.ts`, `useParticles.ts`, `ParticleSystem.tsx`) with 6 particle types: water, fertilize, harvest, plant, confetti, growthTick
+- **Created PlantSelectionSheet** with horizontal seed carousel, stats preview, quantity badges, difficulty stars
+- **Added pulsing hint** to IsometricGrid center plot using reanimated shared value for empty garden state
+- **Created gameFeedback.ts** unifying haptics, sound (expo-av), and particles via single `useGameFeedback()` hook
+- **Wired AnimatedActionButton actionType** into WaterButton (actionType="water"), FertilizeButton (actionType="fertilize"), HarvestButton (actionType="harvest")
+- **Removed direct HapticFeedback calls** from all 3 buttons — delegated to AnimatedActionButton
+- **Wired useGameFeedback** into GardenScreen handleWater/handleFertilize/handleHarvest handlers
+- **Added starter seed grant** — auto-opens PlantSelectionSheet when crops.length === 0
+- **Added growth tick visual pulse** via ParticleSystem emit('growthTick')
+- **Created 5 placeholder .wav assets** (44 bytes each, valid PCM WAV headers) in assets/sounds/
+- **Fixed Gradle build errors**: patched expo-av and expo-haptics build.gradle (removed `expo-module-gradle-plugin` dependency, used `ExpoModulesCorePlugin.gradle`), patched @shopify/react-native-skia SkiaBaseViewManager.java (setPointerEvents package-private fix), set `reactNativeAndroidRoot` path, created ReactAndroid/gradle.properties stub
+- **Built APK successfully** — `app-arm64-v8a-debug.apk` (88.2 MB) via `gradlew.bat assembleDebug -x :expo-updates:kaptDebugKotlin`
+- **Emulator verification** (Pixel_7_API_34): app launches without crash, Hermes engine loaded, no AndroidRuntime FATAL_EXCEPTION, all native libraries loaded
+- **TypeScript passes** with zero errors across mobile package
+
+**Mistakes & Corrections:**
+1. ❌ `subscribe` cleanup returned boolean from `Set.delete()` — useEffect cleanup must return void
+   ✅ Wrapped in `{ unsub(); }` to return void
+2. ❌ reanimated 3 `interpolate` is standalone function, not method on SharedValue
+   ✅ Changed `pulseAnim.interpolate(...)` → `interpolate(pulseAnim.value, ...)`
+3. ❌ Missing `expo-haptics` and `expo-av` in mobile package
+   ✅ Installed via npm
+4. ❌ `expo-module-gradle-plugin` not bundled with expo-modules-core@1.12.26 — build failed
+   ✅ Patched expo-av@16.0.8 and expo-haptics@56.0.3 build.gradle to use ExpoModulesCorePlugin.gradle pattern instead
+5. ❌ `@shopify/react-native-skia` compilation error: `setPointerEvents(PointerEvents)` is package-private in RN 0.74
+   ✅ Changed SkiaBaseViewManager.java to override `setPointerEvents(ReactViewGroup, String)` and call super
+6. ❌ Inline shell build blocks the agent for 5+ minutes
+   ✅ Always use Task subagent for Gradle builds to avoid blocking
+
+**Next Steps:**
+- Complete login flow test on emulator (DPAD navigation to login fields)
+- Fix sound asset placeholder to actually generate usable audio (currently 44-byte headers with 0-length data)
+- Phase 2: XP floating numbers, level-up celebration, crop detail modal, daily quest API integration
+- Phase 3: Seasonal themes, weather particles, drag-to-water gesture

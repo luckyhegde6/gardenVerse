@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { useGardenStore } from "../stores/gardenStore";
 import { Crop } from "../types";
+import api from "../services/api";
 
 export function useGarden() {
   const {
@@ -25,6 +26,15 @@ export function useGarden() {
       fetchGardens();
     }
   }, [gardens.length, fetchGardens]);
+
+  // Grant starter seeds on first garden creation
+  const grantStarterSeeds = useCallback(async (gardenId: string) => {
+    try {
+      await api.post(`/garden/${gardenId}/starter-seeds`);
+    } catch {
+      // Silent fail - starter seeds are non-critical
+    }
+  }, []);
 
   const selectedGarden = gardens.find((g) => g.id === selectedGardenId);
 
@@ -89,5 +99,6 @@ export function useGarden() {
     harvestCrop: handleHarvestCrop,
     getCropById,
     clearError,
+    grantStarterSeeds,
   };
 }

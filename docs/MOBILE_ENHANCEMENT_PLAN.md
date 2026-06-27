@@ -174,6 +174,185 @@ Impact: Medium
 
 ---
 
+## PHASE 1.5: Garden Screen — Core Game Feel & Interactivity (Week 1-2)
+**Goal**: Transform GardenScreen from a functional grid into a playable, juicy game loop
+
+### 1.5.1 Guided First Plant Experience
+```
+Priority: CRITICAL | Effort: Medium | Impact: CRITICAL
+```
+- **Animated empty plot hint**: Pulsing "+" on center tile (3,3) with "Tap to plant" tooltip
+- **Seed Selection Bottom Sheet**: Horizontal carousel of starter seeds (Tomato, Chilli, Mint)
+  - Each card: sprite preview, growth time, yield, rarity badge
+  - One-tap select → confirm → planting animation
+- **Planting Animation Sequence** (1.5s):
+  1. Seed drops from top with bounce
+  2. Soil puff particle burst (Skia)
+  3. Sprout emerges with spring scale animation
+  4. Success chime + light haptic
+- **Starter Seeds**: Grant 3 free seeds on first garden creation (server-side)
+
+### 1.5.2 Action Feedback System (Juice)
+```
+Priority: CRITICAL | Effort: Low | Low | Impact: HIGH
+```
+- **Unified Feedback Service** (`src/utils/gameFeedback.ts`):
+  ```typescript
+  plant:   { haptic: medium, sound: 'plant.wav',   particles: 'soilPuff' }
+  water:   { haptic: medium, sound: 'water.wav',   particles: 'droplets' }
+  fertilize:{ haptic: medium, sound: 'fertilize.wav', particles: 'sparkles' }
+  harvest: { haptic: heavy,  sound: 'harvest.wav', particles: 'burst + coins' }
+  levelUp: { haptic: success, sound: 'levelup.wav', particles: 'confetti' }
+  growthTick: { haptic: light, particles: 'subtlePulse' }
+  ```
+- **Skia Particle System** (`components/garden/ParticleSystem.tsx`):
+  - `DropletEmitter` — gravity-affected water drops
+  - `SparkleBurst` — radial green/gold particles
+  - `ConfettiExplosion` — physics-based rectangles
+  - `SubtlePulse` — scale pulse on crop sprite
+- **Integration**: Wrap `AnimatedActionButton` to trigger on press
+
+### 1.5.3 3D View Interaction Parity
+```
+Priority: HIGH | Effort: Medium | Impact: HIGH
+```
+- **Raycast Tap Detection** in `Garden3D`:
+  - On tap, cast ray from camera through tap point
+  - Find intersected crop mesh → select crop
+  - Show same action buttons (Water/Fertilize/Harvest) as 2D
+- **Camera Focus Animation**: Smooth pan/zoom to selected plant
+- **Selection Ring**: Already exists — ensure visible on tap
+
+### 1.5.4 Empty State Gamification
+```
+Priority: HIGH | Effort: Low | Impact: HIGH
+```
+- **Starter Seed Grant**: API call on garden creation → 3 common seeds
+- **Animated Plot Hints**: 
+  - Pulsing scale on empty tiles (staggered)
+  - "Drag seed here" ghost preview when seed selected
+- **Progressive Tooltips**: "Plant → Water → Harvest" cycle hint (dismissible)
+
+### 1.5.5 Growth Tick Visual Feedback
+```
+Priority: HIGH | Effort: Low | Impact: MEDIUM
+```
+- **GrowthEngine Event**: Emit `onGrowthTick(crops)` callback
+- **IsometricGrid Listener**: On tick, trigger `SubtlePulse` on all growing crops
+- **Visual**: 200ms scale pulse (1.0 → 1.05 → 1.0) + light haptic
+
+### 1.5.6 Daily Quest Tracker Widget
+```
+Priority: HIGH | Effort: Medium | Impact: HIGH
+```
+- **Header Widget** (below garden name, above grid):
+  - Circular progress ring for active daily quest
+  - Quest title: "Water 3 crops" / "Harvest 2 crops"
+  - Tap → expands to full quest list (navigate to Quests screen)
+- **Auto-Update**: Listen to local action events → update progress optimistically
+- **Claim Animation**: Reward flies from widget → currency counter
+
+### 1.5.7 Skia Particle System Foundation
+```
+Priority: HIGH | Effort: Medium | Impact: HIGH (enabler)
+```
+- **New Components**:
+  - `ParticleSystem.tsx` — Skia Canvas + ParticleEmitter registry
+  - `useParticles.ts` — Hook: `emit('water', {x, y})`, `emit('harvest', {x, y})`
+  - `ParticlePresets.ts` — Pre-configured emitters for each action
+- **Performance**: Single Skia canvas overlay, GPU-instanced particles
+
+---
+
+### New Components for Phase 1.5
+```
+packages/mobile/src/components/garden/
+├── PlantSelectionSheet.tsx      # Seed carousel bottom sheet
+├── ParticleSystem.tsx           # Skia canvas + emitters
+├── useParticles.ts              # Particle emission hook
+├── ParticlePresets.ts           # Water, fertilize, harvest, plant, confetti
+├── XPCelebration.tsx            # Floating XP numbers (Phase 2)
+├── LevelUpModal.tsx             # Full-screen level up (Phase 2)
+├── CropDetailModal.tsx          # Long-press inspection (Phase 2)
+├── QuestTrackerWidget.tsx       # Daily quest progress on header
+└── WeatherParticles.tsx         # Rain/snow/heat (Phase 3)
+```
+
+### Dependencies to Add
+```json
+{
+  "@shopify/react-native-skia": "^1.7.0",
+  "expo-av": "~14.0.0"
+}
+```
+
+### E2E Test Specs (Playwright)
+```typescript
+// e2e/tests/garden-game-feel.spec.ts
+test.describe('Garden Screen — Game Feel', () => {
+  test('First-time user completes plant→water→harvest loop', async ({ page }) => {
+    await login(page, 'demo@gardenverse.vercel.app');
+    await page.goto('/garden');
+    
+    // Guided plant
+    await page.click('[data-testid="plot-3-3"]');
+    await page.click('[data-testid="seed-tomato"]');
+    await page.click('[data-testid="confirm-plant"]');
+    await expect(page.locator('[data-testid="planting-animation"]')).toBeVisible();
+    
+    // Water with feedback
+    await page.click('[data-testid="water-button"]');
+    await expect(page.locator('[data-testid="water-particles"]')).toBeVisible();
+    
+    // Fast-forward & harvest
+    await page.evaluate(() => growthEngine.forceTick());
+    await page.click('[data-testid="harvest-button"]');
+    await expect(page.locator('[data-testid="xp-toast"]')).toBeVisible();
+  });
+  
+  test('2D/3D toggle preserves selection', async ({ page }) => {
+    // ... select crop in 2D, toggle to 3D, verify selection ring
+  });
+  
+  test('Quest widget updates on action', async ({ page }) => {
+    // ... verify progress ring fills on water action
+  });
+});
+```
+
+---
+
+## 📋 Implementation Order (Phase 1.5)
+
+| Week | Task | Dependencies |
+|------|------|--------------|
+| 1 | 1.5.7 Skia Particle System | npm install |
+| 1 | 1.5.2 Action Feedback (haptics + particles + sound) | 1.5.7 |
+| 1 | 1.5.5 Growth Tick Pulse | 1.5.7 |
+| 1 | 1.5.3 3D Tap Interaction | — |
+| 2 | 1.5.1 Guided First Plant + Seed Sheet | 1.5.2 |
+| 2 | 1.5.4 Empty State Gamification | 1.5.1 |
+| 2 | 1.5.6 Quest Tracker Widget | — |
+| 2 | E2E Tests + Polish | All above |
+
+---
+
+## 🎯 Success Metrics (Phase 1.5)
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| First plant completion | > 85% | `garden.first_plant` event |
+| Actions per session | > 20 | Water + fertilize + harvest |
+| Session duration (garden) | > 6 min | Screen time analytics |
+| 3D view usage | > 30% | Toggle event tracking |
+| Quest widget engagement | > 50% | Tap-through to quests |
+
+---
+
+*This garden-specific phase integrates with the existing Phase 1 (Foundation) and Phase 2 (Engagement) — it's the "game feel" layer that makes the garden screen playable.*
+
+---
+
 ## PHASE 2: Engagement & Retention Systems (Weeks 3-4)
 **Goal**: Add daily retention mechanics, push notifications, and quest system
 

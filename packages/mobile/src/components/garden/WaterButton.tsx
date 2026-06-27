@@ -2,7 +2,6 @@ import React, { useMemo } from 'react'
 import { View, Text } from 'react-native'
 import { AnimatedActionButton } from './AnimatedActionButton'
 import { Crop } from '../../types'
-import { HapticFeedback } from '../../utils/haptics'
 
 function getTimeSince(timestamp: string | undefined): string {
   if (!timestamp) return ''
@@ -29,7 +28,6 @@ export function WaterButton({ onPress, crop, isLoading = false, disabled = false
   const isHydrated = (crop?.hydration ?? 0) >= 80
 
   const handlePress = () => {
-    HapticFeedback.action()
     onPress()
   }
 
@@ -42,6 +40,7 @@ export function WaterButton({ onPress, crop, isLoading = false, disabled = false
         icon={needsWater ? "💧" : "✅"}
         label={needsWater ? "Water" : "Hydrated"}
         bgColor={isHydrated ? "#6b7280" : "#3b82f6"}
+        actionType="water"
         className={className}
       />
       {timeSince ? (
