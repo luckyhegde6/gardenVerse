@@ -135,9 +135,47 @@ npx detox test --configuration android.emu.debug --headed
 - Screenshot on failure for debugging
 - All API calls must go through the app (no direct HTTP in tests)
 
-## Troubleshooting
+## ⚠️ Critical: Process Management on Windows (Non-Blocking)
 
-### Emulator Not Detected
+### The Golden Rule
+**NEVER** run long-lived processes (Gradle, emulator, dev server) directly in this agent's bash session. Use `start "Title" cmd /c "command"` for separate windows.
+
+| Command | Behavior | Use Case |
+|---------|----------|----------|
+| `start "Title" cmd /c "command"` | ✅ New window, **non-blocking** | Emulator, Gradle, dev server |
+| `start /B "" command` | ❌ Same console, **still blocks** | NEVER use for daemons |
+| `command` | ❌ Blocks until done | Only quick commands |
+
+### Expected Pre-Requisites (Must Verify Before Testing)
+This agent assumes the following are already running (started by mobile-build agent or main agent):
+1. **Admin dev server** on port 3000 — verify: `curl http://localhost:3000/api/v1/health`
+2. **Android emulator** with `Pixel_7_API_34` — verify: `adb shell getprop sys.boot_completed`
+3. **APK built** — verify: `dir packages\mobile\android\app\build\outputs\apk\debug\app-arm64-v8a-debug.apk`
+4. **Port forwarding** — verify: `adb devices`, then `adb reverse tcp:3000 tcp:3000`
+
+If any are missing, this agent may start them using `start "Title" cmd /c "command"` in new windows, then poll for readiness.
+
+### Self-Healing Pattern
+
+```bash
+:: Check if emulator is running; if not, start in new window
+adb shell getprop sys.boot_completed 2>&1 | findstr "1" >nul
+if errorlevel 1 (
+  start "Emulator" cmd /c "C:\...\emulator -avd Pixel_7_API_34 -no-snapshot"
+  :: Wait for boot
+  for /l %i in (1,1,60) do (adb shell getprop sys.boot_completed 2>&1 | findstr "1" >nul && echo BOOTED! && exit /b) & timeout /t 5 /nobreak >nul
+)
+
+:: Check if dev server is running; if not, start in new window
+curl -s http://localhost:3000/api/v1/health >nul 2>&1
+if errorlevel 1 (
+  start "AdminDev" cmd /c "cd /d F:\Local_git\gardenVerse && npm run admin:dev"
+  :: Poll for readiness
+  for /l %i in (1,1,30) do (curl -s http://localhost:3000/api/v1/health >nul 2>&1 && echo READY! && exit /b) & timeout /t 3 /nobreak >nul
+)
+```
+
+### Troubleshooting
 ```bash
 adb devices
 # If empty, restart adb server

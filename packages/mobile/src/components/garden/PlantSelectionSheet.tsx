@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { PlantSpecies } from '../../types';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: _SCREEN_WIDTH } = Dimensions.get('window');
 const SHEET_HEIGHT = 280;
 const CARD_WIDTH = 120;
 const CARD_HEIGHT = 200;
