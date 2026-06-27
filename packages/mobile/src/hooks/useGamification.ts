@@ -29,10 +29,24 @@ export function useGamification(): UseGamificationReturn {
   const fetchQuests = useCallback(async () => {
     try {
       setLoading(true);
-      // Try to fetch from API - if not available, use mock data
-      const res = await api.get('/gamification/quests/daily');
-      if (res.data) {
-        setDailyQuests(res.data);
+      // Try to fetch from the real quests/user-progress endpoint
+      const res = await api.get('/quests/user-progress');
+      const allQuests = res.data?.grouped?.DAILY || res.data?.DAILY || [];
+      if (allQuests.length > 0) {
+        const mapped: DailyQuest[] = allQuests.map((q: any) => ({
+          id: q.id || q.questId,
+          questKey: q.key || q.questKey || '',
+          title: q.title || '',
+          progress: q.userProgress?.progress ?? q.progress ?? 0,
+          targetCount: q.targetCount || 1,
+          isCompleted: q.userProgress?.isCompleted ?? q.isCompleted ?? false,
+          claimed: !!q.userProgress?.claimedAt || !!q.claimedAt,
+          claimedAt: q.userProgress?.claimedAt || q.claimedAt,
+          xpReward: q.xpReward || 50,
+          creditReward: q.creditReward || 10,
+        }));
+        setDailyQuests(mapped);
+        setLoading(false);
         return;
       }
     } catch {
@@ -92,7 +106,7 @@ export function useGamification(): UseGamificationReturn {
 
   const claimQuest = useCallback(async (questId: string) => {
     try {
-      await api.post(`/gamification/quests/${questId}/claim`);
+      await api.post(`/quests/user-progress?claim=true`, { questId });
       // Refresh after claim
       fetchQuests();
     } catch {
