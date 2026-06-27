@@ -33,7 +33,12 @@ import { Badge } from '../../components/ui/Badge';
 import { GrowthOverlay } from '../../components/garden/GrowthOverlay';
 import { WeatherBar } from '../../components/garden/WeatherBar';
 import { WalkthroughOverlay, useWalkthrough } from '../../components/garden/WalkthroughOverlay';
-import { Crop, CollectionStats, GardenType, WeatherData } from '../../types';
+import { PlantSelectionSheet } from '../../components/garden/PlantSelectionSheet';
+import { ParticleProvider } from '../../components/garden/ParticleSystem';
+import { QuestTrackerWidget } from '../../components/garden/QuestTrackerWidget';
+import { useGameFeedback } from '../../utils/gameFeedback';
+import { useParticleSystem } from '../../components/garden/ParticleSystem';
+import { Crop, CollectionStats, GardenType, WeatherData, PlantSpecies } from '../../types';
 import GamificationService from '../../services/gamification';
 import { growthEngine, GrowthState, WeatherCondition } from '../../services/growthEngine';
 import { useGardenStore } from '../../stores/gardenStore';
@@ -205,6 +210,16 @@ export function GardenScreen() {
         sync(updated)
         setEngineState({ lastTickAt: Date.now(), ticksElapsed: growthEngine['timer'] ? 1 : 0 })
       },
+      (growingCropIds) => {
+        // Trigger growth tick visual pulse for growing crops
+        growingCropIds.forEach(cropId => {
+          const crop = crops.find(c => c.id === cropId)
+          if (crop && crop.plotX !== undefined && crop.plotY !== undefined) {
+            const pos = { x: 50 + crop.plotX * 60, y: 50 + crop.plotY * 60 }
+            emit('growthTick', pos)
+          }
+        })
+      },
     )
     return () => { growthEngine.stop(); engineStarted.current = false }
   }, [!!selectedGarden])
@@ -311,77 +326,149 @@ export function GardenScreen() {
     ? Math.round((collectionStats.completion / 100) * collectionStats.total)
     : 0;
 
+  // ─── Game Feedback & Particle System ────────────────────────────────────────
+  const { emit } = useParticleSystem();
+  const feedback = useGameFeedback();
+
+  // ─── Starter Seed Grant: auto-open plant sheet when no crops exist ─────────
+  const [showPlantSheet, setShowPlantSheet] = useState(false);
+  const [plantSheetPosition, setPlantSheetPosition] = useState<{ plotX: number; plotY: number } | null>(null);
+
+  useEffect(() => {
+    if (!isLoading && crops.length === 0 && !showWalkthrough) {
+      // No crops planted yet — prompt the user to plant their first seed
+      setPlantSheetPosition({ plotX: 3, plotY: 3 });
+      setShowPlantSheet(true);
+    }
+  }, [isLoading, crops.length, showWalkthrough]);
+
   // ─── Action Handlers ─────────────────────────────────────────────────────
 
   const handleWater = useCallback(
     async (cropId: string) => {
-      HapticFeedback.medium();
       try {
         await waterCrop(cropId);
         growthEngine.onCropAction(cropId, 'water');
+        feedback.trigger('water', { x: 150, y: 300 }).catch(() => {});
       } catch {
         // Error handled upstream
       }
     },
-    [waterCrop],
+    [waterCrop, feedback],
   );
 
   const handleFertilize = useCallback(
     async (cropId: string) => {
-      HapticFeedback.medium();
       try {
         await fertilizeCrop(cropId);
         growthEngine.onCropAction(cropId, 'fertilize');
+        feedback.trigger('fertilize', { x: 150, y: 300 }).catch(() => {});
       } catch {
         // Error handled upstream
       }
     },
-    [fertilizeCrop],
+    [fertilizeCrop, feedback],
   );
 
   const handleHarvest = useCallback(
     async (cropId: string) => {
-      HapticFeedback.success();
       try {
         await harvestCrop(cropId);
+        feedback.trigger('harvest', { x: 150, y: 300 }).catch(() => {});
       } catch {
         // Error handled upstream
       }
     },
-    [harvestCrop],
+    [harvestCrop, feedback],
   );
 
   const selectedCropForOverlay = selectedCropId
     ? crops.find((c: Crop) => c.id === selectedCropId) || null
     : null;
 
+  const [availableSeeds, setAvailableSeeds] = useState<{ species: PlantSpecies; quantity: number }[]>([]);
+
+  // Fetch available seeds for planting
+  const fetchAvailableSeeds = useCallback(async () => {
+    try {
+      const res = await api.get('/shop?category=seeds');
+      const items = res.data?.data || res.data;
+      const seeds = items
+        .filter((item: any) => item.category === 'seeds')
+        .map((item: any) => ({
+          species: {
+            id: item.id,
+            commonName: item.name,
+            scientificName: item.description || '',
+            difficulty: 'Easy',
+            waterNeeds: 'Medium',
+            sunlightNeeds: 'Full Sun',
+            seasons: ['Spring', 'Summer'],
+            edible: true,
+            tags: [],
+          } as PlantSpecies,
+          quantity: item.stock || 99,
+        }));
+      setAvailableSeeds(seeds);
+    } catch {
+      // Use mock data
+      setAvailableSeeds([
+        { species: { id: 'tomato', commonName: 'Tomato', scientificName: 'Solanum lycopersicum', difficulty: 'Easy', waterNeeds: 'High', sunlightNeeds: 'Full Sun', seasons: ['Spring', 'Summer'], edible: true, tags: [] } as PlantSpecies, quantity: 10 },
+        { species: { id: 'chilli', commonName: 'Chilli', scientificName: 'Capsicum annuum', difficulty: 'Easy', waterNeeds: 'Medium', sunlightNeeds: 'Full Sun', seasons: ['Spring', 'Summer'], edible: true, tags: [] } as PlantSpecies, quantity: 10 },
+        { species: { id: 'mint', commonName: 'Mint', scientificName: 'Mentha', difficulty: 'Easy', waterNeeds: 'Medium', sunlightNeeds: 'Partial Shade', seasons: ['Spring', 'Summer', 'Fall'], edible: true, tags: [] } as PlantSpecies, quantity: 10 },
+      ]);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAvailableSeeds();
+  }, [fetchAvailableSeeds]);
+
+  const handlePlantFromSheet = useCallback(async (species: PlantSpecies) => {
+    if (!plantSheetPosition || !selectedGardenId) return;
+    try {
+      await useGardenStore.getState().plantCrop(selectedGardenId, species.commonName, species.id, plantSheetPosition.plotX, plantSheetPosition.plotY);
+      // Trigger planting feedback
+      const pos = { x: 50 + plantSheetPosition.plotX * 60, y: 50 + plantSheetPosition.plotY * 60 };
+      (emit as (type: 'plant' | 'water' | 'fertilize' | 'harvest' | 'confetti' | 'growthTick', position: { x: number; y: number }) => void)('plant', pos);
+      growthEngine.onCropAction('', 'plant');
+    } catch (e) {
+      console.warn('Failed to plant crop:', e);
+    }
+    setShowPlantSheet(false);
+    setPlantSheetPosition(null);
+  }, [plantSheetPosition, selectedGardenId, emit]);
+
   return (
-    <View testID="garden-screen" style={{ flex: 1, backgroundColor: theme.background }}>
-      {/* ─── Plant-Centric Header ──────────────────────────────────────────── */}
-      <View style={styles.plantHeader}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>
-              {selectedGarden?.name || 'My Garden'}
-            </Text>
-            <Text style={styles.headerSubtitle}>
-              Level {masteryLevel} Gardener
-            </Text>
-          </View>
-          <View style={styles.headerRight}>
-            <SyncStatusIndicator compact />
-            <View style={styles.collectionBadge}>
-              <Text style={styles.collectionBadgeText}>
-                🌿 {collectionStats.discovered}/{collectionStats.total}
+    <ParticleProvider>
+      <View testID="garden-screen" style={{ flex: 1, backgroundColor: theme.background }}>
+        {/* ─── Plant-Centric Header ──────────────────────────────────────────── */}
+        <View style={styles.plantHeader}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.headerTitle}>
+                {selectedGarden?.name || 'My Garden'}
+              </Text>
+              <Text style={styles.headerSubtitle}>
+                Level {masteryLevel} Gardener
               </Text>
             </View>
-            {user && (
+            <View style={styles.headerRight}>
+              <QuestTrackerWidget onPress={() => router.push('/quests')} />
+              <SyncStatusIndicator compact />
+              <View style={styles.collectionBadge}>
+                <Text style={styles.collectionBadgeText}>
+                  🌿 {collectionStats.discovered}/{collectionStats.total}
+                </Text>
+              </View>
+{user && (
               <View style={styles.creditsBadge}>
                 <Text style={styles.creditsBadgeText}>
                   🪙 {user.greenCredits}
                 </Text>
               </View>
             )}
+            <QuestTrackerWidget onPress={() => router.push('/quests')} />
           </View>
         </View>
       </View>
@@ -930,6 +1017,15 @@ export function GardenScreen() {
       {/* ─── Auto-save Toast ────────────────────────────────────────────────── */}
       {ToastComponent}
     </View>
+    <PlantSelectionSheet
+      visible={showPlantSheet}
+      onClose={() => setShowPlantSheet(false)}
+      onPlant={handlePlantFromSheet}
+      plotX={plantSheetPosition?.plotX ?? 0}
+      plotY={plantSheetPosition?.plotY ?? 0}
+      availableSeeds={availableSeeds}
+    />
+  </ParticleProvider>
   );
 }
 

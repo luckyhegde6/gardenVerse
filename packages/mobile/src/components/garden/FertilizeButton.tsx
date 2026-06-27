@@ -2,7 +2,6 @@ import React, { useMemo } from 'react'
 import { View, Text } from 'react-native'
 import { AnimatedActionButton } from './AnimatedActionButton'
 import { Crop } from '../../types'
-import { HapticFeedback } from '../../utils/haptics'
 
 function getTimeSince(timestamp: string | undefined): string {
   if (!timestamp) return ''
@@ -29,7 +28,6 @@ export function FertilizeButton({ onPress, crop, isLoading = false, disabled = f
   const isFed = (crop?.nutrientLevel ?? 0) >= 80
 
   const handlePress = () => {
-    HapticFeedback.action()
     onPress()
   }
 
@@ -42,6 +40,7 @@ export function FertilizeButton({ onPress, crop, isLoading = false, disabled = f
         icon={needsNutrients ? "🌿" : "✅"}
         label={needsNutrients ? "Fertilize" : "Fed"}
         bgColor={isFed ? "#6b7280" : "#65a30d"}
+        actionType="fertilize"
         className={className}
       />
       {timeSince ? (
