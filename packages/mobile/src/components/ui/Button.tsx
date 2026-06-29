@@ -1,13 +1,18 @@
 import React from "react";
 import {
-  TouchableOpacity,
   Text,
   ActivityIndicator,
+  Pressable,
   ViewStyle,
   TextStyle,
   StyleSheet,
 } from "react-native";
-import { colors, spacing, borderRadius, typography } from "../../styles/theme";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "../../styles/tokens";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
@@ -19,12 +24,15 @@ interface ButtonProps {
   size?: ButtonSize;
   variant?: ButtonVariant;
   icon?: string;
+  iconPosition?: "left" | "right";
   disabled?: boolean;
   fullWidth?: boolean;
   testID?: string;
   /** @deprecated Use StyleSheet instead of className */
   className?: string;
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function Button({
   title,
@@ -33,12 +41,26 @@ export function Button({
   size = "md",
   variant = "primary",
   icon,
+  iconPosition = "left",
   disabled = false,
   fullWidth = false,
   testID,
   className: _className,
 }: ButtonProps) {
   const isDisabled = disabled || isLoading;
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.96, { damping: 15, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
 
   const buttonStyles: ViewStyle[] = [
     styles.base,
@@ -62,33 +84,54 @@ export function Button({
     size === "lg" && styles.textLg,
   ].filter(Boolean) as TextStyle[];
 
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <ActivityIndicator
+          size="small"
+          color={
+            variant === "outline" || variant === "ghost"
+              ? COLORS.primary
+              : COLORS.white
+          }
+        />
+      );
+    }
+
+    const iconElement = icon ? <Text style={styles.icon}>{icon}</Text> : null;
+    const textElement = <Text style={textStyles}>{title}</Text>;
+
+    if (iconPosition === "right") {
+      return (
+        <>
+          {textElement}
+          {iconElement}
+        </>
+      );
+    }
+
+    return (
+      <>
+        {iconElement}
+        {textElement}
+      </>
+    );
+  };
+
   return (
-    <TouchableOpacity
-      style={buttonStyles}
+    <AnimatedPressable
+      style={[buttonStyles, animatedStyle]}
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={isDisabled}
-      activeOpacity={0.7}
       testID={testID}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled }}
       accessibilityLabel={title}
     >
-      {isLoading ? (
-        <ActivityIndicator
-          size="small"
-          color={
-            variant === "outline" || variant === "ghost"
-              ? colors.primary
-              : colors.white
-          }
-        />
-      ) : (
-        <>
-          {icon ? <Text style={styles.icon}>{icon}</Text> : null}
-          <Text style={textStyles}>{title}</Text>
-        </>
-      )}
-    </TouchableOpacity>
+      {renderContent()}
+    </AnimatedPressable>
   );
 }
 
@@ -99,20 +142,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: borderRadius.md,
+    borderRadius: BORDER_RADIUS.md,
     height: 52,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.sm,
   },
   sm: {
     height: 40,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.sm,
   },
   lg: {
     height: 56,
-    paddingHorizontal: spacing.xl,
-    borderRadius: borderRadius.md,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: BORDER_RADIUS.md,
   },
   fullWidth: {
     width: "100%",
@@ -121,34 +164,34 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   primary: {
-    backgroundColor: colors.primary,
+    backgroundColor: COLORS.primary,
   },
   secondary: {
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: COLORS.surfaceSecondary,
   },
   outline: {
     backgroundColor: "transparent",
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: COLORS.primary,
   },
   ghost: {
     backgroundColor: "transparent",
   },
   danger: {
-    backgroundColor: colors.error,
+    backgroundColor: COLORS.dangerRed,
   },
   textBase: {
-    ...typography.button,
-    color: colors.white,
+    ...TYPOGRAPHY.button,
+    color: COLORS.white,
   },
   textSecondary: {
-    color: colors.text,
+    color: COLORS.text,
   },
   textOutlineGhost: {
-    color: colors.primary,
+    color: COLORS.primary,
   },
   textDanger: {
-    color: colors.white,
+    color: COLORS.white,
   },
   textSm: {
     fontSize: 14,

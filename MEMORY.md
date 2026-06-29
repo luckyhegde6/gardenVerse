@@ -4,26 +4,34 @@
 
 ## Current Session
 
-**Date**: June 27, 2026
-**Session ID**: ses-016
-**Focus**: Multi-Garden Economy — Plot Purchases, Shop, Coupons, Real Gardener, Campaigns (Admin API + UI + Mobile)
+**Date**: June 28, 2026
+**Session ID**: ses-019
+**Focus**: Mobile UX Refactor — Design System Foundation + Garden Immersive Overhaul + Prisma v7 Migration
 
 ### Active Context
 
-- **Multi-garden economy**: Prisma schema updated (1:1 → 1:many User:Garden), 15 economy API routes created, 6 admin UI pages built, seed data with 21 shop items / 6 fertilizers / 6 coupons
-- **API routes tested**: Plot purchase (100 GC deducted), shop buy (item added + token transaction), coupon redeem (10% off), real gardener verify (badge 🏡 assigned) — all verified via curl
-- **Admin UI pages live**: Shop (3-tab Browse/Purchases/Inventory), Coupons (CRUD modals + stats), Plots (card grid + soil-check form + pricing tiers), Fertilizers, Campaigns (enhanced w/ discount fields)
-- **Mobile Phase 1-4 complete**: 11 new types, 4 service modules, 3 Zustand stores, 6 new screen routes, 6 screens (Shop, CouponRedeem, Plots, PlotDetail, SoilCheck, RealGardener), updated GardenScreen plot selector + ProfileScreen menu items
-- **Emulator verified**: App launches, GardenScreen renders fully (plot selector bar, 2D/3D toggles, plant collections, care streaks), Profile tab accessible via DPAD, shows Shop/Plots/RealGardener menu items between stats and activity feed
-- **TypeScript passes**: `tsc --noEmit` zero errors on both admin and mobile packages
-- **E2E**: 68/68 tests passing (5.9m, zero failures)
-- **Seed script**: Uses `SET session_replication_role = 'replica'` + TRUNCATE CASCADE via raw SQL for clean FK-safe resets
+- **Design token system created** (`packages/mobile/src/styles/tokens.ts`) — centralized color palette, spacing scale (4/8/12/16/24/32/48), typography constants, shadow presets. Design system rules codified: no inline colors, no random spacing, all interactive elements use Reanimated press animations.
+- **Core UI components upgraded**: Card (Reanimated press 1→0.96), Button (spring press scale), Avatar (image error fallback → initials, never raw URLs), Modal (Reanimated → RN Animated), ProgressBar (animated fill)
+- **New shared components**: MetricCard, ErrorFallback, PageHeader, SectionHeader, CollapsibleSection (Reanimated), LoadingCard (skeleton)
+- **EnvironmentEffects**: Skia-based animated weather overlay — rain particles, sun glow, cloud drift, night mode stars, storm lightning. Driven by `weather.condition` prop.
+- **GardenViewport**: Full-width 60% viewport container with layer system (environment → grid → effects). Auto-scales IsometricGrid/Garden3D.
+- **FloatingActionButtons**: 3 circular FABs (Scan purple, Water blue, Soil amber) with Reanimated spring press physics.
+- **PlantHealthBadge**: Color-coded dot+label per crop (healthy/dry/sick/growing) with pulse animation on growing state.
+- **SyncWidget**: IoT sensor card showing online/offline, moisture/humidity/temp, last sync time.
+- **XpBar + StreakDisplay**: Compact animated HUD elements — thin XP progress bar and fire-streak pill.
+- **GardenScreen rewritten**: Immersive layout — garden at 60% viewport, EnvironmentEffects overlay, FABs, compact HUD, collapsible sections for collections/streaks/mastery. Reduced from 1317→~650 lines.
+- **GrowthOverlay.tsx deleted** (774 lines) — replaced by compact HUD + inline components.
+- **TypeScript**: `tsc --noEmit` zero errors on mobile package.
+- **No backend APIs changed** — all existing API contracts preserved.
+- **Prisma v7 migration**: Updated schema (`prisma-client` generator, `output = "../src/lib/prisma/generated"`, no `url` in datasource), created `prisma.config.ts` with `defineConfig`, updated `client.ts` to use `PrismaPg` adapter, added tsconfig path alias (`@prisma/client` → generated client) to preserve all 29 import files unchanged. TypeScript passes with zero errors. Seed works with full data (220 plants, 3 users, etc.).
+- **File split**: AGENTS.md now contains only CLAUDE.md behavioral guidelines (61 lines). All project reference content (standards, sessions, conventions) moved to PROJECT_REFERENCE.md (1260 lines).
 
 ### Open Questions
 
 - Weather effects on growth engine not wired (sunlight modifier exists but no weather data integration)
 - Garden/crop detail tables on `/garden` page still use hardcoded `data={[]}` — needs admin-specific garden listing API routes
 - `packages/admin/prisma/migrations/` directory was never created; schema pushed via `prisma db push` instead — needs a proper initial migration
+- Path aliases (`@/`, `@components/`, `@screens/`) configured in tsconfig but zero files use them — needs batch migration
 
 ### Active Specs
 
@@ -56,15 +64,31 @@
 
 ### Key Numbers
 
-- **Admin**: 152 pages/routes compiled, 45+ API modules (15 new economy routes), 6 new UI pages (Shop, Coupons, Plots, Fertilizers, enhanced Campaigns)
-- **Mobile**: 6 new screens (Shop, CouponRedeem, Plots, PlotDetail, SoilCheck, RealGardener), 4 service modules, 3 Zustand stores, 6 new routes; verified on Pixel_7_API_34 emulator
-- **E2E**: 68 Playwright tests all passing (20 integration + 10 admin + 7 auth + 7 invites + 24 screenshots)
-- **Seed data**: 21 shop items (6 categories), 6 fertilizer catalog, 6 coupon codes (valid + expired), 3 soil checks, 3 external sync records
-- **API endpoints**: 15 new economy endpoints tested via curl (all 200 OK)
-- **Contracts**: 8 Solidity contracts, 41 Hardhat tests passing
-- **Docs**: 35+ markdown files across 8 doc categories
+- **Mobile**: 30 new/rewritten files (tokens.ts, 8 UI component upgrades, 7 new shared components, 8 garden components, 1 screen rewrite). GardenScreen 1317→~650 lines. GrowthOverlay deleted (774 lines).
+- **Design System**: 1 token file, 8 UI component upgrades, 7 new shared components. Zero inline colors. 4 spacing values. 5 typography sizes. 7 color tokens.
+- **TypeScript**: `tsc --noEmit` zero errors on mobile package.
+- **Backend**: Zero API changes. All existing endpoints preserved.
+- **Garden components created**: EnvironmentEffects (Skia particles), GardenViewport, FloatingActionButton, PlantHealthBadge, SyncWidget, XpBar, StreakDisplay, CollapsibleSection
+- **Components deleted**: GrowthOverlay.tsx (774 lines) — replaced by compact HUD
+- **E2E**: 68/68 tests passing
 
 ## Previous Sessions
+
+### Session 19 (Jun 28, 2026): Mobile UX Refactor — Design System + Garden Immersive Overhaul
+- Created design token system (`src/styles/tokens.ts`) — 7 color tokens, 6 spacing values, 5 typography sizes, 4 shadow presets
+- Upgraded 8 UI components: Card (Reanimated press), Button (spring), Avatar (image fallback), Modal (Reanimated), ProgressBar (animated), EmptyState (fade-in), Input (focus ring), LoadingSpinner (rotation)
+- Created 7 new shared components: MetricCard, ErrorFallback, PageHeader, SectionHeader, CollapsibleSection, LoadingCard
+- Created EnvironmentEffects — Skia animated weather (rain particles, sun glow, cloud drift, night stars, storm lightning)
+- Created GardenViewport — 60% viewport with layer system
+- Created FloatingActionButton — 3 FABs (Scan/Water/Soil) with Reanimated spring
+- Created PlantHealthBadge — color-dot per crop growing/dry/healthy/sick with pulse
+- Created SyncWidget, XpBar, StreakDisplay — compact animated HUD
+- Rewrote GardenScreen (1317→~650 lines) — immersive layout, compact HUD, collapsible sections
+- Deleted GrowthOverlay.tsx (774 lines)
+- Key decisions: ADR-017 (Skia weather), ADR-018 (compact HUD on viewport), ADR-019 (Reanimated for all press), ADR-020 (collapsible sections)
+- Avatar fix: never show raw URLs, catch Image error → initials fallback
+- TypeScript zero errors on mobile package
+- No backend APIs changed
 
 ### Session 16 (Jun 27, 2026): Multi-Garden Economy — Plot Purchases, Shop, Coupons, Real Gardener, Campaigns (Admin + Mobile)
 - Prisma schema updated: removed @unique from Garden.userId (1:1 → 1:many); added User.maxPlots/plotPurchaseCount/isRealGardener; Garden.plotNumber/isPurchased/purchasePrice/soilLastCheckedAt/plantMoveCount; new models Coupon, Fertilizer, PlotPurchase, SoilCheck, ExternalDataSync; campaign discount fields
@@ -232,13 +256,14 @@
 
 ## Next Actions
 
-1. Create admin garden listing/crop health API routes for `/garden` page tables (still hardcoded `data={[]}`)
-2. Wire weather effects into growth simulation (sunlight modifier already in engine)
-3. Build production APK via `eas build --profile production` (fixes useContext crash in dev APK; blocked until EAS free plan resets)
-4. Create initial Prisma migration (`prisma migrate dev --name init`) for admin schema
-5. Add ESLint config to admin package
-6. Verify Expo web auth persistence in production build
-7. Build production APK via `eas build --profile production`
+1. **Phase 2**: Marketplace redesign — ProductCard, BuyModal, SearchBar, CategoryChip, FeaturedRow, TrendingRow, EmptyMarketplace
+2. **Phase 3**: Community redesign — NearbyGardenerCard, LeaderboardCard, CommunityGroupCard, EventCard, ActivityFeed, CommunitySearchBar
+3. **Phase 4**: React Query migration (useQuery for all API calls), FlashList for lists, lazy loading for Garden3D
+4. **Phase 5**: Per-screen ErrorBoundary, entrance animations (staggered), offline support (banner + stale cache)
+5. **Path alias migration**: Batch update all 100+ mobile files to use `@/` `@components/` etc.
+6. Create admin garden listing/crop health API routes for `/garden` page tables
+7. Wire weather effects into growth simulation (sunlight modifier already in engine)
+8. Build production APK via `eas build --profile production`
 
 ## File Map
 

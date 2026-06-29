@@ -76,6 +76,9 @@ contracts/cache/
 # Sentry
 .sentryclirc
 
+# Prisma v7 generated client
+packages/admin/src/lib/prisma/generated/
+
 # Husky generated hooks
 .husky/_/
 

@@ -1,4 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useMemo } from "react";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import api from "../services/api";
 import { MarketplaceListing, ListingStatus } from "../types";
 
@@ -15,68 +20,85 @@ interface PaginationInfo {
   total: number;
 }
 
+interface MarketplaceListResponse {
+  data: MarketplaceListing[];
+  page: number;
+  totalPages: number;
+  total: number;
+}
+
+const STALE_TIME = 1000 * 60 * 2; // 2 minutes
+
 export function useMarketplace(options: UseMarketplaceOptions = {}) {
-  const [listings, setListings] = useState<MarketplaceListing[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1,
-    totalPages: 1,
-    total: 0,
+  const queryClient = useQueryClient();
+
+  // ── Infinite query for paginated listings ──────────────────────────────
+  const {
+    data,
+    isLoading: isPending,
+    isRefetching,
+    error: queryError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery<MarketplaceListResponse>({
+    queryKey: [
+      "marketplace",
+      options.category,
+      options.search,
+      options.status,
+      options.local,
+    ],
+    queryFn: async ({ pageParam = 1 }) => {
+      const params: Record<string, unknown> = {
+        page: pageParam,
+        limit: 20,
+        ...(options.category && { category: options.category }),
+        ...(options.search && { search: options.search }),
+        ...(options.status && { status: options.status }),
+        ...(options.local && { local: true }),
+      };
+      const response = await api.get("/marketplace", { params });
+      return response.data as MarketplaceListResponse;
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.page < lastPage.totalPages) {
+        return lastPage.page + 1;
+      }
+      return undefined;
+    },
+    staleTime: STALE_TIME,
   });
 
-  const fetchListings = useCallback(
-    async (page = 1, refresh = false) => {
-      if (refresh) setIsRefreshing(true);
-      else setIsLoading(true);
-      setError(null);
-
-      try {
-        const params: Record<string, unknown> = {
-          page,
-          limit: 20,
-          ...(options.category && { category: options.category }),
-          ...(options.search && { search: options.search }),
-          ...(options.status && { status: options.status }),
-          ...(options.local && { local: true }),
-        };
-
-        const response = await api.get("/marketplace", { params });
-        const data = response.data;
-
-        setListings((prev) =>
-          page === 1 ? data.data : [...prev, ...data.data],
-        );
-        setPagination({
-          page: data.page,
-          totalPages: data.totalPages,
-          total: data.total,
-        });
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Failed to fetch listings");
-      } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    },
-    [options.category, options.search, options.status, options.local],
+  // ── Derive the flat listings list ─────────────────────────────────────
+  const listings = useMemo(
+    () => data?.pages.flatMap((page) => page.data) ?? [],
+    [data],
   );
 
-  useEffect(() => {
-    fetchListings(1);
-  }, [fetchListings]);
+  // ── Derive pagination info from the last page ─────────────────────────
+  const pagination = useMemo<PaginationInfo>(() => {
+    const lastPage = data?.pages[data.pages.length - 1];
+    return {
+      page: lastPage?.page ?? 1,
+      totalPages: lastPage?.totalPages ?? 1,
+      total: lastPage?.total ?? 0,
+    };
+  }, [data]);
 
-  const refresh = useCallback(() => fetchListings(1, true), [fetchListings]);
+  // ── Error as string (matching original interface) ──────────────────────
+  const error: string | null =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? String(queryError)
+        : null;
 
-  const loadMore = useCallback(() => {
-    if (pagination.page < pagination.totalPages && !isLoading) {
-      fetchListings(pagination.page + 1);
-    }
-  }, [pagination.page, pagination.totalPages, isLoading, fetchListings]);
-
-  const createListing = useCallback(
-    async (data: {
+  // ── Create listing mutation ────────────────────────────────────────────
+  const createMutation = useMutation({
+    mutationFn: async (data: {
       title: string;
       description?: string;
       category: string;
@@ -88,27 +110,69 @@ export function useMarketplace(options: UseMarketplaceOptions = {}) {
       const response = await api.post("/marketplace", data);
       return response.data as MarketplaceListing;
     },
-    [],
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["marketplace"] });
+    },
+  });
+
+  const createListing = useCallback(
+    async (data: {
+      title: string;
+      description?: string;
+      category: string;
+      price: number;
+      currency: string;
+      quantity: number;
+      images?: string[];
+    }) => createMutation.mutateAsync(data),
+    [createMutation],
   );
 
-  const deleteListing = useCallback(async (listingId: string) => {
-    await api.delete(`/marketplace/${listingId}`);
-    setListings((prev) => prev.filter((l) => l.id !== listingId));
-  }, []);
+  // ── Delete listing mutation ────────────────────────────────────────────
+  const deleteMutation = useMutation({
+    mutationFn: async (listingId: string) => {
+      await api.delete(`/marketplace/${listingId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["marketplace"] });
+    },
+  });
 
-  const getListingById = useCallback(async (listingId: string) => {
-    const response = await api.get(`/marketplace/${listingId}`);
-    return response.data as MarketplaceListing;
-  }, []);
+  const deleteListing = useCallback(
+    async (listingId: string) => deleteMutation.mutateAsync(listingId),
+    [deleteMutation],
+  );
 
+  // ── Get listing by ID (uses queryClient.fetchQuery for caching) ────────
+  const getListingById = useCallback(
+    async (listingId: string) => {
+      return queryClient.fetchQuery<MarketplaceListing>({
+        queryKey: ["marketplace", listingId],
+        queryFn: async () => {
+          const response = await api.get(`/marketplace/${listingId}`);
+          return response.data as MarketplaceListing;
+        },
+        staleTime: STALE_TIME,
+      });
+    },
+    [queryClient],
+  );
+
+  // ── Public API ─────────────────────────────────────────────────────────
   return {
     listings,
-    isLoading,
-    isRefreshing,
+    isLoading: isPending,
+    isRefreshing: isRefetching,
     error,
     pagination,
-    refresh,
-    loadMore,
+    refresh: () => {
+      void refetch();
+    },
+    loadMore: () => {
+      if (hasNextPage && !isFetchingNextPage) {
+        void fetchNextPage();
+      }
+    },
     createListing,
     deleteListing,
     getListingById,

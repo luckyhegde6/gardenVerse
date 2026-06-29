@@ -215,6 +215,8 @@ export interface Group {
   type: string;
   region?: string;
   memberCount: number;
+  imageUrl?: string;
+  isJoined?: boolean;
 }
 
 export interface Invite {
@@ -333,6 +335,37 @@ export interface NearbyGardener {
   latitude?: number;
   longitude?: number;
   sustainabilityScore: number;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  username: string;
+  displayName?: string;
+  avatarUrl?: string;
+  score: number;
+  rank: number;
+  level?: number;
+}
+
+export interface ActivityEntry {
+  id: string;
+  type: "plant" | "harvest" | "water" | "fertilize" | "badge" | "levelup" | "trade" | "join";
+  text: string;
+  timestamp: string;
+  userId: string;
+  username: string;
+  avatarUrl?: string;
+}
+
+export interface CommunityEvent {
+  id: string;
+  title: string;
+  description?: string;
+  date: string;
+  endDate?: string;
+  rewards?: string[];
+  participants?: number;
+  imageUrl?: string;
 }
 
 export interface PlantCollectionData {

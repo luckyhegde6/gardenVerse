@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   AppState,
   AppStateStatus,
+  Dimensions,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -21,31 +22,35 @@ import { useRouter } from 'expo-router';
 import { useGarden } from '../../hooks/useGarden';
 import { useAuthStore } from '../../stores/authStore';
 import { IsometricGrid } from '../../components/garden/IsometricGrid';
-import { Garden3D } from '../../components/garden/Garden3D';
-
+const Garden3D = React.lazy(() =>
+  import('../../components/garden/Garden3D').then(m => ({ default: m.Garden3D }))
+);
 import { GardenAnalytics } from '../../components/garden/GardenAnalytics';
 import { WaterButton } from '../../components/garden/WaterButton';
 import { FertilizeButton } from '../../components/garden/FertilizeButton';
 import { HarvestButton } from '../../components/garden/HarvestButton';
-import { Badge } from '../../components/ui/Badge';
-// import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-// import { EmptyState } from '../../components/ui/EmptyState';
-import { GrowthOverlay } from '../../components/garden/GrowthOverlay';
 import { WeatherBar } from '../../components/garden/WeatherBar';
 import { WalkthroughOverlay, useWalkthrough } from '../../components/garden/WalkthroughOverlay';
 import { PlantSelectionSheet } from '../../components/garden/PlantSelectionSheet';
 import { CropDetailModal } from '../../components/garden/CropDetailModal';
 import { LevelUpModal } from '../../components/garden/LevelUpModal';
 import { XPFloatingManager } from '../../components/garden/XPFloatingText';
-import { ParticleProvider } from '../../components/garden/ParticleSystem';
+import { ParticleProvider, useParticleSystem } from '../../components/garden/ParticleSystem';
 import { QuestTrackerWidget } from '../../components/garden/QuestTrackerWidget';
+import { GardenViewport } from '../../components/garden/GardenViewport';
+import { FloatingActionButton } from '../../components/garden/FloatingActionButton';
+import { PlantHealthBadge } from '../../components/garden/PlantHealthBadge';
+import { SyncWidget } from '../../components/garden/SyncWidget';
+import { XpBar } from '../../components/garden/XpBar';
+import { StreakDisplay } from '../../components/garden/StreakDisplay';
+import { CollapsibleSection } from '../../components/ui/CollapsibleSection';
+import { LoadingCard } from '../../components/ui/LoadingCard';
+import { Badge } from '../../components/ui/Badge';
 import { useGameFeedback } from '../../utils/gameFeedback';
-import { useParticleSystem } from '../../components/garden/ParticleSystem';
 import { Crop, CollectionStats, GardenType, WeatherData, PlantSpecies } from '../../types';
 import GamificationService from '../../services/gamification';
 import { growthEngine, GrowthState, WeatherCondition } from '../../services/growthEngine';
 import { useGardenStore } from '../../stores/gardenStore';
-import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import api from '../../services/api';
 import { requestLocationPermission, requestNotificationPermission } from '../../utils/permissions';
 import HapticFeedback from '../../utils/haptics';
@@ -56,6 +61,10 @@ import { SyncStatusIndicator } from '../../components/SyncStatusIndicator';
 import { SaveGameButton } from '../../components/SaveGameButton';
 import { gameSaveSync } from '../../services/gameSaveSync';
 import { useToast } from '../../components/ui/Toast';
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS } from '../../styles/tokens';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const GARDEN_VIEWPORT_HEIGHT = SCREEN_HEIGHT * 0.6;
 
 export function GardenScreen() {
   const { theme } = useTheme();
@@ -81,14 +90,9 @@ export function GardenScreen() {
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [engineState, setEngineState] = useState<GrowthState | null>(null);
+  const [, setEngineState] = useState<GrowthState | null>(null);
 
-  const {
-    showWalkthrough,
-    checking: walkthroughChecking,
-    completeWalkthrough,
-    skipWalkthrough,
-  } = useWalkthrough();
+  const { showWalkthrough, checking: walkthroughChecking, completeWalkthrough, skipWalkthrough } = useWalkthrough();
 
   const [locationPermission, setLocationPermission] = useState<boolean>(false);
   const [, setNotificationPermission] = useState<boolean>(false);
@@ -99,22 +103,17 @@ export function GardenScreen() {
     completion: 0,
   });
 
-  // ─── Plant-ID quest state ──────────────────────────────────────────────
   const [recentIdentifications, setRecentIdentifications] = useState<IdentifiedPlantPhoto[]>([]);
   const [speciesIdentifiedCount, setSpeciesIdentifiedCount] = useState(0);
 
-  // ─── Save & Sync ────────────────────────────────────────────────────────
-  const { show: showToast, hide: _hideToast, ToastComponent } = useToast();
+  const { show: showToast, ToastComponent } = useToast();
   const autoSaveDone = useRef(false);
 
-  // ─── Crop Detail Modal ──────────────────────────────────────────────────
   const [showCropDetail, setShowCropDetail] = useState(false);
 
-  // ─── XP Floating Events ────────────────────────────────────────────────
   const [xpEvents, setXpEvents] = useState<Array<{ id: string; amount: number; position: { x: number; y: number } }>>([]);
   const xpCounterRef = useRef(0);
 
-  // ─── Level-Up Modal ────────────────────────────────────────────────────
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newLevel] = useState(1);
 
@@ -123,11 +122,9 @@ export function GardenScreen() {
     setXpEvents(prev => [...prev, { id, amount, position: position || { x: 150, y: 300 } }]);
   }, []);
 
-  // Auto-save on app background/resume
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (nextAppState === 'background' || nextAppState === 'inactive') {
-        // App going to background: save and sync
         try {
           await gameSaveSync.saveAndSyncOnBackground({
             crops,
@@ -139,7 +136,6 @@ export function GardenScreen() {
           // Silent fail on background save
         }
       } else if (nextAppState === 'active') {
-        // App coming to foreground: sync
         autoSaveDone.current = false;
         try {
           const result = await gameSaveSync.syncWithServer();
@@ -162,8 +158,6 @@ export function GardenScreen() {
 
   const isVirtual = selectedGarden?.type === 'VIRTUAL';
 
-  // ─── Fetch Collection Stats ────────────────────────────────────────────────
-
   const fetchCollectionStats = useCallback(async () => {
     try {
       const stats = await GamificationService.getCollectionStats();
@@ -172,8 +166,6 @@ export function GardenScreen() {
       // Silent fail
     }
   }, []);
-
-  // ─── Fetch recent plant identifications ────────────────────────────────────
 
   const fetchRecentIdentifications = useCallback(async () => {
     try {
@@ -185,8 +177,6 @@ export function GardenScreen() {
       // Silent fail
     }
   }, []);
-
-  // ─── Fetch Weather ─────────────────────────────────────────────────────────
 
   const fetchWeather = useCallback(async () => {
     if (!selectedGarden?.timezone) return;
@@ -214,7 +204,6 @@ export function GardenScreen() {
     fetchRecentIdentifications();
   }, [fetchCollectionStats, fetchWeather, fetchRecentIdentifications]);
 
-  // ─── Growth Engine Integration ──────────────────────────────────────────
   const engineStarted = useRef(false)
 
   useEffect(() => {
@@ -230,7 +219,6 @@ export function GardenScreen() {
         setEngineState({ lastTickAt: Date.now(), ticksElapsed: growthEngine['timer'] ? 1 : 0 })
       },
       (growingCropIds) => {
-        // Trigger growth tick visual pulse for growing crops
         growingCropIds.forEach(cropId => {
           const crop = crops.find(c => c.id === cropId)
           if (crop && crop.plotX !== undefined && crop.plotY !== undefined) {
@@ -249,7 +237,6 @@ export function GardenScreen() {
     }
   }, [crops])
 
-  // ─── Feed weather data to growth engine ─────────────────────────────────
   useEffect(() => {
     if (!weather || !engineStarted.current) return
     const conditionMap: Record<string, WeatherCondition> = {
@@ -267,7 +254,6 @@ export function GardenScreen() {
     })
   }, [weather])
 
-  // ─── Engine state polling ───────────────────────────────────────────────
   useEffect(() => {
     const interval = setInterval(() => {
       if (engineStarted.current) {
@@ -277,7 +263,6 @@ export function GardenScreen() {
     return () => clearInterval(interval)
   }, [])
 
-  // ─── Permission Requests for REAL Gardens ─────────────────────────────
   useEffect(() => {
     if (selectedGarden?.type === 'REAL') {
       requestLocationPermission().then(setLocationPermission);
@@ -308,9 +293,7 @@ export function GardenScreen() {
     ],
   }));
 
-  const selectedCrop = selectedCropId
-    ? crops.find((c) => c.id === selectedCropId)
-    : null;
+  const selectedCrop = selectedCropId ? crops.find((c) => c.id === selectedCropId) : null;
   const soilQuality = selectedGarden?.soilQuality ?? 50;
   const irrigationLevel = selectedGarden?.irrigationLevel ?? 50;
 
@@ -331,8 +314,6 @@ export function GardenScreen() {
     [selectedCropId, router],
   );
 
-  // ─── Plant-Centric Computations ────────────────────────────────────────────
-
   const careStreakCrops = useMemo(() => {
     return [...crops]
       .filter((c: Crop) => c.careStreak > 0)
@@ -345,23 +326,18 @@ export function GardenScreen() {
     ? Math.round((collectionStats.completion / 100) * collectionStats.total)
     : 0;
 
-  // ─── Game Feedback & Particle System ────────────────────────────────────────
   const { emit } = useParticleSystem();
   const feedback = useGameFeedback();
 
-  // ─── Starter Seed Grant: auto-open plant sheet when no crops exist ─────────
   const [showPlantSheet, setShowPlantSheet] = useState(false);
   const [plantSheetPosition, setPlantSheetPosition] = useState<{ plotX: number; plotY: number } | null>(null);
 
   useEffect(() => {
     if (!isLoading && crops.length === 0 && !showWalkthrough) {
-      // No crops planted yet — prompt the user to plant their first seed
       setPlantSheetPosition({ plotX: 3, plotY: 3 });
       setShowPlantSheet(true);
     }
   }, [isLoading, crops.length, showWalkthrough]);
-
-  // ─── Action Handlers ─────────────────────────────────────────────────────
 
   const handleWater = useCallback(
     async (cropId: string) => {
@@ -372,8 +348,7 @@ export function GardenScreen() {
         addXpEvent(10, { x: 150, y: 250 });
         const crop = crops.find(c => c.id === cropId);
         if (crop && crop.plotX !== undefined && crop.plotY !== undefined) {
-          const pos = { x: 50 + crop.plotX * 60, y: 50 + crop.plotY * 60 };
-          addXpEvent(10, pos);
+          addXpEvent(10, { x: 50 + crop.plotX * 60, y: 50 + crop.plotY * 60 });
         }
       } catch {
         // Error handled upstream
@@ -391,8 +366,7 @@ export function GardenScreen() {
         addXpEvent(15, { x: 150, y: 250 });
         const crop = crops.find(c => c.id === cropId);
         if (crop && crop.plotX !== undefined && crop.plotY !== undefined) {
-          const pos = { x: 50 + crop.plotX * 60, y: 50 + crop.plotY * 60 };
-          addXpEvent(15, pos);
+          addXpEvent(15, { x: 50 + crop.plotX * 60, y: 50 + crop.plotY * 60 });
         }
       } catch {
         // Error handled upstream
@@ -409,8 +383,7 @@ export function GardenScreen() {
         addXpEvent(50, { x: 150, y: 250 });
         const crop = crops.find(c => c.id === cropId);
         if (crop && crop.plotX !== undefined && crop.plotY !== undefined) {
-          const pos = { x: 50 + crop.plotX * 60, y: 50 + crop.plotY * 60 };
-          addXpEvent(50, pos);
+          addXpEvent(50, { x: 50 + crop.plotX * 60, y: 50 + crop.plotY * 60 });
         }
       } catch {
         // Error handled upstream
@@ -419,13 +392,8 @@ export function GardenScreen() {
     [harvestCrop, feedback, addXpEvent, crops],
   );
 
-  const selectedCropForOverlay = selectedCropId
-    ? crops.find((c: Crop) => c.id === selectedCropId) || null
-    : null;
-
   const [availableSeeds, setAvailableSeeds] = useState<{ species: PlantSpecies; quantity: number }[]>([]);
 
-  // Fetch available seeds for planting
   const fetchAvailableSeeds = useCallback(async () => {
     try {
       const res = await api.get('/shop?category=seeds');
@@ -448,7 +416,6 @@ export function GardenScreen() {
         }));
       setAvailableSeeds(seeds);
     } catch {
-      // Use mock data
       setAvailableSeeds([
         { species: { id: 'tomato', commonName: 'Tomato', scientificName: 'Solanum lycopersicum', difficulty: 'Easy', waterNeeds: 'High', sunlightNeeds: 'Full Sun', seasons: ['Spring', 'Summer'], edible: true, tags: [] } as PlantSpecies, quantity: 10 },
         { species: { id: 'chilli', commonName: 'Chilli', scientificName: 'Capsicum annuum', difficulty: 'Easy', waterNeeds: 'Medium', sunlightNeeds: 'Full Sun', seasons: ['Spring', 'Summer'], edible: true, tags: [] } as PlantSpecies, quantity: 10 },
@@ -465,7 +432,6 @@ export function GardenScreen() {
     if (!plantSheetPosition || !selectedGardenId) return;
     try {
       await useGardenStore.getState().plantCrop(selectedGardenId, species.commonName, species.id, plantSheetPosition.plotX, plantSheetPosition.plotY);
-      // Trigger planting feedback
       const pos = { x: 50 + plantSheetPosition.plotX * 60, y: 50 + plantSheetPosition.plotY * 60 };
       (emit as (type: 'plant' | 'water' | 'fertilize' | 'harvest' | 'confetti' | 'growthTick', position: { x: number; y: number }) => void)('plant', pos);
       growthEngine.onCropAction('', 'plant');
@@ -476,11 +442,31 @@ export function GardenScreen() {
     setPlantSheetPosition(null);
   }, [plantSheetPosition, selectedGardenId, emit]);
 
+  const weatherCondition = weather?.condition
+    ? (weather.condition === 'Clear' ? 'clear' as const
+      : weather.condition === 'Clouds' ? 'clouds' as const
+      : weather.condition === 'Rain' || weather.condition === 'Drizzle' ? 'rain' as const
+      : weather.condition === 'Thunderstorm' ? 'storm' as const
+      : weather.condition === 'Fog' || weather.condition === 'Mist' || weather.condition === 'Haze' ? 'haze' as const
+      : 'clear' as const)
+    : undefined;
+
+  const xpToNext = (user?.level ?? 1) * 100;
+
+  const topStreak = useMemo(() => {
+    return Math.max(0, ...crops.map(c => c.careStreak ?? 0));
+  }, [crops]);
+
+  const selectedCropHealth = selectedCrop
+    ? (selectedCrop.health > 70 ? 'healthy' as const
+      : selectedCrop.health > 40 ? 'dry' as const
+      : 'sick' as const)
+    : undefined;
+
   return (
     <ParticleProvider>
-      <View testID="garden-screen" style={{ flex: 1, backgroundColor: theme.background }}>
-        {/* ─── Plant-Centric Header ──────────────────────────────────────────── */}
-        <View style={styles.plantHeader}>
+      <View testID="garden-screen" style={[styles.root, { backgroundColor: theme.background }]}>
+        <View style={styles.header}>
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
               <Text style={styles.headerTitle}>
@@ -497,188 +483,90 @@ export function GardenScreen() {
                   🌿 {collectionStats.discovered}/{collectionStats.total}
                 </Text>
               </View>
-{user && (
-              <View style={styles.creditsBadge}>
-                <Text style={styles.creditsBadgeText}>
-                  🪙 {user.greenCredits}
-                </Text>
-              </View>
-            )}
-            <QuestTrackerWidget onPress={() => router.push('/quests')} />
+              {user && (
+                <View style={styles.creditsBadge}>
+                  <Text style={styles.creditsBadgeText}>
+                    🪙 {user.greenCredits}
+                  </Text>
+                </View>
+              )}
+              <QuestTrackerWidget onPress={() => router.push('/quests')} />
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Plot Selector Bar */}
-      {gardens.length > 1 && (
-        <View style={{ backgroundColor: '#0a1f12', paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#1a4a2a' }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-            {gardens.map((g) => (
-              <TouchableOpacity
-                key={g.id}
-                onPress={() => selectGarden(g.id)}
-                style={{
-                  backgroundColor: g.id === selectedGardenId ? '#1a4a2a' : 'transparent',
-                  borderRadius: 20,
-                  paddingHorizontal: 14,
-                  paddingVertical: 6,
-                  borderWidth: 1,
-                  borderColor: g.id === selectedGardenId ? '#2d8a4e' : 'rgba(255,255,255,0.15)',
-                }}
-              >
-                <Text style={{ fontSize: 12, fontWeight: '600', color: g.id === selectedGardenId ? '#a5f0b0' : 'rgba(255,255,255,0.6)' }}>
-                  Plot #{g.plotNumber ?? gardens.indexOf(g) + 1}
-                </Text>
-                {g.isPurchased && (
-                  <Text style={{ fontSize: 9, color: 'rgba(255,215,0,0.6)', textAlign: 'center', marginTop: 1 }}>
-                    🪙
+        {gardens.length > 1 && (
+          <View style={styles.plotSelector}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.plotSelectorContent}>
+              {gardens.map((g) => (
+                <TouchableOpacity
+                  key={g.id}
+                  onPress={() => selectGarden(g.id)}
+                  style={[
+                    styles.plotChip,
+                    g.id === selectedGardenId && styles.plotChipActive,
+                  ]}
+                >
+                  <Text style={[styles.plotChipText, g.id === selectedGardenId && styles.plotChipTextActive]}>
+                    Plot #{g.plotNumber ?? gardens.indexOf(g) + 1}
                   </Text>
-                )}
-              </TouchableOpacity>
-            ))}
-            {canPurchaseMore && (
-              <TouchableOpacity
-                onPress={() => router.push('/plots')}
-                style={{
-                  backgroundColor: 'rgba(99,102,241,0.2)',
-                  borderRadius: 20,
-                  paddingHorizontal: 14,
-                  paddingVertical: 6,
-                  borderWidth: 1,
-                  borderColor: 'rgba(99,102,241,0.3)',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#a5b4fc' }}>+</Text>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: '#a5b4fc' }}>Buy Plot</Text>
-              </TouchableOpacity>
-            )}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* Weather Bar */}
-      <WeatherBar weather={weather} timezone={selectedGarden?.timezone} />
-
-      {/* Permission Banner for REAL Gardens */}
-      {selectedGarden?.type === 'REAL' && !locationPermission && (
-        <View style={styles.permissionBanner}>
-          <Text style={styles.permissionBannerText}>📍 Enable location for REAL garden features</Text>
-          <TouchableOpacity
-            onPress={() => requestLocationPermission().then(setLocationPermission)}
-            style={styles.permissionBannerButton}
-          >
-            <Text style={styles.permissionBannerButtonText}>Enable</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Error Banner */}
-      {error && (
-        <View className="bg-red-50 border-b border-red-200 px-4 py-3 flex-row items-center">
-          <Text className="text-red-700 text-sm flex-1">{error}</Text>
-          <TouchableOpacity
-            onPress={onRefresh}
-            className="bg-red-100 px-3 py-1 rounded-lg"
-          >
-            <Text className="text-red-700 text-xs font-semibold">Retry</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* ─── Main Scrollable Content ──────────────────────────────────────── */}
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-        className="flex-1"
-      >
-        {isVirtual && (
-          <View className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex-row items-center">
-            <Text className="text-lg mr-2">⚡</Text>
-            <View className="flex-1">
-              <Text className="text-amber-800 text-sm font-semibold">
-                Virtual Garden — 100x Speed
-              </Text>
-              <Text className="text-amber-600 text-xs">
-                Crops grow 100x faster than real-time
-              </Text>
-            </View>
-            <Badge label="VIRTUAL" variant="warning" size="sm" />
+                  {g.isPurchased && (
+                    <Text style={styles.plotChipCoin}>🪙</Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+              {canPurchaseMore && (
+                <TouchableOpacity
+                  onPress={() => router.push('/plots')}
+                  style={styles.plotBuyChip}
+                >
+                  <Text style={styles.plotBuyIcon}>+</Text>
+                  <Text style={styles.plotBuyText}>Buy Plot</Text>
+                </TouchableOpacity>
+              )}
+            </ScrollView>
           </View>
         )}
 
-        {/* Garden View Toggle Bar */}
-        <View className="px-4 mt-3 mb-2">
-          <View className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex-row items-center justify-between">
-            <View className="flex-row items-center gap-2">
-              <View className="bg-gray-100 rounded-xl p-1 flex-row">
-                <TouchableOpacity
-                  onPress={() => switchView('2d')}
-                  className={`px-3 py-1.5 rounded-lg flex-row items-center gap-1 ${viewMode === '2d' ? 'bg-white shadow-sm' : ''}`}
-                >
-                  <Text className={`text-xs ${viewMode === '2d' ? 'text-primary-600' : 'text-gray-400'}`}>
-                    {viewMode === '2d' ? '▦' : '▦'}
-                  </Text>
-                  <Text className={`text-xs font-semibold ${viewMode === '2d' ? 'text-primary-600' : 'text-gray-500'}`}>
-                    2D
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => switchView('3d')}
-                  className={`px-3 py-1.5 rounded-lg flex-row items-center gap-1 ${viewMode === '3d' ? 'bg-white shadow-sm' : ''}`}
-                >
-                  <Text className={`text-xs ${viewMode === '3d' ? 'text-primary-600' : 'text-gray-400'}`}>
-                    {viewMode === '3d' ? '◈' : '◈'}
-                  </Text>
-                  <Text className={`text-xs font-semibold ${viewMode === '3d' ? 'text-primary-600' : 'text-gray-500'}`}>
-                    3D
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity
-                onPress={() => setShowAnalytics(v => !v)}
-                className={`px-2.5 py-1.5 rounded-lg ${showAnalytics ? 'bg-primary-50' : 'bg-gray-50'}`}
-              >
-                <Text className={`text-xs font-medium ${showAnalytics ? 'text-primary-600' : 'text-gray-500'}`}>
-                  📊
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              onPress={() => router.push('/plant-crop')}
-              className="bg-primary-600 px-4 py-2 rounded-xl active:bg-primary-700 flex-row items-center gap-1"
-            >
-              <Text className="text-white text-sm font-bold">+</Text>
-              <Text className="text-white text-sm font-semibold">Plant</Text>
+        <WeatherBar weather={weather} timezone={selectedGarden?.timezone} />
+
+        {selectedGarden?.type === 'REAL' && !locationPermission && (
+          <View style={styles.permissionBanner}>
+            <Text style={styles.permissionBannerText}>📍 Enable location for REAL garden features</Text>
+            <TouchableOpacity onPress={() => requestLocationPermission().then(setLocationPermission)} style={styles.permissionBannerButton}>
+              <Text style={styles.permissionBannerButtonText}>Enable</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        )}
 
-        {/* Analytics Panel */}
-        {showAnalytics && (
-          <View className="px-4 mb-3">
-            <GardenAnalytics
-              crops={crops}
-              gridWidth={6}
-              gridHeight={6}
-              soilQuality={soilQuality}
-              onClose={() => setShowAnalytics(false)}
-            />
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{error}</Text>
+            <TouchableOpacity onPress={onRefresh} style={styles.errorBannerButton}>
+              <Text style={styles.errorBannerButtonText}>Retry</Text>
+            </TouchableOpacity>
           </View>
         )}
 
-        {/* Garden Grid — always visible */}
-        <View className="px-4 mb-4">
-          <Animated.View
-            style={viewToggleStyle}
-            className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100"
-          >
-            {viewMode === '2d' ? (
-              <View>
+        <ScrollView
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          showsVerticalScrollIndicator={false}
+          style={styles.scroll}
+        >
+          {isVirtual && (
+            <View style={styles.virtualBanner}>
+              <Text style={styles.virtualBannerIcon}>⚡</Text>
+              <View style={styles.virtualBannerContent}>
+                <Text style={styles.virtualBannerTitle}>Virtual Garden — 100x Speed</Text>
+                <Text style={styles.virtualBannerSub}>Crops grow 100x faster than real-time</Text>
+              </View>
+              <Badge label="VIRTUAL" variant="warning" size="sm" />
+            </View>
+          )}
+
+          <View style={styles.viewportWrapper}>
+            <GardenViewport environmentCondition={weatherCondition}>
+              {viewMode === '2d' ? (
                 <IsometricGrid
                   crops={crops}
                   gridWidth={6}
@@ -690,402 +578,239 @@ export function GardenScreen() {
                   soilQuality={soilQuality}
                   irrigationLevel={irrigationLevel}
                 />
-                {crops.length === 0 && (
-                  <View className="items-center py-4">
-                    <Text className="text-gray-400 text-xs">
-                      Tap any empty plot or press + Plant to start growing
-                    </Text>
+              ) : (
+                <Suspense fallback={
+                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d2818' }}>
+                    <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>Loading 3D Garden...</Text>
                   </View>
-                )}
+                }>
+                  <Garden3D
+                    selectedCropId={selectedCropId}
+                    onTilePress={handleTilePress}
+                    onPlantPress={(col, row) => router.push({ pathname: '/plant-crop', params: { plotX: String(col), plotY: String(row) } })}
+                  />
+                </Suspense>
+              )}
+            </GardenViewport>
+
+            <View style={styles.hudOverlay}>
+              <XpBar currentXP={user?.experience ?? 0} xpToNext={xpToNext} level={masteryLevel} />
+              <View style={styles.hudRow}>
+                <StreakDisplay streak={topStreak} />
+                <SyncWidget isOnline />
               </View>
-            ) : (
-              <View>
-                <Garden3D
-                  selectedCropId={selectedCropId}
-                  onTilePress={handleTilePress}
-                  onPlantPress={(col, row) => router.push({ pathname: '/plant-crop', params: { plotX: String(col), plotY: String(row) } })}
-                />
-                {crops.length === 0 && (
-                  <View className="items-center py-4">
-                    <Text className="text-gray-400 text-xs">
-                      Tap any empty plot or press + Plant to start growing
-                    </Text>
-                  </View>
-                )}
+            </View>
+          </View>
+
+          <View style={styles.viewToggleBar}>
+            <View style={styles.viewToggleRow}>
+              <View style={styles.viewToggleButtons}>
+                <TouchableOpacity onPress={() => switchView('2d')} style={[styles.viewToggleBtn, viewMode === '2d' && styles.viewToggleBtnActive]}>
+                  <Text style={[styles.viewToggleBtnText, viewMode === '2d' && styles.viewToggleBtnTextActive]}>▦ 2D</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => switchView('3d')} style={[styles.viewToggleBtn, viewMode === '3d' && styles.viewToggleBtnActive]}>
+                  <Text style={[styles.viewToggleBtnText, viewMode === '3d' && styles.viewToggleBtnTextActive]}>◈ 3D</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity onPress={() => setShowAnalytics(v => !v)} style={styles.analyticsToggle}>
+                <Text style={styles.analyticsToggleText}>📊</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity onPress={() => router.push('/plant-crop')} style={styles.plantButton}>
+              <Text style={styles.plantButtonText}>+ Plant</Text>
+            </TouchableOpacity>
+          </View>
+
+          {showAnalytics && (
+            <View style={styles.analyticsContainer}>
+              <GardenAnalytics
+                crops={crops}
+                gridWidth={6}
+                gridHeight={6}
+                soilQuality={soilQuality}
+                onClose={() => setShowAnalytics(false)}
+              />
+            </View>
+          )}
+
+          <Animated.View style={[styles.gardenCard, viewToggleStyle]}>
+            {crops.length === 0 && (
+              <View style={styles.emptyGridHint}>
+                <Text style={styles.emptyGridHintText}>
+                  Tap any empty plot or press + Plant to start growing
+                </Text>
               </View>
             )}
           </Animated.View>
-        </View>
 
-        {/* Selected Crop Actions */}
-        {selectedCrop && (
-          <View className="px-4 mb-4">
-            <View className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <Text className="text-base font-semibold text-gray-900 mb-3">
-                {selectedCrop.name} Actions
-              </Text>
-              <View className="flex-row justify-between gap-2">
-                <WaterButton
-                  onPress={() => handleWater(selectedCrop.id)}
-                  crop={selectedCrop}
-                  className="flex-1"
-                />
-                <FertilizeButton
-                  onPress={() => handleFertilize(selectedCrop.id)}
-                  crop={selectedCrop}
-                  className="flex-1"
-                />
-                <HarvestButton
-                  onPress={() => handleHarvest(selectedCrop.id)}
-                  crop={selectedCrop}
-                  className="flex-1"
-                />
+          {selectedCrop && (
+            <View style={styles.cropActions}>
+              <View style={styles.cropActionsHeader}>
+                <PlantHealthBadge status={selectedCropHealth || 'growing'} />
+                <Text style={styles.cropActionsTitle}>{selectedCrop.name}</Text>
               </View>
-            </View>
-          </View>
-        )}
-
-        {/* ─── Loading Skeletons (while data loads) ─────────────────────────── */}
-        {isLoading && (
-          <View className="px-4 mb-4">
-            <View style={styles.sectionCard}>
-              <SkeletonLoader width="50%" height={20} borderRadius={6} style={{ marginBottom: 12 }} />
-              <SkeletonLoader width={60} height={22} borderRadius={11} style={{ marginBottom: 12 }} />
-              <View style={{ marginBottom: 8 }}>
-                <SkeletonLoader width="100%" height={8} borderRadius={4} />
+              <View style={styles.cropActionsRow}>
+                <WaterButton onPress={() => handleWater(selectedCrop.id)} crop={selectedCrop} />
+                <FertilizeButton onPress={() => handleFertilize(selectedCrop.id)} crop={selectedCrop} />
+                <HarvestButton onPress={() => handleHarvest(selectedCrop.id)} crop={selectedCrop} />
               </View>
-              <SkeletonLoader width="70%" height={12} borderRadius={4} />
-            </View>
-          </View>
-        )}
-
-        {isLoading && (
-          <View className="px-4 mb-4">
-            <View style={styles.sectionCard}>
-              <SkeletonLoader width="40%" height={20} borderRadius={6} style={{ marginBottom: 12 }} />
-              {[0, 1, 2].map((i) => (
-                <View key={i} style={[styles.streakRow, { borderBottomColor: '#f3f4f6', borderBottomWidth: 1 }]}>
-                  <View style={styles.streakLeft}>
-                    <SkeletonLoader width={20} height={20} borderRadius={10} />
-                    <View style={{ marginLeft: 10, flex: 1 }}>
-                      <SkeletonLoader width="80%" height={14} borderRadius={4} style={{ marginBottom: 4 }} />
-                      <SkeletonLoader width="50%" height={10} borderRadius={4} />
-                    </View>
-                  </View>
-                  <SkeletonLoader width={30} height={20} borderRadius={6} />
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {isLoading && (
-          <View className="px-4 mb-6">
-            <View style={styles.sectionCard}>
-              <View className="flex-row items-center justify-between mb-2">
-                <SkeletonLoader width="45%" height={20} borderRadius={6} />
-                <SkeletonLoader width={50} height={22} borderRadius={11} />
-              </View>
-              <View className="flex-row items-center justify-between mb-2">
-                <SkeletonLoader width={60} height={28} borderRadius={6} />
-                <SkeletonLoader width={60} height={28} borderRadius={6} />
-                <SkeletonLoader width={60} height={28} borderRadius={6} />
-              </View>
-              <SkeletonLoader width="100%" height={8} borderRadius={4} style={{ marginTop: 12 }} />
-              <SkeletonLoader width={80} height={28} borderRadius={10} style={{ marginTop: 16 }} />
-            </View>
-          </View>
-        )}
-
-        {/* ─── Collections Section ─────────────────────────────────────────── */}
-        {!isLoading && (
-          <>
-          <View className="px-4 mb-4">
-          <View style={styles.sectionCard}>
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-base font-bold text-gray-900">
-                🌿 Plant Collections
-              </Text>
-              <Badge
-                label={`${collectionStats.completion}%`}
-                variant={
-                  collectionStats.completion >= 75
-                    ? 'success'
-                    : collectionStats.completion >= 25
-                      ? 'warning'
-                      : 'neutral'
-                }
-                size="sm"
-              />
-            </View>
-            <View className="mb-2">
-              <View className="flex-row justify-between mb-1">
-                <Text className="text-xs text-gray-500">
-                  Species discovered
-                </Text>
-                <Text className="text-xs font-semibold text-gray-700">
-                  {collectionStats.discovered} / {collectionStats.total}
-                </Text>
-              </View>
-              <View style={styles.progressBarBg}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      width: `${Math.min(100, collectionStats.completion)}%`,
-                      backgroundColor:
-                        collectionStats.completion >= 75
-                          ? '#16a34a'
-                          : collectionStats.completion >= 25
-                            ? '#d97706'
-                            : '#6366f1',
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-            <Text className="text-xs text-gray-400">
-              {collectionStats.total - collectionStats.discovered > 0
-                ? `${collectionStats.total - collectionStats.discovered} more species to discover!`
-                : 'All species discovered! 🌟'}
-            </Text>
-          </View>
-        </View>
-
-        {/* ─── Care Streaks Section ────────────────────────────────────────── */}
-        {careStreakCrops.length > 0 && (
-          <View className="px-4 mb-4">
-            <View style={styles.sectionCard}>
-              <Text className="text-base font-bold text-gray-900 mb-3">
-                💚 Care Streaks
-              </Text>
-              {careStreakCrops.map((crop: Crop) => {
-                const streak = crop.careStreak;
-                let streakLabel = `${streak} day${streak !== 1 ? 's' : ''}`;
-                let streakColor = '#6b7280';
-                if (streak >= 30) {
-                  streakLabel += ' 🔥';
-                  streakColor = '#dc2626';
-                } else if (streak >= 14) {
-                  streakLabel += ' ⭐';
-                  streakColor = '#d97706';
-                } else if (streak >= 7) {
-                  streakLabel += ' 💪';
-                  streakColor = '#16a34a';
-                } else if (streak >= 3) {
-                  streakLabel += ' 👍';
-                  // streakColor = '#6366f1';
-                }
-                return (
-                  <TouchableOpacity
-                    key={crop.id}
-                    style={styles.streakRow}
-                    onPress={() => {
-                      setSelectedCropId(crop.id);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.streakLeft}>
-                      <Text style={styles.streakIcon}>🌱</Text>
-                      <View>
-                        <Text className="text-sm font-medium text-gray-800">
-                          {crop.name}
-                        </Text>
-                        <Text className="text-xs text-gray-400">
-                          Stage {crop.growthStage} · Health {crop.health}%
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.streakRight}>
-                      <Text
-                        style={[styles.streakCount, { color: streakColor }]}
-                      >
-                        {streak}
-                      </Text>
-                      <Text style={styles.streakLabel}>{streakLabel}</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        )}
-
-        {/* ─── Mastery Summary Section ─────────────────────────────────────── */}
-        <View className="px-4 mb-6">
-          <View style={styles.sectionCard}>
-            <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-base font-bold text-gray-900">
-                🏆 Species Mastery
-              </Text>
-              <Badge
-                label={`Level ${masteryLevel}`}
-                variant="primary"
-                size="sm"
-              />
-            </View>
-            <View className="flex-row items-center justify-between mb-2">
-              <View className="flex-row items-center gap-3">
-                <View style={styles.masteryStat}>
-                  <Text className="text-lg font-bold text-primary-600">
-                    {masteredCount}
-                  </Text>
-                  <Text className="text-xs text-gray-400">Mastered</Text>
-                </View>
-                <View style={styles.masteryStat}>
-                  <Text className="text-lg font-bold text-amber-600">
-                    {collectionStats.discovered}
-                  </Text>
-                  <Text className="text-xs text-gray-400">Discovered</Text>
-                </View>
-                <View style={styles.masteryStat}>
-                  <Text className="text-lg font-bold text-green-600">
-                    {crops.length}
-                  </Text>
-                  <Text className="text-xs text-gray-400">Growing</Text>
-                </View>
-              </View>
-            </View>
-            <View className="mt-1">
-              <View className="flex-row justify-between mb-1">
-                <Text className="text-xs text-gray-500">
-                  Level progression
-                </Text>
-                <Text className="text-xs font-semibold text-gray-700">
-                  {user?.experience ?? 0} / {(user?.level ?? 1) * 100} XP
-                </Text>
-              </View>
-              <View style={styles.progressBarBg}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      width: `${Math.min(100, ((user?.experience ?? 0) / ((user?.level ?? 1) * 100)) * 100)}%`,
-                      backgroundColor: '#6366f1',
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-            <TouchableOpacity
-              style={styles.masteryButton}
-              onPress={() => {
-                const firstCropId = crops[0]?.id;
-                if (firstCropId) {
-                  router.push({ pathname: '/crop-detail/[cropId]', params: { cropId: firstCropId } });
-                }
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.masteryButtonText}>
-                View All Masteries →
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-          </>
-        )}
-
-        {/* Bottom padding for overlay */}
-        <View className="h-96" />
-      </ScrollView>
-
-      {/* ─── Walkthrough Overlay (first-time users) ─────────────────────── */}
-      {!walkthroughChecking && (
-        <WalkthroughOverlay
-          visible={showWalkthrough}
-          onComplete={completeWalkthrough}
-          onSkip={skipWalkthrough}
-        />
-      )}
-
-      {/* ─── Floating Growth Overlay ───────────────────────────────────────── */}
-      <GrowthOverlay
-        crop={selectedCropForOverlay}
-        garden={selectedGarden || null}
-        weather={weather}
-        engineState={engineState}
-        isVirtual={isVirtual}
-      />
-
-      {/* ─── Floating "Identify Plant" Button ──────────────────────────────── */}
-      <TouchableOpacity
-        style={styles.floatingIdentifyButton}
-        onPress={() => {
-          HapticFeedback.medium();
-          router.push("/ai-scanner" as any);
-        }}
-        activeOpacity={0.85}
-        accessibilityLabel="Identify a plant"
-        accessibilityRole="button"
-      >
-        <Text style={styles.floatingIdentifyIcon}>📸</Text>
-        <Text style={styles.floatingIdentifyText}>Identify Plant</Text>
-      </TouchableOpacity>
-
-      {/* ─── Recent Identification Badges ──────────────────────────────────── */}
-      {recentIdentifications.length > 0 && (
-        <View style={styles.idBadgeContainer}>
-          {recentIdentifications.slice(0, 3).map((photo, idx) => (
-            <View
-              key={photo.id}
-              style={[
-                styles.idBadge,
-                { right: 16 + idx * 44 },
-              ]}
-            >
-              <Text style={styles.idBadgeText}>
-                {photo.speciesName.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-          ))}
-          {speciesIdentifiedCount > 0 && (
-            <View style={[styles.idBadge, styles.idBadgeCount, { right: 16 + Math.min(recentIdentifications.length, 3) * 44 }]}>
-              <Text style={styles.idBadgeCountText}>+{speciesIdentifiedCount}</Text>
             </View>
           )}
+
+          {isLoading && (
+            <View style={styles.skeletonSection}>
+              <LoadingCard lines={3} />
+              <LoadingCard lines={2} />
+              <LoadingCard lines={3} />
+            </View>
+          )}
+
+          {!isLoading && (
+            <>
+              <CollapsibleSection
+                title="🌿 Plant Collections"
+                badge={`${collectionStats.completion}%`}
+              >
+                <View style={styles.compactSection}>
+                  <View style={styles.statRow}>
+                    <Text style={styles.statLabel}>Species discovered</Text>
+                    <Text style={styles.statValue}>{collectionStats.discovered} / {collectionStats.total}</Text>
+                  </View>
+                  <View style={styles.progressBarBg}>
+                    <View style={[styles.progressBarFill, { width: `${Math.min(100, collectionStats.completion)}%` }]} />
+                  </View>
+                  <Text style={styles.statHint}>
+                    {collectionStats.total - collectionStats.discovered > 0
+                      ? `${collectionStats.total - collectionStats.discovered} more species to discover!`
+                      : 'All species discovered! 🌟'}
+                  </Text>
+                </View>
+              </CollapsibleSection>
+
+              {careStreakCrops.length > 0 && (
+                <CollapsibleSection title="💚 Care Streaks">
+                  {careStreakCrops.map((crop: Crop) => {
+                    const streak = crop.careStreak;
+                    let streakLabel = `${streak} day${streak !== 1 ? 's' : ''}`;
+                    let streakColor: string = COLORS.textMuted;
+                    if (streak >= 30) { streakLabel += ' 🔥'; streakColor = COLORS.dangerRed; }
+                    else if (streak >= 14) { streakLabel += ' ⭐'; streakColor = COLORS.sunYellow; }
+                    else if (streak >= 7) { streakLabel += ' 💪'; streakColor = COLORS.leafGreen; }
+                    else if (streak >= 3) { streakLabel += ' 👍'; }
+                    return (
+                      <TouchableOpacity key={crop.id} style={styles.streakRow} onPress={() => setSelectedCropId(crop.id)} activeOpacity={0.7}>
+                        <View style={styles.streakLeft}>
+                          <Text style={styles.streakIcon}>🌱</Text>
+                          <View>
+                            <Text style={styles.streakName}>{crop.name}</Text>
+                            <Text style={styles.streakSub}>Stage {crop.growthStage} · Health {crop.health}%</Text>
+                          </View>
+                        </View>
+                        <View style={styles.streakRight}>
+                          <Text style={[styles.streakCount, { color: streakColor }]}>{streak}</Text>
+                          <Text style={styles.streakLabel}>{streakLabel}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </CollapsibleSection>
+              )}
+
+              <CollapsibleSection title="🏆 Species Mastery">
+                <View style={styles.compactSection}>
+                  <View style={styles.masteryRow}>
+                    <View style={styles.masteryStat}>
+                      <Text style={styles.masteryStatValue}>{masteredCount}</Text>
+                      <Text style={styles.masteryStatLabel}>Mastered</Text>
+                    </View>
+                    <View style={styles.masteryStat}>
+                      <Text style={[styles.masteryStatValue, { color: COLORS.sunYellow }]}>{collectionStats.discovered}</Text>
+                      <Text style={styles.masteryStatLabel}>Discovered</Text>
+                    </View>
+                    <View style={styles.masteryStat}>
+                      <Text style={[styles.masteryStatValue, { color: COLORS.leafGreen }]}>{crops.length}</Text>
+                      <Text style={styles.masteryStatLabel}>Growing</Text>
+                    </View>
+                  </View>
+                  <View style={styles.statRow}>
+                    <Text style={styles.statLabel}>Level progression</Text>
+                    <Text style={styles.statValue}>{user?.experience ?? 0} / {xpToNext} XP</Text>
+                  </View>
+                  <View style={styles.progressBarBg}>
+                    <View style={[styles.progressBarFill, { width: `${Math.min(100, ((user?.experience ?? 0) / xpToNext) * 100)}%`, backgroundColor: COLORS.skyBlue }]} />
+                  </View>
+                  <TouchableOpacity style={styles.masteryButton} onPress={() => { const id = crops[0]?.id; if (id) router.push({ pathname: '/crop-detail/[cropId]', params: { cropId: id } }); }} activeOpacity={0.7}>
+                    <Text style={styles.masteryButtonText}>View All Masteries →</Text>
+                  </TouchableOpacity>
+                </View>
+              </CollapsibleSection>
+            </>
+          )}
+
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+
+        <View style={[styles.fabContainer, { top: GARDEN_VIEWPORT_HEIGHT - 80 }]}>
+          <FloatingActionButton icon="📸" color="#7c3aed" onPress={() => { HapticFeedback.medium(); router.push("/ai-scanner" as any); }} />
+          <FloatingActionButton icon="💧" color={COLORS.skyBlue} onPress={() => { if (selectedCrop) handleWater(selectedCrop.id); }} position={{ bottom: 0, right: 70 }} />
+          <FloatingActionButton icon="🌱" color={COLORS.soilBrown} onPress={() => router.push('/soil-check/' + (selectedCropId || ''))} position={{ bottom: 0, right: 0 }} />
         </View>
-      )}
 
-      {/* ─── Save Game FAB ──────────────────────────────────────────────────── */}
-      <SaveGameButton />
+        {!walkthroughChecking && (
+          <WalkthroughOverlay visible={showWalkthrough} onComplete={completeWalkthrough} onSkip={skipWalkthrough} />
+        )}
 
-      {/* ─── XP Floating Text Manager ────────────────────────────────────────── */}
-      <XPFloatingManager xpEvents={xpEvents} />
+        {recentIdentifications.length > 0 && (
+          <View style={styles.idBadgeContainer}>
+            {recentIdentifications.slice(0, 3).map((photo, idx) => (
+              <View key={photo.id} style={[styles.idBadge, { right: 16 + idx * 44 }]}>
+                <Text style={styles.idBadgeText}>{photo.speciesName.charAt(0).toUpperCase()}</Text>
+              </View>
+            ))}
+            {speciesIdentifiedCount > 0 && (
+              <View style={[styles.idBadge, styles.idBadgeCount, { right: 16 + Math.min(recentIdentifications.length, 3) * 44 }]}>
+                <Text style={styles.idBadgeCountText}>+{speciesIdentifiedCount}</Text>
+              </View>
+            )}
+          </View>
+        )}
 
-      {/* ─── Auto-save Toast ────────────────────────────────────────────────── */}
-      {ToastComponent}
-    </View>
-    <PlantSelectionSheet
-      visible={showPlantSheet}
-      onClose={() => setShowPlantSheet(false)}
-      onPlant={handlePlantFromSheet}
-      plotX={plantSheetPosition?.plotX ?? 0}
-      plotY={plantSheetPosition?.plotY ?? 0}
-      availableSeeds={availableSeeds}
-    />
-    <CropDetailModal
-      visible={showCropDetail}
-      crop={selectedCrop ?? null}
-      onClose={() => setShowCropDetail(false)}
-    />
-    <LevelUpModal
-      visible={showLevelUp}
-      newLevel={newLevel}
-      onClose={() => setShowLevelUp(false)}
-    />
-  </ParticleProvider>
+        <SaveGameButton />
+        <XPFloatingManager xpEvents={xpEvents} />
+        {ToastComponent}
+      </View>
+      <PlantSelectionSheet
+        visible={showPlantSheet}
+        onClose={() => setShowPlantSheet(false)}
+        onPlant={handlePlantFromSheet}
+        plotX={plantSheetPosition?.plotX ?? 0}
+        plotY={plantSheetPosition?.plotY ?? 0}
+        availableSeeds={availableSeeds}
+      />
+      <CropDetailModal
+        visible={showCropDetail}
+        crop={selectedCrop ?? null}
+        onClose={() => setShowCropDetail(false)}
+      />
+      <LevelUpModal
+        visible={showLevelUp}
+        newLevel={newLevel}
+        onClose={() => setShowLevelUp(false)}
+      />
+    </ParticleProvider>
   );
 }
 
-// ─── Plant-Centric Styles ────────────────────────────────────────────────
+export default GardenScreen;
 
 const styles = StyleSheet.create({
-  // Header
-  plantHeader: {
-    backgroundColor: '#0d2818',
+  root: {
+    flex: 1,
+  },
+  header: {
+    backgroundColor: COLORS.darkForest,
     paddingTop: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.md,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#1a4a2a',
@@ -1099,12 +824,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    ...TYPOGRAPHY.headingS,
+    color: COLORS.white,
     fontWeight: '800',
-    color: '#ffffff',
   },
   headerSubtitle: {
-    fontSize: 12,
+    ...TYPOGRAPHY.caption,
     color: 'rgba(255,255,255,0.6)',
     marginTop: 2,
   },
@@ -1139,92 +864,69 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFD700',
   },
-
-  // Section Card
-  sectionCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
-  },
-
-  // Progress Bar
-  progressBarBg: {
-    height: 8,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-
-  // Care Streaks
-  streakRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
+  plotSelector: {
+    backgroundColor: '#0a1f12',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: '#1a4a2a',
   },
-  streakLeft: {
+  plotSelectorContent: {
+    gap: 8,
+  },
+  plotChip: {
+    backgroundColor: 'transparent',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  plotChipActive: {
+    backgroundColor: '#1a4a2a',
+    borderColor: '#2d8a4e',
+  },
+  plotChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.6)',
+  },
+  plotChipTextActive: {
+    color: '#a5f0b0',
+  },
+  plotChipCoin: {
+    fontSize: 9,
+    color: 'rgba(255,215,0,0.6)',
+    textAlign: 'center',
+    marginTop: 1,
+  },
+  plotBuyChip: {
+    backgroundColor: 'rgba(99,102,241,0.2)',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.3)',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    flex: 1,
+    gap: 4,
   },
-  streakIcon: {
-    fontSize: 20,
+  plotBuyIcon: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#a5b4fc',
   },
-  streakRight: {
-    alignItems: 'center',
-    minWidth: 48,
-  },
-  streakCount: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  streakLabel: {
-    fontSize: 9,
-    color: '#9ca3af',
-    fontWeight: '500',
-    textTransform: 'uppercase',
-  },
-
-  // Mastery
-  masteryStat: {
-    alignItems: 'center',
-  },
-  masteryButton: {
-    marginTop: 12,
-    backgroundColor: '#f0f0ff',
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.2)',
-  },
-  masteryButtonText: {
-    fontSize: 13,
+  plotBuyText: {
+    fontSize: 12,
     fontWeight: '600',
-    color: '#6366f1',
+    color: '#a5b4fc',
   },
-
-  // Permission Banner
   permissionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#fef3cd',
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.md,
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#fde68a',
@@ -1244,74 +946,334 @@ const styles = StyleSheet.create({
   permissionBannerButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#ffffff',
+    color: COLORS.white,
   },
-
-  // ─── Floating Identify Button ────────────────────────────────────────────
-  floatingIdentifyButton: {
-    position: "absolute",
-    bottom: 24,
-    right: 16,
-    backgroundColor: "#0d2818",
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#fecaca',
   },
-  floatingIdentifyIcon: {
-    fontSize: 18,
-  },
-  floatingIdentifyText: {
+  errorBannerText: {
+    color: '#dc2626',
     fontSize: 13,
-    fontWeight: "700",
-    color: "#ffffff",
+    flex: 1,
   },
-
-  // ─── Recent ID Badges ────────────────────────────────────────────────────
-  idBadgeContainer: {
-    position: "absolute",
-    top: 8,
+  errorBannerButton: {
+    backgroundColor: '#fecaca',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 12,
+  },
+  errorBannerButtonText: {
+    color: '#dc2626',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  scroll: {
+    flex: 1,
+  },
+  virtualBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fffbeb',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#fde68a',
+  },
+  virtualBannerIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  virtualBannerContent: {
+    flex: 1,
+  },
+  virtualBannerTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#92400e',
+  },
+  virtualBannerSub: {
+    fontSize: 11,
+    color: '#a16207',
+  },
+  viewportWrapper: {
+    height: GARDEN_VIEWPORT_HEIGHT,
+  },
+  hudOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
     right: 0,
-    flexDirection: "row",
+    paddingHorizontal: SPACING.sm,
+    paddingTop: SPACING.xs,
+  },
+  hudRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: SPACING.xs,
+  },
+  viewToggleBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  viewToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  viewToggleButtons: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: BORDER_RADIUS.md,
+    padding: 2,
+  },
+  viewToggleBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+  viewToggleBtnActive: {
+    backgroundColor: COLORS.surface,
+    ...SHADOWS.sm,
+  },
+  viewToggleBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+  },
+  viewToggleBtnTextActive: {
+    color: COLORS.primary,
+  },
+  analyticsToggle: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+  analyticsToggleText: {
+    fontSize: 14,
+  },
+  plantButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    borderRadius: BORDER_RADIUS.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  plantButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  analyticsContainer: {
+    paddingHorizontal: SPACING.md,
+    marginBottom: 8,
+  },
+  gardenCard: {
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.md,
+    padding: 0,
+    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  emptyGridHint: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  emptyGridHintText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+  },
+  cropActions: {
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.md,
+    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  cropActionsHeader: {
+    marginBottom: SPACING.sm,
+  },
+  cropActionsTitle: {
+    ...TYPOGRAPHY.headingS,
+    color: COLORS.text,
+    marginTop: 4,
+  },
+  cropActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  skeletonSection: {
+    paddingHorizontal: SPACING.md,
+    gap: 12,
+    marginBottom: SPACING.md,
+  },
+  compactSection: {
+    paddingTop: SPACING.xs,
+  },
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  statLabel: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textSecondary,
+  },
+  statValue: {
+    ...TYPOGRAPHY.caption,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  statHint: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textMuted,
+    marginTop: 6,
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: COLORS.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: COLORS.primary,
+  },
+  streakRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  streakLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  streakIcon: {
+    fontSize: 20,
+  },
+  streakName: {
+    ...TYPOGRAPHY.bodySmall,
+    fontWeight: '500',
+    color: COLORS.text,
+  },
+  streakSub: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textMuted,
+  },
+  streakRight: {
+    alignItems: 'center',
+    minWidth: 48,
+  },
+  streakCount: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  streakLabel: {
+    fontSize: 9,
+    color: COLORS.textMuted,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+  },
+  masteryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 12,
+  },
+  masteryStat: {
+    alignItems: 'center',
+  },
+  masteryStatValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  masteryStatLabel: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textMuted,
+  },
+  masteryButton: {
+    marginTop: 12,
+    backgroundColor: '#f0f0ff',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.2)',
+  },
+  masteryButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6366f1',
+  },
+  bottomSpacer: {
+    height: 120,
+  },
+  fabContainer: {
+    position: 'absolute',
+    right: 16,
+    width: 60,
+    height: 200,
+    alignItems: 'flex-end',
+    gap: 12,
+  },
+  idBadgeContainer: {
+    position: 'absolute',
+    top: 100,
+    right: 0,
+    flexDirection: 'row',
   },
   idBadge: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#10b981",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
-    borderColor: "#ffffff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: COLORS.white,
+    ...SHADOWS.md,
   },
   idBadgeText: {
     fontSize: 14,
-    fontWeight: "800",
-    color: "#ffffff",
+    fontWeight: '800',
+    color: COLORS.white,
   },
   idBadgeCount: {
-    backgroundColor: "#6366f1",
-    width: "auto" as any,
+    backgroundColor: '#6366f1',
+    width: 'auto' as unknown as number,
     paddingHorizontal: 8,
     borderRadius: 18,
   },
   idBadgeCountText: {
     fontSize: 10,
-    fontWeight: "800",
-    color: "#ffffff",
+    fontWeight: '800',
+    color: COLORS.white,
   },
 });

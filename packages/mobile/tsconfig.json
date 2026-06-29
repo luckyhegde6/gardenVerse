@@ -15,6 +15,7 @@
       "@navigation/*": ["src/navigation/*"]
     },
     "jsx": "react-jsx",
+    "module": "esnext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": false,
     "noEmit": true,
