@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, StyleSheet, PanResponder, LayoutChangeEvent, Platform, Text } from 'react-native'
 import { GLView } from 'expo-gl'
 import * as THREE from 'three'
-import { useGarden } from '../../hooks/useGarden'
-import { Crop } from '../../types'
+import { useGarden } from '@hooks/useGarden'
+import { Crop } from "@/types"
 
 const GRID_SIZE = 6
 const TILE_SPACING = 1.8

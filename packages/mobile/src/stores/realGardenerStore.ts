@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import RealGardenerService from "../services/realGardener";
-import { RealGardenerStatus, EncouragementTip } from "../types";
+import RealGardenerService from "@services/realGardener";
+import { RealGardenerStatus, EncouragementTip } from "@/types";
 
 interface RealGardenerState {
   status: RealGardenerStatus | null;

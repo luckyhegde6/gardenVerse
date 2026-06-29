@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { Crop, CropStatus } from "../../types";
+import { Crop, CropStatus } from "@/types";
 
 interface CropSpriteProps {
   crop: Crop;

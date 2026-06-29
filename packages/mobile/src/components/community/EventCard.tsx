@@ -11,8 +11,8 @@ import {
   TYPOGRAPHY,
   SHADOWS,
   BORDER_RADIUS,
-} from "../../styles/tokens";
-import { CommunityEvent } from "../../types";
+} from "@/styles/tokens";
+import { CommunityEvent } from "@/types";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

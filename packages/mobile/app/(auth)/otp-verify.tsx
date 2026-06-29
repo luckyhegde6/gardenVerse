@@ -10,9 +10,9 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter, useLocalSearchParams, Link } from "expo-router";
-import { Button } from "../../src/components/ui/Button";
-import AuthService from "../../src/services/auth";
-import { colors, spacing, borderRadius, typography, globalStyles } from "../../src/styles/theme";
+import { Button } from "@components/ui/Button";
+import AuthService from "@services/auth";
+import { colors, spacing, borderRadius, typography, globalStyles } from "@/styles/theme";
 
 export default function OTPVerifyScreen() {
   const router = useRouter();

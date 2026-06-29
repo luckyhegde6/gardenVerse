@@ -1,5 +1,5 @@
 import React from "react";
-import { QuestScreen } from "../src/screens/quests/QuestScreen";
+import { QuestScreen } from "@screens/quests/QuestScreen";
 
 export default function QuestsRoute() {
   return <QuestScreen />;

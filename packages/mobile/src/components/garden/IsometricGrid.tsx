@@ -20,9 +20,9 @@ import Animated, {
   Easing,
   interpolate,
 } from "react-native-reanimated";
-import { Crop, CropStatus } from "../../types";
-import HapticFeedback from "../../utils/haptics";
-import { CropSpriteSVG } from "./CropSpriteSVG";
+import { Crop, CropStatus } from "@/types";
+import HapticFeedback from "@utils/haptics";
+import { CropSpriteSVG } from "@components/garden/CropSpriteSVG";
 
 interface IsometricGridProps {
   crops: Crop[];

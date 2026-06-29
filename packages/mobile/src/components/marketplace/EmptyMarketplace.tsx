@@ -11,7 +11,7 @@ import {
   SPACING,
   TYPOGRAPHY,
   BORDER_RADIUS,
-} from "../../styles/tokens";
+} from "@/styles/tokens";
 
 interface EmptyMarketplaceProps {
   /** If true, shows search-specific empty state */

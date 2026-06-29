@@ -11,8 +11,8 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from "../../styles/tokens";
-import { NearbyGardener } from "../../types";
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from "@/styles/tokens";
+import { NearbyGardener } from "@/types";
 
 interface NearbyGardenerCardProps {
   gardener: NearbyGardener;

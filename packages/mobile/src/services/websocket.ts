@@ -1,12 +1,12 @@
 import { io, Socket } from "socket.io-client";
-import { getItem, StorageKeys } from "../utils/storage";
+import { getItem, StorageKeys } from "@utils/storage";
 import {
   Crop,
   Notification,
   Message,
   WeatherData,
   GovernmentAdvisory,
-} from "../types";
+} from "@/types";
 
 const WS_URL =
   process.env.WS_URL || (__DEV__

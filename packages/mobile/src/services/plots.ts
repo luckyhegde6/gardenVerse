@@ -1,4 +1,4 @@
-import api from './api';
+import api from '@services/api';
 
 const PlotsService = {
   async getPlots(page = 1, limit = 20) {

@@ -7,14 +7,14 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { CommunitySearchBar } from "../../components/community/CommunitySearchBar";
-import { NearbyGardenerCard } from "../../components/community/NearbyGardenerCard";
-import { LeaderboardCard } from "../../components/community/LeaderboardCard";
-import { CommunityGroupCard } from "../../components/community/CommunityGroupCard";
-import { EventCard } from "../../components/community/EventCard";
-import { ActivityFeed } from "../../components/community/ActivityFeed";
+import { CommunitySearchBar } from "@components/community/CommunitySearchBar";
+import { NearbyGardenerCard } from "@components/community/NearbyGardenerCard";
+import { LeaderboardCard } from "@components/community/LeaderboardCard";
+import { CommunityGroupCard } from "@components/community/CommunityGroupCard";
+import { EventCard } from "@components/community/EventCard";
+import { ActivityFeed } from "@components/community/ActivityFeed";
 
-import { COLORS, SPACING, TYPOGRAPHY, SHADOWS, BORDER_RADIUS } from "../../styles/tokens";
+import { COLORS, SPACING, TYPOGRAPHY, SHADOWS, BORDER_RADIUS } from "@/styles/tokens";
 
 import type {
   Group,
@@ -22,7 +22,7 @@ import type {
   LeaderboardEntry,
   ActivityEntry,
   CommunityEvent,
-} from "../../types";
+} from "@/types";
 
 // ─── Sample Data ────────────────────────────────────────────────────────────
 

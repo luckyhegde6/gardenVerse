@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Image, Text, StyleSheet } from "react-native";
-import { COLORS, BORDER_RADIUS } from "../../styles/tokens";
+import { COLORS, BORDER_RADIUS } from "@/styles/tokens";
 
 interface AvatarProps {
   uri?: string;

@@ -12,18 +12,18 @@ import {
   Image,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-import { ProgressBar } from "../../components/ui/ProgressBar";
-import { ScreenHeader } from "../../components/ui/ScreenHeader";
-import { EmptyState } from "../../components/ui/EmptyState";
-// import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
-import api from "../../services/api";
-import HapticFeedback from "../../utils/haptics";
-import { plantIdQuest } from "../../services/plantIdentificationQuest";
-import type { QuestProgress, IdentifiedPlantPhoto } from "../../types";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { ProgressBar } from "@components/ui/ProgressBar";
+import { ScreenHeader } from "@components/ui/ScreenHeader";
+import { EmptyState } from "@components/ui/EmptyState";
+// import { LoadingSpinner } from "@components/ui/LoadingSpinner";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
+import { colors, spacing, borderRadius, typography, shadows } from "@/styles/theme";
+import api from "@services/api";
+import HapticFeedback from "@utils/haptics";
+import { plantIdQuest } from "@services/plantIdentificationQuest";
+import type { QuestProgress, IdentifiedPlantPhoto } from "@/types";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

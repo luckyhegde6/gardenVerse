@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { Group } from "../../types";
-import { Avatar } from "../ui/Avatar";
-import { Badge } from "../ui/Badge";
+import { Group } from "@/types";
+import { Avatar } from "@components/ui/Avatar";
+import { Badge } from "@components/ui/Badge";
 
 interface GroupCardProps {
   group: Group;

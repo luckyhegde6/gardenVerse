@@ -13,7 +13,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS } from "../../styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS } from "@/styles/tokens";
 
 interface ModalProps {
   visible: boolean;

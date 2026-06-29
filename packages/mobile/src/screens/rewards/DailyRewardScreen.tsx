@@ -8,15 +8,15 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-import { ScreenHeader } from "../../components/ui/ScreenHeader";
-// import { EmptyState } from "../../components/ui/EmptyState";
-// import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
-import api from "../../services/api";
-import HapticFeedback from "../../utils/haptics";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { ScreenHeader } from "@components/ui/ScreenHeader";
+// import { EmptyState } from "@components/ui/EmptyState";
+// import { LoadingSpinner } from "@components/ui/LoadingSpinner";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
+import { colors, spacing, borderRadius, typography, shadows } from "@/styles/theme";
+import api from "@services/api";
+import HapticFeedback from "@utils/haptics";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

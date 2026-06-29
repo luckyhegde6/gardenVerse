@@ -4,8 +4,8 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import api from "../services/api";
-import { MarketplaceListing, ListingStatus } from "../types";
+import api from "@services/api";
+import { MarketplaceListing, ListingStatus } from "@/types";
 
 interface UseMarketplaceOptions {
   category?: string;

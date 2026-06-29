@@ -1,10 +1,10 @@
-import { api } from "./api";
-import { getItem, setItem } from "../utils/storage";
-import { logger } from "./logger";
+import { api } from "@services/api";
+import { getItem, setItem } from "@utils/storage";
+import { logger } from "@services/logger";
 import type {
   QuestProgress,
   IdentifiedPlantPhoto,
-} from "../types";
+} from "@/types";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 

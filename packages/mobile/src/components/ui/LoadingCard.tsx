@@ -6,7 +6,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS } from "../../styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS } from "@/styles/tokens";
 
 interface LoadingCardProps {
   lines?: number;

@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native";
-import { useShopStore } from "../../stores/shopStore";
-import { CouponRedemption } from "../../types";
+import { useShopStore } from "@stores/shopStore";
+import { CouponRedemption } from "@/types";
 
 export function CouponRedeemScreen() {
   const router = useRouter();

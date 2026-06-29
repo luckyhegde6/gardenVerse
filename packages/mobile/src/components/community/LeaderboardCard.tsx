@@ -12,8 +12,8 @@ import Animated, {
   withSpring,
   withDelay,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from "../../styles/tokens";
-import { LeaderboardEntry } from "../../types";
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from "@/styles/tokens";
+import { LeaderboardEntry } from "@/types";
 
 interface LeaderboardCardProps {
   entry: LeaderboardEntry;

@@ -12,7 +12,7 @@ import {
   COLORS,
   SPACING,
   BORDER_RADIUS,
-} from "../../styles/tokens";
+} from "@/styles/tokens";
 
 interface ListingSkeletonProps {
   /** Visual variant: "card" (vertical) or "horizontal" */

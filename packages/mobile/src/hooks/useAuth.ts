@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import { useAuthStore } from "../stores/authStore";
-import { LoginRequest, RegisterRequest } from "../services/auth";
+import { useAuthStore } from "@stores/authStore";
+import { LoginRequest, RegisterRequest } from "@services/auth";
 
 export function useAuth() {
   const {

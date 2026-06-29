@@ -1,5 +1,5 @@
-import api from './api';
-import type { RealGardenerStatus, EncouragementTip } from '../types';
+import api from '@services/api';
+import type { RealGardenerStatus, EncouragementTip } from "@/types";
 
 const RealGardenerService = {
   /**

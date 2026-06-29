@@ -4,8 +4,8 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { Platform } from "react-native";
-import { getItem, setItem, removeItem, StorageKeys } from "../services/storage";
-import { logger } from "./logger";
+import { getItem, setItem, removeItem, StorageKeys } from "@services/storage";
+import { logger } from "@services/logger";
 
 const LOCAL_API_URL =
   Platform.OS === "android"

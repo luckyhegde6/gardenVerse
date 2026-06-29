@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { MarketplaceListing } from "../../types";
-import { Avatar } from "../ui/Avatar";
-import { Badge } from "../ui/Badge";
-import { formatRelativeTime } from "../../utils/formatting";
+import { MarketplaceListing } from "@/types";
+import { Avatar } from "@components/ui/Avatar";
+import { Badge } from "@components/ui/Badge";
+import { formatRelativeTime } from "@utils/formatting";
 
 interface ListingCardProps {
   listing: MarketplaceListing;

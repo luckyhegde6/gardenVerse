@@ -10,16 +10,16 @@ import {
 } from "react-native";
 import { CameraView as ExpoCameraView, useCameraPermissions } from "expo-camera";
 import { launchImageLibraryAsync, MediaTypeOptions } from "expo-image-picker";
-import { requestCameraPermission } from "../../utils/permissions";
-import { Button } from "../../components/ui/Button";
-import { CameraOverlay } from "../../components/scanner/CameraOverlay";
-import { ScanResult } from "../../components/scanner/ScanResult";
-import { ScanHistory } from "../../components/scanner/ScanHistory";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { useAI } from "../../hooks/useAI";
-import { AiScanResult } from "../../types";
-import { plantIdQuest } from "../../services/plantIdentificationQuest";
-import HapticFeedback from "../../utils/haptics";
+import { requestCameraPermission } from "@utils/permissions";
+import { Button } from "@components/ui/Button";
+import { CameraOverlay } from "@components/scanner/CameraOverlay";
+import { ScanResult } from "@components/scanner/ScanResult";
+import { ScanHistory } from "@components/scanner/ScanHistory";
+import { LoadingSpinner } from "@components/ui/LoadingSpinner";
+import { useAI } from "@hooks/useAI";
+import { AiScanResult } from "@/types";
+import { plantIdQuest } from "@services/plantIdentificationQuest";
+import HapticFeedback from "@utils/haptics";
 
 // expo-camera CameraView has a type incompatibility with React 18 JSX types
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

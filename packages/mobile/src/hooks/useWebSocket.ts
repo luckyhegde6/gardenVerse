@@ -1,4 +1,4 @@
-import socketService from "../services/websocket";
+import socketService from "@services/websocket";
 
 export interface UseWebSocketReturn {
   isConnected: boolean;

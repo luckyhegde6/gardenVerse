@@ -11,8 +11,8 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from "../../styles/tokens";
-import { Group } from "../../types";
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from "@/styles/tokens";
+import { Group } from "@/types";
 
 interface CommunityGroupCardProps {
   group: Group;

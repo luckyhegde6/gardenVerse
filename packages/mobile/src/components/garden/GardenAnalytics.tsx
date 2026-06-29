@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react"
 import { View, Text, ScrollView, TouchableOpacity } from "react-native"
 import Svg, { Rect } from "react-native-svg"
-import { Crop, CropStatus } from "../../types"
-import HapticFeedback from "../../utils/haptics"
+import { Crop, CropStatus } from "@/types"
+import HapticFeedback from "@utils/haptics"
 
 type AnalyticsTab = "overview" | "hydration" | "health"
 

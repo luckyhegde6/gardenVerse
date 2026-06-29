@@ -6,7 +6,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { COLORS, SPACING, TYPOGRAPHY } from "../../styles/tokens";
+import { COLORS, SPACING, TYPOGRAPHY } from "@/styles/tokens";
 
 type PlantStatus = "healthy" | "dry" | "sick" | "growing";
 

@@ -1,10 +1,10 @@
 import React from "react";
 import { View, Text, ScrollView } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-import { Button } from "../../components/ui/Button";
-import { MemberListItem } from "../../components/community/MemberListItem";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { Button } from "@components/ui/Button";
+import { MemberListItem } from "@components/community/MemberListItem";
 
 export function GroupDetailScreen() {
   const router = useRouter();

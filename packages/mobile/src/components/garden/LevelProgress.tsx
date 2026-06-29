@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, borderRadius, shadows } from '../../styles/theme';
+import { colors, spacing, borderRadius, shadows } from '@/styles/theme';
 
 interface LevelProgressProps {
   level: number;

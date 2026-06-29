@@ -4,9 +4,9 @@ import {
   COLORS,
   SPACING,
   TYPOGRAPHY,
-} from "../../styles/tokens";
-import { MarketplaceListing } from "../../types";
-import { ProductCardHorizontal } from "./ProductCardHorizontal";
+} from "@/styles/tokens";
+import { MarketplaceListing } from "@/types";
+import { ProductCardHorizontal } from "@components/marketplace/ProductCardHorizontal";
 
 interface TrendingRowProps {
   listings: MarketplaceListing[];

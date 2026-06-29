@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Dimensions, StyleSheet } from "react-native";
-import { COLORS } from "../../styles/tokens";
-import { EnvironmentEffects } from "./EnvironmentEffects";
+import { COLORS } from "@/styles/tokens";
+import { EnvironmentEffects } from "@components/garden/EnvironmentEffects";
 
 interface GardenViewportProps {
   children: React.ReactNode;

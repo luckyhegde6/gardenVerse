@@ -8,16 +8,16 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ScreenHeader } from "../../components/ui/ScreenHeader";
-import { Avatar } from "../../components/ui/Avatar";
-import { Button } from "../../components/ui/Button";
-import { EmptyState } from "../../components/ui/EmptyState";
-import { Badge } from "../../components/ui/Badge";
-import { Card } from "../../components/ui/Card";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import api from "../../services/api";
-import { HapticFeedback } from "../../utils/haptics";
-import { colors, spacing, typography } from "../../styles/theme";
+import { ScreenHeader } from "@components/ui/ScreenHeader";
+import { Avatar } from "@components/ui/Avatar";
+import { Button } from "@components/ui/Button";
+import { EmptyState } from "@components/ui/EmptyState";
+import { Badge } from "@components/ui/Badge";
+import { Card } from "@components/ui/Card";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
+import api from "@services/api";
+import { HapticFeedback } from "@utils/haptics";
+import { colors, spacing, typography } from "@/styles/theme";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

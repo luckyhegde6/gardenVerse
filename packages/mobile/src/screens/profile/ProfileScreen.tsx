@@ -1,20 +1,20 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { useAuthStore } from "../../stores/authStore";
-import { Avatar } from "../../components/ui/Avatar";
-import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-import { ProgressBar } from "../../components/ui/ProgressBar";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import { UserRole } from "../../types";
-import api from "../../services/api";
+import { useAuthStore } from "@stores/authStore";
+import { Avatar } from "@components/ui/Avatar";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { ProgressBar } from "@components/ui/ProgressBar";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
+import { UserRole } from "@/types";
+import api from "@services/api";
 import {
   // ensurePermission,
   requestCameraPermission,
   requestLocationPermission,
   requestNotificationPermission,
-} from "../../utils/permissions";
+} from "@utils/permissions";
 import { Camera } from "expo-camera";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";

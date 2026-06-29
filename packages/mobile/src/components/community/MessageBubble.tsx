@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { Message } from "../../types";
-import { Avatar } from "../ui/Avatar";
-import { formatTime } from "../../utils/formatting";
+import { Message } from "@/types";
+import { Avatar } from "@components/ui/Avatar";
+import { formatTime } from "@utils/formatting";
 
 interface MessageBubbleProps {
   message: Message;

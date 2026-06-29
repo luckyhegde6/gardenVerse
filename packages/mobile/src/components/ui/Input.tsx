@@ -7,7 +7,7 @@ import {
   StyleSheet,
   KeyboardTypeOptions,
 } from "react-native";
-import { colors, spacing, borderRadius, typography } from "../../styles/theme";
+import { colors, spacing, borderRadius, typography } from "@/styles/theme";
 
 interface InputProps {
   label?: string;

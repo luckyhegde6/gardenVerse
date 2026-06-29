@@ -6,7 +6,7 @@ import {
   SafeAreaView,
   StyleSheet,
 } from "react-native";
-import { colors, spacing, typography } from "../../styles/theme";
+import { colors, spacing, typography } from "@/styles/theme";
 
 interface ScreenHeaderProps {
   title: string;

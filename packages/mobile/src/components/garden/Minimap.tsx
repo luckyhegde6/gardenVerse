@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useGarden } from '../../hooks/useGarden';
-import { Crop } from '../../types';
-import HapticFeedback from '../../utils/haptics';
+import { useGarden } from '@hooks/useGarden';
+import { Crop } from "@/types";
+import HapticFeedback from '@utils/haptics';
 
 const GRID = 6;
 const CELL = 24;

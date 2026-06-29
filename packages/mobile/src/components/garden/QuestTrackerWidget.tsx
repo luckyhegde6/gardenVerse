@@ -8,7 +8,7 @@ import {
   Easing,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useGamification } from '../../hooks/useGamification';
+import { useGamification } from '@hooks/useGamification';
 
 interface QuestTrackerWidgetProps {
   onPress?: () => void;

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import * as Location from "expo-location";
-import { ensurePermission } from "../utils/permissions";
-import { encodeGeohash } from "../utils/geo";
+import { ensurePermission } from "@utils/permissions";
+import { encodeGeohash } from "@utils/geo";
 
 interface LocationState {
   latitude: number | null;

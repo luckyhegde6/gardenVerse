@@ -11,13 +11,13 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { usePlotsStore } from "../../stores/plotsStore";
-import { useGardenStore } from "../../stores/gardenStore";
-import { useAuthStore } from "../../stores/authStore";
-import { Garden, GardenType } from "../../types";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import { ProgressBar } from "../../components/ui/ProgressBar";
-import { Badge } from "../../components/ui/Badge";
+import { usePlotsStore } from "@stores/plotsStore";
+import { useGardenStore } from "@stores/gardenStore";
+import { useAuthStore } from "@stores/authStore";
+import { Garden, GardenType } from "@/types";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
+import { ProgressBar } from "@components/ui/ProgressBar";
+import { Badge } from "@components/ui/Badge";
 
 const GARDEN_TYPE_COLORS: Record<GardenType, string> = {
   [GardenType.VIRTUAL]: "#3b82f6",

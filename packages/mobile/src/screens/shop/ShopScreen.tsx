@@ -12,12 +12,12 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native";
-import { useAuthStore } from "../../stores/authStore";
-import { useShopStore } from "../../stores/shopStore";
-import { ShopItem, InventoryItem, CouponRedemption } from "../../types";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import { Badge } from "../../components/ui/Badge";
-import { EmptyState } from "../../components/ui/EmptyState";
+import { useAuthStore } from "@stores/authStore";
+import { useShopStore } from "@stores/shopStore";
+import { ShopItem, InventoryItem, CouponRedemption } from "@/types";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
+import { Badge } from "@components/ui/Badge";
+import { EmptyState } from "@components/ui/EmptyState";
 
 const { width } = Dimensions.get("window");
 const CARD_GAP = 12;

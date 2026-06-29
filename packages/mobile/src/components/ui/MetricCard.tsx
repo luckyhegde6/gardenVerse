@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS } from "../../styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS } from "@/styles/tokens";
 
 interface MetricCardProps {
   icon: string;

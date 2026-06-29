@@ -1,7 +1,7 @@
 import React from "react";
 import { Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { SPACING, TYPOGRAPHY } from "../../styles/tokens";
+import { SPACING, TYPOGRAPHY } from "@/styles/tokens";
 
 interface OfflineBannerProps {
   isOffline: boolean;

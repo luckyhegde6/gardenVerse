@@ -8,13 +8,13 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
 } from "react-native";
-import { Crop, CropStatus } from "../../types";
-import { ProgressBar } from "../ui/ProgressBar";
-import { Badge } from "../ui/Badge";
+import { Crop, CropStatus } from "@/types";
+import { ProgressBar } from "@components/ui/ProgressBar";
+import { Badge } from "@components/ui/Badge";
 import {
   formatDate,
   formatGrowthStage,
-} from "../../utils/formatting";
+} from "@utils/formatting";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 

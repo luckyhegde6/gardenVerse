@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import api from "../services/api";
-import { Notification } from "../types";
-import socketService from "../services/websocket";
+import api from "@services/api";
+import { Notification } from "@/types";
+import socketService from "@services/websocket";
 
 interface NotificationState {
   notifications: Notification[];

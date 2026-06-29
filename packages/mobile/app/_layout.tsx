@@ -5,17 +5,17 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useAuthStore } from "../src/stores/authStore";
-import { ErrorBoundary } from "../src/components/ui/ErrorBoundary";
-import { DebugOverlay } from "../src/components/ui/DebugOverlay";
-import { useWebSocket } from "../src/hooks/useWebSocket";
-import { initLogger } from "../src/services/logger";
+import { useAuthStore } from "@stores/authStore";
+import { ErrorBoundary } from "@components/ui/ErrorBoundary";
+import { DebugOverlay } from "@components/ui/DebugOverlay";
+import { useWebSocket } from "@hooks/useWebSocket";
+import { initLogger } from "@services/logger";
 import {
   registerForPushNotifications,
   setupNotificationHandlers,
-} from "../src/services/notifications";
-import { typography } from "../src/styles/theme";
-import { ThemeProvider, useTheme } from "../src/styles/ThemeContext";
+} from "@services/notifications";
+import { typography } from "@/styles/theme";
+import { ThemeProvider, useTheme } from "@/styles/ThemeContext";
 
 initLogger();
 

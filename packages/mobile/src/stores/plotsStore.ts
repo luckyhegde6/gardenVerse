@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import PlotsService from "../services/plots";
-import { Garden, PlotPricing } from "../types";
+import PlotsService from "@services/plots";
+import { Garden, PlotPricing } from "@/types";
 
 interface PlotsState {
   plots: Garden[];

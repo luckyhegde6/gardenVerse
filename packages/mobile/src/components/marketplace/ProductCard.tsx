@@ -18,8 +18,8 @@ import {
   TYPOGRAPHY,
   SHADOWS,
   BORDER_RADIUS,
-} from "../../styles/tokens";
-import { MarketplaceListing } from "../../types";
+} from "@/styles/tokens";
+import { MarketplaceListing } from "@/types";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

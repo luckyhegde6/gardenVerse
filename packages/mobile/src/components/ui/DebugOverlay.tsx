@@ -10,7 +10,7 @@ import {
   Dimensions,
   StyleSheet,
 } from "react-native";
-import { colors, spacing, borderRadius, typography } from "../../styles/theme";
+import { colors, spacing, borderRadius, typography } from "@/styles/theme";
 
 // ─── Debug global store ─────────────────────────────────────────────────────
 

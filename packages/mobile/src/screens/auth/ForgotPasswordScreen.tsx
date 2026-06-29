@@ -9,11 +9,11 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { validateEmail } from "../../utils/validation";
-import { AuthStackParamList } from "../../types";
-import AuthService from "../../services/auth";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { validateEmail } from "@utils/validation";
+import { AuthStackParamList } from "@/types";
+import AuthService from "@services/auth";
 
 type ForgotPasswordNavProp = NativeStackNavigationProp<
   AuthStackParamList,

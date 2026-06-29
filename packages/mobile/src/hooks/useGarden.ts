@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from "react";
-import { useGardenStore } from "../stores/gardenStore";
-import { Crop } from "../types";
-import api from "../services/api";
+import { useGardenStore } from "@stores/gardenStore";
+import { Crop } from "@/types";
+import api from "@services/api";
 
 export function useGarden() {
   const {

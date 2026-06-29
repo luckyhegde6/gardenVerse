@@ -8,11 +8,11 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter, Link } from "expo-router";
-import { Button } from "../../src/components/ui/Button";
-import { Input } from "../../src/components/ui/Input";
-import { validateEmail } from "../../src/utils/validation";
-import AuthService from "../../src/services/auth";
-import { colors, spacing, typography, globalStyles } from "../../src/styles/theme";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { validateEmail } from "@utils/validation";
+import AuthService from "@services/auth";
+import { colors, spacing, typography, globalStyles } from "@/styles/theme";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();

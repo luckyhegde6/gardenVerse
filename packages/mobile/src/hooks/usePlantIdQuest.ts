@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { plantIdQuest } from "../services/plantIdentificationQuest";
-import type { QuestProgress, IdentifiedPlantPhoto } from "../types";
+import { plantIdQuest } from "@services/plantIdentificationQuest";
+import type { QuestProgress, IdentifiedPlantPhoto } from "@/types";
 
 export interface UsePlantIdQuestReturn {
   questProgress: QuestProgress[];

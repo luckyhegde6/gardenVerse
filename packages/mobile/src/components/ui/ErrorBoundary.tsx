@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from "../../styles/tokens";
+import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from "@/styles/tokens";
 
 interface ErrorBoundaryProps {
   children: ReactNode;

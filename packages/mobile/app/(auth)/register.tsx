@@ -9,17 +9,17 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter, Link } from "expo-router";
-import { Button } from "../../src/components/ui/Button";
-import { Input } from "../../src/components/ui/Input";
-import { useAuthStore } from "../../src/stores/authStore";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { useAuthStore } from "@stores/authStore";
 import {
   validateEmail,
   validatePassword,
   validateUsername,
   validateConfirmPassword,
   validateInviteCode,
-} from "../../src/utils/validation";
-import { colors, spacing, typography, globalStyles } from "../../src/styles/theme";
+} from "@utils/validation";
+import { colors, spacing, typography, globalStyles } from "@/styles/theme";
 
 export default function RegisterScreen() {
   const router = useRouter();

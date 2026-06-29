@@ -15,7 +15,7 @@ import {
   SPACING,
   TYPOGRAPHY,
   BORDER_RADIUS,
-} from "../../styles/tokens";
+} from "@/styles/tokens";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

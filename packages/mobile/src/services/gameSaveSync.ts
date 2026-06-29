@@ -1,7 +1,7 @@
-import { getItem, setItem, removeItem } from '../utils/storage'
-import { logger } from './logger'
-import api from './api'
-import { Crop, Garden, QuestProgress, CollectionEntry } from '../types'
+import { getItem, setItem, removeItem } from '@utils/storage'
+import { logger } from '@services/logger'
+import api from '@services/api'
+import { Crop, Garden, QuestProgress, CollectionEntry } from "@/types"
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
 const LAST_SYNC_KEY = 'last_game_sync'

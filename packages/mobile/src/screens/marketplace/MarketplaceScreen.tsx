@@ -14,17 +14,17 @@ import Animated, {
   withSpring,
   FadeInDown,
 } from "react-native-reanimated";
-import { SearchBar } from "../../components/marketplace/SearchBar";
-import { CategoryChip } from "../../components/marketplace/CategoryChip";
-import { ProductCard } from "../../components/marketplace/ProductCard";
-import { FeaturedRow } from "../../components/marketplace/FeaturedRow";
-import { TrendingRow } from "../../components/marketplace/TrendingRow";
-import { BuyModal } from "../../components/marketplace/BuyModal";
-import { ListingSkeleton } from "../../components/marketplace/ListingSkeleton";
-import { EmptyMarketplace } from "../../components/marketplace/EmptyMarketplace";
-import { useMarketplace } from "../../hooks/useMarketplace";
-import { MarketplaceListing } from "../../types";
-import { COLORS, SPACING, TYPOGRAPHY } from "../../styles/tokens";
+import { SearchBar } from "@components/marketplace/SearchBar";
+import { CategoryChip } from "@components/marketplace/CategoryChip";
+import { ProductCard } from "@components/marketplace/ProductCard";
+import { FeaturedRow } from "@components/marketplace/FeaturedRow";
+import { TrendingRow } from "@components/marketplace/TrendingRow";
+import { BuyModal } from "@components/marketplace/BuyModal";
+import { ListingSkeleton } from "@components/marketplace/ListingSkeleton";
+import { EmptyMarketplace } from "@components/marketplace/EmptyMarketplace";
+import { useMarketplace } from "@hooks/useMarketplace";
+import { MarketplaceListing } from "@/types";
+import { COLORS, SPACING, TYPOGRAPHY } from "@/styles/tokens";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

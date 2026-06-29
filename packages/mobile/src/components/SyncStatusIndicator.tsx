@@ -7,8 +7,8 @@ import Animated, {
   withRepeat,
   withSequence,
 } from 'react-native-reanimated';
-import { gameSaveSync } from '../services/gameSaveSync';
-import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { gameSaveSync } from '@services/gameSaveSync';
+import { useNetworkStatus } from '@hooks/useNetworkStatus';
 
 type SyncStatus = 'synced' | 'syncing' | 'offline' | 'pending';
 

@@ -24,8 +24,8 @@ import {
   TYPOGRAPHY,
   BORDER_RADIUS,
   SHADOWS,
-} from "../../styles/tokens";
-import type { MarketplaceListing } from "../../types";
+} from "@/styles/tokens";
+import type { MarketplaceListing } from "@/types";
 
 interface BuyModalProps {
   visible: boolean;

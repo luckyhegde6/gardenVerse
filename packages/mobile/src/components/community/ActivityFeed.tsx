@@ -17,8 +17,8 @@ import {
   TYPOGRAPHY,
   SHADOWS,
   BORDER_RADIUS,
-} from "../../styles/tokens";
-import { ActivityEntry } from "../../types";
+} from "@/styles/tokens";
+import { ActivityEntry } from "@/types";
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<ActivityEntry>);
 

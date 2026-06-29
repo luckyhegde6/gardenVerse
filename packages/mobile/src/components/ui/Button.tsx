@@ -12,7 +12,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "../../styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@/styles/tokens";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";

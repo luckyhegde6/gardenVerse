@@ -13,9 +13,9 @@ import Animated, {
   withRepeat,
   withSequence,
 } from 'react-native-reanimated';
-import { gameSaveSync } from '../services/gameSaveSync';
-import { useGardenStore } from '../stores/gardenStore';
-import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { gameSaveSync } from '@services/gameSaveSync';
+import { useGardenStore } from '@stores/gardenStore';
+import { useNetworkStatus } from '@hooks/useNetworkStatus';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 

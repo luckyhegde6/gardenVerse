@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, Dimensions } from "react-native";
-import { SensorReading } from "../../types";
-import { Card } from "../ui/Card";
+import { SensorReading } from "@/types";
+import { Card } from "@components/ui/Card";
 import dayjs from "dayjs";
 
 interface SensorChartProps {

@@ -9,9 +9,9 @@ import {
   TextInput,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import api from "../../services/api";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import api from "@services/api";
 
 export function SupportScreen() {
   const navigation = useNavigation();

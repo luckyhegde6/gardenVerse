@@ -12,7 +12,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from "../../styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from "@/styles/tokens";
 
 type CardVariant = "default" | "elevated";
 type CardPadding = "sm" | "md" | "lg";

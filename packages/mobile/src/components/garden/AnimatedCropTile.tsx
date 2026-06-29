@@ -8,8 +8,8 @@ import Animated, {
   withDelay,
   interpolate,
 } from 'react-native-reanimated'
-import { Crop, CropStatus } from '../../types'
-import { CropSprite } from './CropSprite'
+import { Crop, CropStatus } from "@/types"
+import { CropSprite } from '@components/garden/CropSprite'
 
 interface AnimatedCropTileProps {
   crop: Crop

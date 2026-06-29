@@ -1,5 +1,5 @@
-import api from './api';
-import type { ShopItem, Fertilizer, InventoryItem } from '../types';
+import api from '@services/api';
+import type { ShopItem, Fertilizer, InventoryItem } from "@/types";
 
 export interface BuyItemResponse {
   success: boolean;

@@ -1,5 +1,5 @@
 import React from "react";
-import { CreateListingScreen } from "../src/screens/marketplace/CreateListingScreen";
+import { CreateListingScreen } from "@screens/marketplace/CreateListingScreen";
 
 export default function CreateListingRoute() {
   return <CreateListingScreen />;

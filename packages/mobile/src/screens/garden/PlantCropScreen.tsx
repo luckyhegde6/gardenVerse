@@ -7,15 +7,15 @@ import {
   TextInput,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { useGarden } from "../../hooks/useGarden";
-import { PlantSpecies } from "../../types";
-import api from "../../services/api";
-import debounce from "../../utils/debounce";
-import HapticFeedback from "../../utils/haptics";
+import { Button } from "@components/ui/Button";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { LoadingSpinner } from "@components/ui/LoadingSpinner";
+import { useGarden } from "@hooks/useGarden";
+import { PlantSpecies } from "@/types";
+import api from "@services/api";
+import debounce from "@utils/debounce";
+import HapticFeedback from "@utils/haptics";
 
 const CATEGORIES = [
   { key: "all", label: "All", icon: "🌱" },

@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import ShopService from "../services/shop";
-import CouponService from "../services/coupons";
-import { ShopItem, Fertilizer, InventoryItem, CouponRedemption } from "../types";
-import { getItem, StorageKeys } from "../services/storage";
+import ShopService from "@services/shop";
+import CouponService from "@services/coupons";
+import { ShopItem, Fertilizer, InventoryItem, CouponRedemption } from "@/types";
+import { getItem, StorageKeys } from "@services/storage";
 
 interface ShopState {
   items: ShopItem[];

@@ -1,6 +1,6 @@
 import React from "react";
 import { ScrollView } from "react-native";
-import { Chip } from "../ui/Chip";
+import { Chip } from "@components/ui/Chip";
 
 const CATEGORIES = [
   { id: "all", label: "All" },

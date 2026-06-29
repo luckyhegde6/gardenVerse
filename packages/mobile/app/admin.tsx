@@ -6,16 +6,16 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ScreenHeader } from "../src/components/ui/ScreenHeader";
-import { Card } from "../src/components/ui/Card";
-import { Badge } from "../src/components/ui/Badge";
-import { Button } from "../src/components/ui/Button";
-import { SkeletonLoader } from "../src/components/ui/SkeletonLoader";
-import api from "../src/services/api";
-import { useAuthStore } from "../src/stores/authStore";
-import { UserRole } from "../src/types";
-import { spacing, typography } from "../src/styles/theme";
-import { useTheme } from "../src/styles/ThemeContext";
+import { ScreenHeader } from "@components/ui/ScreenHeader";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { Button } from "@components/ui/Button";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
+import api from "@services/api";
+import { useAuthStore } from "@stores/authStore";
+import { UserRole } from "@/types";
+import { spacing, typography } from "@/styles/theme";
+import { useTheme } from "@/styles/ThemeContext";
 
 interface AdminStats {
   users: number;

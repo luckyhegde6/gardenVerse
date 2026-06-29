@@ -6,7 +6,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "../../styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@/styles/tokens";
 
 interface StreakDisplayProps {
   streak: number;

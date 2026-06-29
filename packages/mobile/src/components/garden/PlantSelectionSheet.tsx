@@ -8,7 +8,7 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { PlantSpecies } from '../../types';
+import { PlantSpecies } from "@/types";
 
 const { width: _SCREEN_WIDTH } = Dimensions.get('window');
 const SHEET_HEIGHT = 280;
