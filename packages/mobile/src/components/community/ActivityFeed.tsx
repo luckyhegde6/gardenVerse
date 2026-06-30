@@ -17,6 +17,7 @@ import {
   TYPOGRAPHY,
   SHADOWS,
   BORDER_RADIUS,
+  useThemeColors,
 } from "@/styles/tokens";
 import { ActivityEntry } from "@/types";
 
@@ -78,13 +79,14 @@ function formatRelativeTime(isoString: string): string {
 }
 
 function ActivityRowComponent({ item }: { item: ActivityEntry }) {
+  const colors = useThemeColors();
   const avatarEmoji = item.avatarUrl ? null : getAvatarFallback(item.username);
   const typeEmoji = getTypeEmoji(item.type);
 
   return (
     <View style={styles.row}>
-      <View style={styles.avatarContainer}>
-        <Text style={styles.avatarText}>
+      <View style={[styles.avatarContainer, { backgroundColor: colors.surfaceVariant }]}>
+        <Text style={[styles.avatarText, { color: colors.textSecondary }]}>
           {avatarEmoji || "👤"}
         </Text>
       </View>
@@ -92,12 +94,12 @@ function ActivityRowComponent({ item }: { item: ActivityEntry }) {
       <View style={styles.content}>
         <View style={styles.textRow}>
           <Text style={styles.typeEmoji}>{typeEmoji}</Text>
-          <Text style={styles.text} numberOfLines={2}>
-            <Text style={styles.username}>{item.username}</Text>
+          <Text style={[styles.text, { color: colors.text }]} numberOfLines={2}>
+            <Text style={[styles.username, { color: colors.text }]}>{item.username}</Text>
             {" "}{item.text}
           </Text>
         </View>
-        <Text style={styles.timestamp}>
+        <Text style={[styles.timestamp, { color: colors.textMuted }]}>
           {formatRelativeTime(item.timestamp)}
         </Text>
       </View>
@@ -108,14 +110,15 @@ function ActivityRowComponent({ item }: { item: ActivityEntry }) {
 const ActivityRow = React.memo(ActivityRowComponent);
 
 function LoadingSkeleton() {
+  const colors = useThemeColors();
   return (
     <View style={styles.loadingContainer}>
       {[1, 2, 3, 4, 5].map((key) => (
         <View key={key} style={styles.skeletonRow}>
-          <View style={styles.skeletonAvatar} />
+          <View style={[styles.skeletonAvatar, { backgroundColor: colors.surfaceSecondary }]} />
           <View style={styles.skeletonContent}>
-            <View style={styles.skeletonLine} />
-            <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
+            <View style={[styles.skeletonLine, { backgroundColor: colors.surfaceSecondary }]} />
+            <View style={[styles.skeletonLine, styles.skeletonLineShort, { backgroundColor: colors.surfaceSecondary }]} />
           </View>
         </View>
       ))}
@@ -124,11 +127,12 @@ function LoadingSkeleton() {
 }
 
 function EmptyState() {
+  const colors = useThemeColors();
   return (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyEmoji}>🌿</Text>
-      <Text style={styles.emptyText}>No recent activity</Text>
-      <Text style={styles.emptySubtext}>
+      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No recent activity</Text>
+      <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>
         Start gardening to see your activity here
       </Text>
     </View>
@@ -139,6 +143,7 @@ function ActivityFeedComponent({
   activities,
   isLoading = false,
 }: ActivityFeedProps) {
+  const colors = useThemeColors();
   const opacity = useSharedValue(0);
 
   useEffect(() => {
@@ -160,16 +165,16 @@ function ActivityFeedComponent({
 
   if (isLoading) {
     return (
-      <Animated.View style={[styles.wrapper, animatedContainerStyle]}>
-        <Text style={styles.sectionTitle}>Activity</Text>
+      <Animated.View style={[styles.wrapper, { backgroundColor: colors.surface }, animatedContainerStyle]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Activity</Text>
         <LoadingSkeleton />
       </Animated.View>
     );
   }
 
   return (
-    <Animated.View style={[styles.wrapper, animatedContainerStyle]}>
-      <Text style={styles.sectionTitle}>Activity</Text>
+    <Animated.View style={[styles.wrapper, { backgroundColor: colors.surface }, animatedContainerStyle]}>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Activity</Text>
       {activities.length === 0 ? (
         <EmptyState />
       ) : (
@@ -186,7 +191,8 @@ function ActivityFeedComponent({
 }
 
 function Separator() {
-  return <View style={styles.separator} />;
+  const colors = useThemeColors();
+  return <View style={[styles.separator, { backgroundColor: colors.border }]} />;
 }
 
 export const ActivityFeed = React.memo(ActivityFeedComponent);

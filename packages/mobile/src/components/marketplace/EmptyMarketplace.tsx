@@ -11,6 +11,7 @@ import {
   SPACING,
   TYPOGRAPHY,
   BORDER_RADIUS,
+  useThemeColors,
 } from "@/styles/tokens";
 
 interface EmptyMarketplaceProps {
@@ -30,10 +31,12 @@ function ActionButton({
   title,
   onPress,
   variant = "primary",
+  colors,
 }: {
   title: string;
   onPress: () => void;
   variant?: "primary" | "secondary";
+  colors: ReturnType<typeof useThemeColors>;
 }) {
   const scale = useSharedValue(1);
 
@@ -53,7 +56,13 @@ function ActionButton({
     <AnimatedPressable
       style={[
         styles.actionButton,
-        variant === "secondary" && styles.actionButtonSecondary,
+        variant === "secondary"
+          ? {
+              backgroundColor: colors.surfaceVariant,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }
+          : { backgroundColor: colors.primary },
         animatedStyle,
       ]}
       onPress={onPress}
@@ -65,7 +74,7 @@ function ActionButton({
       <Text
         style={[
           styles.actionButtonText,
-          variant === "secondary" && styles.actionButtonTextSecondary,
+          { color: variant === "secondary" ? colors.text : colors.white },
         ]}
       >
         {title}
@@ -80,6 +89,7 @@ export function EmptyMarketplace({
   onCreateListing,
   onResetFilters,
 }: EmptyMarketplaceProps) {
+  const colors = useThemeColors();
   const emoji = isSearch ? "\uD83D\uDD0D" : "\uD83C\uDFEA";
   const title = isSearch ? "No results found" : "No listings yet";
   const description = isSearch
@@ -98,11 +108,11 @@ export function EmptyMarketplace({
 
   return (
     <Animated.View entering={FadeIn.duration(400)} style={styles.container}>
-      <View style={styles.iconContainer}>
+      <View style={[styles.iconContainer, { backgroundColor: colors.surfaceSecondary }]}>
         <Text style={styles.icon}>{emoji}</Text>
       </View>
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.description}>{description}</Text>
+      <Text style={[styles.description, { color: colors.textSecondary }]}>{description}</Text>
 
       <View style={styles.actionsContainer}>
         {isSearch && onResetFilters ? (
@@ -110,6 +120,7 @@ export function EmptyMarketplace({
             title="Browse All"
             onPress={handleResetFilters}
             variant="secondary"
+            colors={colors}
           />
         ) : null}
 
@@ -118,6 +129,7 @@ export function EmptyMarketplace({
             title="Create Listing"
             onPress={handleCreateListing}
             variant="primary"
+            colors={colors}
           />
         ) : null}
 
@@ -126,6 +138,7 @@ export function EmptyMarketplace({
             title="Browse All"
             onPress={handleResetFilters}
             variant="secondary"
+            colors={colors}
           />
         ) : null}
       </View>

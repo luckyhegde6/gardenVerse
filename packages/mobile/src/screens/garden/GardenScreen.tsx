@@ -61,13 +61,14 @@ import { SyncStatusIndicator } from '@components/SyncStatusIndicator';
 import { SaveGameButton } from '@components/SaveGameButton';
 import { gameSaveSync } from '@services/gameSaveSync';
 import { useToast } from '@components/ui/Toast';
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS } from '@/styles/tokens';
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS, useThemeColors } from '@/styles/tokens';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const GARDEN_VIEWPORT_HEIGHT = SCREEN_HEIGHT * 0.6;
 
 export function GardenScreen() {
   const { theme } = useTheme();
+  const colors = useThemeColors();
   const router = useRouter();
   const {
     crops,
@@ -466,10 +467,10 @@ export function GardenScreen() {
   return (
     <ParticleProvider>
       <View testID="garden-screen" style={[styles.root, { backgroundColor: theme.background }]}>
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.darkForest }]}>
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
-              <Text style={styles.headerTitle}>
+              <Text style={[styles.headerTitle, { color: colors.white }]}>
                 {selectedGarden?.name || 'My Garden'}
               </Text>
               <Text style={styles.headerSubtitle}>
@@ -534,7 +535,7 @@ export function GardenScreen() {
           <View style={styles.permissionBanner}>
             <Text style={styles.permissionBannerText}>📍 Enable location for REAL garden features</Text>
             <TouchableOpacity onPress={() => requestLocationPermission().then(setLocationPermission)} style={styles.permissionBannerButton}>
-              <Text style={styles.permissionBannerButtonText}>Enable</Text>
+              <Text style={[styles.permissionBannerButtonText, { color: colors.white }]}>Enable</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -604,20 +605,20 @@ export function GardenScreen() {
 
           <View style={styles.viewToggleBar}>
             <View style={styles.viewToggleRow}>
-              <View style={styles.viewToggleButtons}>
-                <TouchableOpacity onPress={() => switchView('2d')} style={[styles.viewToggleBtn, viewMode === '2d' && styles.viewToggleBtnActive]}>
-                  <Text style={[styles.viewToggleBtnText, viewMode === '2d' && styles.viewToggleBtnTextActive]}>▦ 2D</Text>
+              <View style={[styles.viewToggleButtons, { backgroundColor: colors.surfaceVariant }]}>
+                <TouchableOpacity onPress={() => switchView('2d')} style={[styles.viewToggleBtn, viewMode === '2d' && styles.viewToggleBtnActive, viewMode === '2d' && { backgroundColor: colors.surface }]}>
+                  <Text style={[styles.viewToggleBtnText, { color: viewMode === '2d' ? colors.primary : colors.textMuted }]}>▦ 2D</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => switchView('3d')} style={[styles.viewToggleBtn, viewMode === '3d' && styles.viewToggleBtnActive]}>
-                  <Text style={[styles.viewToggleBtnText, viewMode === '3d' && styles.viewToggleBtnTextActive]}>◈ 3D</Text>
+                <TouchableOpacity onPress={() => switchView('3d')} style={[styles.viewToggleBtn, viewMode === '3d' && styles.viewToggleBtnActive, viewMode === '3d' && { backgroundColor: colors.surface }]}>
+                  <Text style={[styles.viewToggleBtnText, { color: viewMode === '3d' ? colors.primary : colors.textMuted }]}>◈ 3D</Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => setShowAnalytics(v => !v)} style={styles.analyticsToggle}>
+              <TouchableOpacity onPress={() => setShowAnalytics(v => !v)} style={[styles.analyticsToggle, { backgroundColor: colors.surfaceVariant }]}>
                 <Text style={styles.analyticsToggleText}>📊</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => router.push('/plant-crop')} style={styles.plantButton}>
-              <Text style={styles.plantButtonText}>+ Plant</Text>
+            <TouchableOpacity onPress={() => router.push('/plant-crop')} style={[styles.plantButton, { backgroundColor: colors.primary }]}>
+              <Text style={[styles.plantButtonText, { color: colors.white }]}>+ Plant</Text>
             </TouchableOpacity>
           </View>
 
@@ -633,10 +634,10 @@ export function GardenScreen() {
             </View>
           )}
 
-          <Animated.View style={[styles.gardenCard, viewToggleStyle]}>
+          <Animated.View style={[styles.gardenCard, viewToggleStyle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {crops.length === 0 && (
               <View style={styles.emptyGridHint}>
-                <Text style={styles.emptyGridHintText}>
+                <Text style={[styles.emptyGridHintText, { color: colors.textMuted }]}>
                   Tap any empty plot or press + Plant to start growing
                 </Text>
               </View>
@@ -644,10 +645,10 @@ export function GardenScreen() {
           </Animated.View>
 
           {selectedCrop && (
-            <View style={styles.cropActions}>
+            <View style={[styles.cropActions, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.cropActionsHeader}>
                 <PlantHealthBadge status={selectedCropHealth || 'growing'} />
-                <Text style={styles.cropActionsTitle}>{selectedCrop.name}</Text>
+                <Text style={[styles.cropActionsTitle, { color: colors.text }]}>{selectedCrop.name}</Text>
               </View>
               <View style={styles.cropActionsRow}>
                 <WaterButton onPress={() => handleWater(selectedCrop.id)} crop={selectedCrop} />
@@ -673,13 +674,13 @@ export function GardenScreen() {
               >
                 <View style={styles.compactSection}>
                   <View style={styles.statRow}>
-                    <Text style={styles.statLabel}>Species discovered</Text>
-                    <Text style={styles.statValue}>{collectionStats.discovered} / {collectionStats.total}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Species discovered</Text>
+                    <Text style={[styles.statValue, { color: colors.text }]}>{collectionStats.discovered} / {collectionStats.total}</Text>
                   </View>
-                  <View style={styles.progressBarBg}>
-                    <View style={[styles.progressBarFill, { width: `${Math.min(100, collectionStats.completion)}%` }]} />
+                  <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+                    <View style={[styles.progressBarFill, { width: `${Math.min(100, collectionStats.completion)}%`, backgroundColor: colors.primary }]} />
                   </View>
-                  <Text style={styles.statHint}>
+                  <Text style={[styles.statHint, { color: colors.textMuted }]}>
                     {collectionStats.total - collectionStats.discovered > 0
                       ? `${collectionStats.total - collectionStats.discovered} more species to discover!`
                       : 'All species discovered! 🌟'}
@@ -692,23 +693,23 @@ export function GardenScreen() {
                   {careStreakCrops.map((crop: Crop) => {
                     const streak = crop.careStreak;
                     let streakLabel = `${streak} day${streak !== 1 ? 's' : ''}`;
-                    let streakColor: string = COLORS.textMuted;
-                    if (streak >= 30) { streakLabel += ' 🔥'; streakColor = COLORS.dangerRed; }
-                    else if (streak >= 14) { streakLabel += ' ⭐'; streakColor = COLORS.sunYellow; }
-                    else if (streak >= 7) { streakLabel += ' 💪'; streakColor = COLORS.leafGreen; }
+                    let streakColor: string = colors.textMuted;
+                    if (streak >= 30) { streakLabel += ' 🔥'; streakColor = colors.dangerRed; }
+                    else if (streak >= 14) { streakLabel += ' ⭐'; streakColor = colors.sunYellow; }
+                    else if (streak >= 7) { streakLabel += ' 💪'; streakColor = colors.leafGreen; }
                     else if (streak >= 3) { streakLabel += ' 👍'; }
                     return (
-                      <TouchableOpacity key={crop.id} style={styles.streakRow} onPress={() => setSelectedCropId(crop.id)} activeOpacity={0.7}>
+                      <TouchableOpacity key={crop.id} style={[styles.streakRow, { borderBottomColor: colors.border }]} onPress={() => setSelectedCropId(crop.id)} activeOpacity={0.7}>
                         <View style={styles.streakLeft}>
                           <Text style={styles.streakIcon}>🌱</Text>
                           <View>
-                            <Text style={styles.streakName}>{crop.name}</Text>
-                            <Text style={styles.streakSub}>Stage {crop.growthStage} · Health {crop.health}%</Text>
+                            <Text style={[styles.streakName, { color: colors.text }]}>{crop.name}</Text>
+                            <Text style={[styles.streakSub, { color: colors.textMuted }]}>Stage {crop.growthStage} · Health {crop.health}%</Text>
                           </View>
                         </View>
                         <View style={styles.streakRight}>
                           <Text style={[styles.streakCount, { color: streakColor }]}>{streak}</Text>
-                          <Text style={styles.streakLabel}>{streakLabel}</Text>
+                          <Text style={[styles.streakLabel, { color: colors.textMuted }]}>{streakLabel}</Text>
                         </View>
                       </TouchableOpacity>
                     );
@@ -720,24 +721,24 @@ export function GardenScreen() {
                 <View style={styles.compactSection}>
                   <View style={styles.masteryRow}>
                     <View style={styles.masteryStat}>
-                      <Text style={styles.masteryStatValue}>{masteredCount}</Text>
-                      <Text style={styles.masteryStatLabel}>Mastered</Text>
+                      <Text style={[styles.masteryStatValue, { color: colors.primary }]}>{masteredCount}</Text>
+                      <Text style={[styles.masteryStatLabel, { color: colors.textMuted }]}>Mastered</Text>
                     </View>
                     <View style={styles.masteryStat}>
-                      <Text style={[styles.masteryStatValue, { color: COLORS.sunYellow }]}>{collectionStats.discovered}</Text>
-                      <Text style={styles.masteryStatLabel}>Discovered</Text>
+                      <Text style={[styles.masteryStatValue, { color: colors.sunYellow }]}>{collectionStats.discovered}</Text>
+                      <Text style={[styles.masteryStatLabel, { color: colors.textMuted }]}>Discovered</Text>
                     </View>
                     <View style={styles.masteryStat}>
-                      <Text style={[styles.masteryStatValue, { color: COLORS.leafGreen }]}>{crops.length}</Text>
-                      <Text style={styles.masteryStatLabel}>Growing</Text>
+                      <Text style={[styles.masteryStatValue, { color: colors.leafGreen }]}>{crops.length}</Text>
+                      <Text style={[styles.masteryStatLabel, { color: colors.textMuted }]}>Growing</Text>
                     </View>
                   </View>
                   <View style={styles.statRow}>
-                    <Text style={styles.statLabel}>Level progression</Text>
-                    <Text style={styles.statValue}>{user?.experience ?? 0} / {xpToNext} XP</Text>
+                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Level progression</Text>
+                    <Text style={[styles.statValue, { color: colors.text }]}>{user?.experience ?? 0} / {xpToNext} XP</Text>
                   </View>
-                  <View style={styles.progressBarBg}>
-                    <View style={[styles.progressBarFill, { width: `${Math.min(100, ((user?.experience ?? 0) / xpToNext) * 100)}%`, backgroundColor: COLORS.skyBlue }]} />
+                  <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+                    <View style={[styles.progressBarFill, { width: `${Math.min(100, ((user?.experience ?? 0) / xpToNext) * 100)}%`, backgroundColor: colors.skyBlue }]} />
                   </View>
                   <TouchableOpacity style={styles.masteryButton} onPress={() => { const id = crops[0]?.id; if (id) router.push({ pathname: '/crop-detail/[cropId]', params: { cropId: id } }); }} activeOpacity={0.7}>
                     <Text style={styles.masteryButtonText}>View All Masteries →</Text>
@@ -752,8 +753,8 @@ export function GardenScreen() {
 
         <View style={[styles.fabContainer, { top: GARDEN_VIEWPORT_HEIGHT - 80 }]}>
           <FloatingActionButton icon="📸" color="#7c3aed" onPress={() => { HapticFeedback.medium(); router.push("/ai-scanner" as any); }} />
-          <FloatingActionButton icon="💧" color={COLORS.skyBlue} onPress={() => { if (selectedCrop) handleWater(selectedCrop.id); }} position={{ bottom: 0, right: 70 }} />
-          <FloatingActionButton icon="🌱" color={COLORS.soilBrown} onPress={() => router.push('/soil-check/' + (selectedCropId || ''))} position={{ bottom: 0, right: 0 }} />
+          <FloatingActionButton icon="💧" color={colors.skyBlue} onPress={() => { if (selectedCrop) handleWater(selectedCrop.id); }} position={{ bottom: 0, right: 70 }} />
+          <FloatingActionButton icon="🌱" color={colors.soilBrown} onPress={() => router.push('/soil-check/' + (selectedCropId || ''))} position={{ bottom: 0, right: 0 }} />
         </View>
 
         {!walkthroughChecking && (
@@ -763,13 +764,13 @@ export function GardenScreen() {
         {recentIdentifications.length > 0 && (
           <View style={styles.idBadgeContainer}>
             {recentIdentifications.slice(0, 3).map((photo, idx) => (
-              <View key={photo.id} style={[styles.idBadge, { right: 16 + idx * 44 }]}>
-                <Text style={styles.idBadgeText}>{photo.speciesName.charAt(0).toUpperCase()}</Text>
+              <View key={photo.id} style={[styles.idBadge, { backgroundColor: colors.primary, borderColor: colors.white, right: 16 + idx * 44 }]}>
+                <Text style={[styles.idBadgeText, { color: colors.white }]}>{photo.speciesName.charAt(0).toUpperCase()}</Text>
               </View>
             ))}
             {speciesIdentifiedCount > 0 && (
               <View style={[styles.idBadge, styles.idBadgeCount, { right: 16 + Math.min(recentIdentifications.length, 3) * 44 }]}>
-                <Text style={styles.idBadgeCountText}>+{speciesIdentifiedCount}</Text>
+                <Text style={[styles.idBadgeCountText, { color: colors.white }]}>+{speciesIdentifiedCount}</Text>
               </View>
             )}
           </View>
@@ -808,7 +809,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    backgroundColor: COLORS.darkForest,
     paddingTop: 12,
     paddingHorizontal: SPACING.md,
     paddingBottom: 12,
@@ -825,7 +825,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...TYPOGRAPHY.headingS,
-    color: COLORS.white,
     fontWeight: '800',
   },
   headerSubtitle: {
@@ -946,7 +945,6 @@ const styles = StyleSheet.create({
   permissionBannerButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.white,
   },
   errorBanner: {
     flexDirection: 'row',
@@ -1034,7 +1032,6 @@ const styles = StyleSheet.create({
   },
   viewToggleButtons: {
     flexDirection: 'row',
-    backgroundColor: COLORS.surfaceVariant,
     borderRadius: BORDER_RADIUS.md,
     padding: 2,
   },
@@ -1044,28 +1041,23 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.sm,
   },
   viewToggleBtnActive: {
-    backgroundColor: COLORS.surface,
     ...SHADOWS.sm,
   },
   viewToggleBtnText: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.textMuted,
   },
   viewToggleBtnTextActive: {
-    color: COLORS.primary,
   },
   analyticsToggle: {
     paddingHorizontal: 8,
     paddingVertical: 6,
-    backgroundColor: COLORS.surfaceVariant,
     borderRadius: BORDER_RADIUS.sm,
   },
   analyticsToggleText: {
     fontSize: 14,
   },
   plantButton: {
-    backgroundColor: COLORS.primary,
     paddingHorizontal: SPACING.md,
     paddingVertical: 8,
     borderRadius: BORDER_RADIUS.md,
@@ -1076,7 +1068,6 @@ const styles = StyleSheet.create({
   plantButtonText: {
     fontSize: 13,
     fontWeight: '700',
-    color: COLORS.white,
   },
   analyticsContainer: {
     paddingHorizontal: SPACING.md,
@@ -1085,12 +1076,10 @@ const styles = StyleSheet.create({
   gardenCard: {
     marginHorizontal: SPACING.md,
     marginBottom: SPACING.md,
-    backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.md,
     padding: 0,
     ...SHADOWS.sm,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   emptyGridHint: {
     alignItems: 'center',
@@ -1098,24 +1087,20 @@ const styles = StyleSheet.create({
   },
   emptyGridHintText: {
     fontSize: 12,
-    color: COLORS.textMuted,
   },
   cropActions: {
     marginHorizontal: SPACING.md,
     marginBottom: SPACING.md,
-    backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.md,
     ...SHADOWS.sm,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   cropActionsHeader: {
     marginBottom: SPACING.sm,
   },
   cropActionsTitle: {
     ...TYPOGRAPHY.headingS,
-    color: COLORS.text,
     marginTop: 4,
   },
   cropActionsRow: {
@@ -1138,28 +1123,23 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
   },
   statValue: {
     ...TYPOGRAPHY.caption,
     fontWeight: '600',
-    color: COLORS.text,
   },
   statHint: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textMuted,
     marginTop: 6,
   },
   progressBarBg: {
     height: 8,
-    backgroundColor: COLORS.border,
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
     borderRadius: 4,
-    backgroundColor: COLORS.primary,
   },
   streakRow: {
     flexDirection: 'row',
@@ -1167,7 +1147,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   streakLeft: {
     flexDirection: 'row',
@@ -1181,11 +1160,9 @@ const styles = StyleSheet.create({
   streakName: {
     ...TYPOGRAPHY.bodySmall,
     fontWeight: '500',
-    color: COLORS.text,
   },
   streakSub: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textMuted,
   },
   streakRight: {
     alignItems: 'center',
@@ -1197,7 +1174,6 @@ const styles = StyleSheet.create({
   },
   streakLabel: {
     fontSize: 9,
-    color: COLORS.textMuted,
     fontWeight: '500',
     textTransform: 'uppercase',
   },
@@ -1212,15 +1188,12 @@ const styles = StyleSheet.create({
   masteryStatValue: {
     fontSize: 22,
     fontWeight: '800',
-    color: COLORS.primary,
   },
   masteryStatLabel: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textMuted,
   },
   masteryButton: {
     marginTop: 12,
-    backgroundColor: '#f0f0ff',
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
@@ -1230,7 +1203,6 @@ const styles = StyleSheet.create({
   masteryButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6366f1',
   },
   bottomSpacer: {
     height: 120,
@@ -1253,17 +1225,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: COLORS.white,
     ...SHADOWS.md,
   },
   idBadgeText: {
     fontSize: 14,
     fontWeight: '800',
-    color: COLORS.white,
   },
   idBadgeCount: {
     backgroundColor: '#6366f1',
@@ -1274,6 +1243,5 @@ const styles = StyleSheet.create({
   idBadgeCountText: {
     fontSize: 10,
     fontWeight: '800',
-    color: COLORS.white,
   },
 });

@@ -101,35 +101,30 @@ function RootContent() {
     <>
       <StatusBar style={isDark ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
-          <>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="plant-crop" options={{ headerShown: false, presentation: 'modal' }} />
-            <Stack.Screen name="crop-detail/[cropId]" options={{ headerShown: false, presentation: 'modal' }} />
-            <Stack.Screen name="create-listing" options={{ headerShown: false, presentation: 'modal' }} />
-            <Stack.Screen name="listing-detail/[listingId]" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="group-detail/[groupId]" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="chat" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="daily-rewards" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="quests" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="friends" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="add-friend" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="garden-visit/[friendId]" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="inventory" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="achievements" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="invites" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="settings" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="admin" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="shop" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="plots" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="plot-detail/[plotId]" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="real-gardener" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="coupon-redeem" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="soil-check/[plotId]" options={{ headerShown: false, presentation: 'card' }} />
-          </>
-        ) : (
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        )}
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="plant-crop" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="crop-detail/[cropId]" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="create-listing" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="listing-detail/[listingId]" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="group-detail/[groupId]" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="chat" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="daily-rewards" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="quests" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="friends" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="add-friend" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="garden-visit/[friendId]" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="inventory" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="achievements" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="invites" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="settings" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="admin" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="shop" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="plots" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="plot-detail/[plotId]" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="real-gardener" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="coupon-redeem" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="soil-check/[plotId]" options={{ headerShown: false, presentation: 'card' }} />
       </Stack>
       {__DEV__ && <DebugOverlay storeState={storeState as Record<string, unknown>} />}
     </>

@@ -12,7 +12,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from "@/styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, useThemeColors } from "@/styles/tokens";
 
 type CardVariant = "default" | "elevated";
 type CardPadding = "sm" | "md" | "lg";
@@ -39,6 +39,7 @@ export function Card({
   heroImage,
   className: _className,
 }: CardProps) {
+  const colors = useThemeColors();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -55,6 +56,7 @@ export function Card({
 
   const cardStyles: ViewStyle[] = [
     styles.base,
+    { backgroundColor: colors.surface },
     variant === "elevated" && styles.elevated,
     padding === "sm" && styles.paddingSm,
     padding === "lg" && styles.paddingLg,

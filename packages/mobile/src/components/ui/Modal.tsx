@@ -13,7 +13,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS } from "@/styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS, useThemeColors } from "@/styles/tokens";
 
 interface ModalProps {
   visible: boolean;
@@ -30,6 +30,7 @@ export function Modal({
   children,
   height = "auto",
 }: ModalProps) {
+  const colors = useThemeColors();
   const translateY = useSharedValue(SCREEN_HEIGHT);
 
   useEffect(() => {
@@ -60,16 +61,17 @@ export function Modal({
       onRequestClose={handleClose}
     >
       <TouchableWithoutFeedback onPress={handleClose}>
-        <View style={styles.overlay}>
+        <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
           <TouchableWithoutFeedback>
             <Animated.View
               style={[
                 styles.sheet,
                 animatedStyle,
+                { backgroundColor: colors.surface },
                 height !== "auto" ? { height: height as number } : undefined,
               ]}
             >
-              <View style={styles.handle} />
+              <View style={[styles.handle, { backgroundColor: colors.border }]} />
               {children}
             </Animated.View>
           </TouchableWithoutFeedback>
@@ -84,11 +86,9 @@ export default Modal;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: COLORS.overlay,
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: COLORS.surface,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
@@ -96,7 +96,6 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: COLORS.border,
     borderRadius: BORDER_RADIUS.full,
     alignSelf: "center",
     marginBottom: SPACING.md,

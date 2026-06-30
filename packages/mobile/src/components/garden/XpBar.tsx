@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@/styles/tokens";
+import { useThemeColors, COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@/styles/tokens";
 
 interface XpBarProps {
   currentXP: number;
@@ -14,6 +14,7 @@ interface XpBarProps {
 }
 
 export function XpBar({ currentXP, xpToNext, level }: XpBarProps) {
+  const colors = useThemeColors();
   const progress = useSharedValue(0);
   const percentage = xpToNext > 0 ? Math.min(currentXP / xpToNext, 1) : 1;
 
@@ -28,11 +29,11 @@ export function XpBar({ currentXP, xpToNext, level }: XpBarProps) {
   return (
     <View style={styles.container}>
       <View style={styles.labelRow}>
-        <Text style={styles.levelText}>Level {level}</Text>
-        <Text style={styles.xpText}>{currentXP}/{xpToNext} XP</Text>
+        <Text style={[styles.levelText, { color: colors.textMuted }]}>Level {level}</Text>
+        <Text style={[styles.xpText, { color: colors.textMuted }]}>{currentXP}/{xpToNext} XP</Text>
       </View>
-      <View style={styles.track}>
-        <Animated.View style={[styles.fill, fillStyle]} />
+      <View style={[styles.track, { backgroundColor: colors.border }]}>
+        <Animated.View style={[styles.fill, { backgroundColor: colors.leafGreen }, fillStyle]} />
       </View>
     </View>
   );
@@ -51,21 +52,17 @@ const styles = StyleSheet.create({
   },
   levelText: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textMuted,
   },
   xpText: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textMuted,
   },
   track: {
     height: 6,
-    backgroundColor: COLORS.border,
     borderRadius: BORDER_RADIUS.full,
     overflow: "hidden",
   },
   fill: {
     height: "100%",
-    backgroundColor: COLORS.leafGreen,
     borderRadius: BORDER_RADIUS.full,
   },
 });

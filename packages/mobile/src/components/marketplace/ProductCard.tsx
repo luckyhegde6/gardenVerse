@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import {
-  COLORS,
+  useThemeColors,
   SPACING,
   TYPOGRAPHY,
   SHADOWS,
@@ -42,8 +42,104 @@ interface ProductCardProps {
 }
 
 function ProductCardComponent({ listing, onPress, onBuy }: ProductCardProps) {
+  const colors = useThemeColors();
   const [imageError, setImageError] = useState(false);
   const scale = useSharedValue(1);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          backgroundColor: colors.surface,
+          borderRadius: BORDER_RADIUS.md,
+          ...SHADOWS.sm,
+          overflow: "hidden",
+        },
+        imageContainer: {
+          position: "relative",
+          width: "100%",
+          aspectRatio: 1.6,
+          backgroundColor: colors.surfaceVariant,
+        },
+        image: {
+          width: "100%",
+          height: "100%",
+        },
+        imageFallback: {
+          width: "100%",
+          height: "100%",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.surfaceVariant,
+        },
+        fallbackEmoji: {
+          fontSize: 48,
+        },
+        categoryBadge: {
+          position: "absolute",
+          top: SPACING.sm,
+          left: SPACING.sm,
+          backgroundColor: colors.primary,
+          paddingHorizontal: SPACING.sm,
+          paddingVertical: 2,
+          borderRadius: BORDER_RADIUS.sm,
+        },
+        categoryBadgeText: {
+          ...TYPOGRAPHY.caption,
+          color: colors.white,
+          fontWeight: "600",
+          textTransform: "capitalize",
+        },
+        info: {
+          padding: SPACING.md,
+          gap: SPACING.xs,
+        },
+        title: {
+          ...TYPOGRAPHY.body,
+          fontWeight: "600",
+          color: colors.text,
+        },
+        seller: {
+          ...TYPOGRAPHY.caption,
+          color: colors.textSecondary,
+        },
+        footer: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginTop: SPACING.xs,
+        },
+        priceRow: {
+          flexDirection: "row",
+          alignItems: "baseline",
+          gap: 2,
+        },
+        price: {
+          ...TYPOGRAPHY.headingS,
+          color: colors.primary,
+          fontWeight: "700",
+        },
+        currency: {
+          ...TYPOGRAPHY.caption,
+          color: colors.textSecondary,
+        },
+        buyButton: {
+          backgroundColor: colors.primary,
+          paddingHorizontal: SPACING.md,
+          paddingVertical: SPACING.xs + 2,
+          borderRadius: BORDER_RADIUS.sm,
+        },
+        buyButtonPressed: {
+          opacity: 0.8,
+        },
+        buyButtonText: {
+          ...TYPOGRAPHY.label,
+          color: colors.white,
+          fontWeight: "600",
+        },
+      }),
+    [colors],
+  );
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -126,94 +222,3 @@ function ProductCardComponent({ listing, onPress, onBuy }: ProductCardProps) {
 
 export const ProductCard = React.memo(ProductCardComponent);
 export default ProductCard;
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    ...SHADOWS.sm,
-    overflow: "hidden",
-  },
-  imageContainer: {
-    position: "relative",
-    width: "100%",
-    aspectRatio: 1.6,
-    backgroundColor: COLORS.surfaceVariant,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  imageFallback: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.surfaceVariant,
-  },
-  fallbackEmoji: {
-    fontSize: 48,
-  },
-  categoryBadge: {
-    position: "absolute",
-    top: SPACING.sm,
-    left: SPACING.sm,
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    borderRadius: BORDER_RADIUS.sm,
-  },
-  categoryBadgeText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.white,
-    fontWeight: "600",
-    textTransform: "capitalize",
-  },
-  info: {
-    padding: SPACING.md,
-    gap: SPACING.xs,
-  },
-  title: {
-    ...TYPOGRAPHY.body,
-    fontWeight: "600",
-    color: COLORS.text,
-  },
-  seller: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
-  },
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: SPACING.xs,
-  },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 2,
-  },
-  price: {
-    ...TYPOGRAPHY.headingS,
-    color: COLORS.primary,
-    fontWeight: "700",
-  },
-  currency: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
-  },
-  buyButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs + 2,
-    borderRadius: BORDER_RADIUS.sm,
-  },
-  buyButtonPressed: {
-    opacity: 0.8,
-  },
-  buyButtonText: {
-    ...TYPOGRAPHY.label,
-    color: COLORS.white,
-    fontWeight: "600",
-  },
-});

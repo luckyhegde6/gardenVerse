@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Image, Text, StyleSheet } from "react-native";
-import { COLORS, BORDER_RADIUS } from "@/styles/tokens";
+import { COLORS, BORDER_RADIUS, useThemeColors } from "@/styles/tokens";
 
 interface AvatarProps {
   uri?: string;
@@ -59,6 +59,7 @@ export function Avatar({
   showOnline = false,
   isOnline = false,
 }: AvatarProps) {
+  const colors = useThemeColors();
   const [imageError, setImageError] = useState(false);
   const dim = sizeMap[size];
   const dotSize = onlineDotSize[size];
@@ -104,7 +105,8 @@ export function Avatar({
               width: dotSize,
               height: dotSize,
               borderRadius: dotSize / 2,
-              backgroundColor: isOnline ? COLORS.leafGreen : "#9ca3af",
+              backgroundColor: isOnline ? colors.leafGreen : "#9ca3af",
+              borderColor: colors.white,
             },
           ]}
         />
@@ -136,6 +138,5 @@ const styles = StyleSheet.create({
     bottom: -1,
     right: -1,
     borderWidth: 2,
-    borderColor: COLORS.white,
   },
 });

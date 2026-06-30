@@ -14,7 +14,7 @@ import { CommunityGroupCard } from "@components/community/CommunityGroupCard";
 import { EventCard } from "@components/community/EventCard";
 import { ActivityFeed } from "@components/community/ActivityFeed";
 
-import { COLORS, SPACING, TYPOGRAPHY, SHADOWS, BORDER_RADIUS } from "@/styles/tokens";
+import { COLORS, SPACING, TYPOGRAPHY, SHADOWS, BORDER_RADIUS, useThemeColors } from "@/styles/tokens";
 
 import type {
   Group,
@@ -180,16 +180,17 @@ function SectionHeader({
   showSeeAll?: boolean;
   onSeeAll?: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
       {showSeeAll && (
         <Pressable
           onPress={onSeeAll}
           accessibilityRole="button"
           accessibilityLabel="See all"
         >
-          <Text style={styles.seeAllText}>See All</Text>
+          <Text style={[styles.seeAllText, { color: colors.primary }]}>See All</Text>
         </Pressable>
       )}
     </View>
@@ -205,6 +206,7 @@ function SegmentButton({
   isActive: boolean;
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -225,6 +227,7 @@ function SegmentButton({
         styles.segment,
         isActive ? styles.segmentActive : styles.segmentInactive,
         animatedStyle,
+        isActive ? { backgroundColor: colors.primary } : undefined,
       ]}
       onPress={() => {
         onPress();
@@ -239,6 +242,7 @@ function SegmentButton({
         style={[
           styles.segmentText,
           isActive ? styles.segmentTextActive : styles.segmentTextInactive,
+          isActive ? { color: colors.white } : { color: colors.textSecondary },
         ]}
       >
         {label}
@@ -248,17 +252,18 @@ function SegmentButton({
 }
 
 function LeaderboardSkeleton() {
+  const colors = useThemeColors();
   return (
     <View style={styles.skeletonContainer}>
       {[1, 2, 3].map((key) => (
-        <View key={key} style={styles.skeletonRow}>
-          <View style={styles.skeletonRank} />
-          <View style={styles.skeletonAvatar} />
+        <View key={key} style={[styles.skeletonRow, { backgroundColor: colors.surface }]}>
+          <View style={[styles.skeletonRank, { backgroundColor: colors.surfaceSecondary }]} />
+          <View style={[styles.skeletonAvatar, { backgroundColor: colors.surfaceSecondary }]} />
           <View style={styles.skeletonTextBlock}>
-            <View style={styles.skeletonLine} />
-            <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
+            <View style={[styles.skeletonLine, { backgroundColor: colors.surfaceSecondary }]} />
+            <View style={[styles.skeletonLine, styles.skeletonLineShort, { backgroundColor: colors.surfaceSecondary }]} />
           </View>
-          <View style={styles.skeletonScore} />
+          <View style={[styles.skeletonScore, { backgroundColor: colors.surfaceSecondary }]} />
         </View>
       ))}
     </View>
@@ -271,6 +276,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function CommunityScreen() {
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSegment, setActiveSegment] = useState<Segment>("Groups");
@@ -362,19 +368,19 @@ export function CommunityScreen() {
       {loading ? (
         <View style={styles.skeletonContainer}>
           {[1, 2, 3].map((key) => (
-            <View key={key} style={styles.groupSkeleton}>
-              <View style={styles.groupSkeletonImage} />
+            <View key={key} style={[styles.groupSkeleton, { backgroundColor: colors.surface }]}>
+              <View style={[styles.groupSkeletonImage, { backgroundColor: colors.surfaceSecondary }]} />
               <View style={styles.groupSkeletonText}>
-                <View style={styles.skeletonLine} />
-                <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
+                <View style={[styles.skeletonLine, { backgroundColor: colors.surfaceSecondary }]} />
+                <View style={[styles.skeletonLine, styles.skeletonLineShort, { backgroundColor: colors.surfaceSecondary }]} />
               </View>
             </View>
           ))}
         </View>
       ) : groups.length === 0 ? (
-        <View style={styles.emptyContainer}>
+        <View style={[styles.emptyContainer, { backgroundColor: colors.surface }]}>
           <Text style={styles.emptyEmoji}>🌐</Text>
-          <Text style={styles.emptyText}>No groups yet. Create the first one!</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No groups yet. Create the first one!</Text>
         </View>
       ) : (
         groups.map((group) => (
@@ -395,9 +401,9 @@ export function CommunityScreen() {
       {loading ? (
         <LeaderboardSkeleton />
       ) : leaderboard.length === 0 ? (
-        <View style={styles.emptyContainer}>
+        <View style={[styles.emptyContainer, { backgroundColor: colors.surface }]}>
           <Text style={styles.emptyEmoji}>🏅</Text>
-          <Text style={styles.emptyText}>No leaderboard data yet</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No leaderboard data yet</Text>
         </View>
       ) : (
         leaderboard.map((entry, index) => (
@@ -413,10 +419,10 @@ export function CommunityScreen() {
       {loading ? (
         <LeaderboardSkeleton />
       ) : events.length === 0 ? (
-        <View style={styles.emptyContainer}>
+        <View style={[styles.emptyContainer, { backgroundColor: colors.surface }]}>
           <Text style={styles.emptyEmoji}>📅</Text>
-          <Text style={styles.emptyText}>No upcoming events</Text>
-          <Text style={styles.emptySubtext}>Check back later for new events!</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No upcoming events</Text>
+          <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>Check back later for new events!</Text>
         </View>
       ) : (
         events.map((event) => (
@@ -449,7 +455,7 @@ export function CommunityScreen() {
   };
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
+    <View style={[styles.screen, { paddingTop: insets.top, backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -458,16 +464,16 @@ export function CommunityScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Community</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Community</Text>
           <AnimatedPressable
-            style={styles.bellButton}
+            style={[styles.bellButton, { backgroundColor: colors.surface }]}
             onPress={() => Alert.alert("Notifications", "No new notifications")}
             accessibilityRole="button"
             accessibilityLabel="Notifications"
@@ -486,7 +492,7 @@ export function CommunityScreen() {
         </View>
 
         {/* Segmented Control */}
-        <View style={styles.segmentedControl}>
+        <View style={[styles.segmentedControl, { backgroundColor: colors.surfaceSecondary }]}>
           {SEGMENTS.map((segment) => (
             <SegmentButton
               key={segment}

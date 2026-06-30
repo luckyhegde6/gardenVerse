@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS } from "@/styles/tokens";
+import { useThemeColors, COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS } from "@/styles/tokens";
 
 interface SyncWidgetProps {
   isOnline?: boolean;
@@ -28,6 +28,7 @@ export function SyncWidget({
   temperature,
   lastSync,
 }: SyncWidgetProps) {
+  const colors = useThemeColors();
   const relativeTime = useMemo(() => {
     if (!lastSync) return null;
     try {
@@ -38,24 +39,24 @@ export function SyncWidget({
   }, [lastSync]);
 
   return (
-    <Animated.View entering={FadeIn.duration(300)} style={styles.card}>
+    <Animated.View entering={FadeIn.duration(300)} style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.header}>
-        <Text style={styles.headerLabel}>IoT Sensors</Text>
-        <View style={[styles.statusDot, { backgroundColor: isOnline ? COLORS.leafGreen : COLORS.textMuted }]} />
+        <Text style={[styles.headerLabel, { color: colors.text }]}>IoT Sensors</Text>
+        <View style={[styles.statusDot, { backgroundColor: isOnline ? colors.leafGreen : colors.textMuted }]} />
       </View>
       {isOnline ? (
         <View style={styles.valuesRow}>
-          <Text style={styles.valueItem}>{'\uD83D\uDCA7'} {moisture ?? "--"}%</Text>
-          <Text style={styles.separator}>|</Text>
-          <Text style={styles.valueItem}>{'\uD83D\uDCA8'} {humidity ?? "--"}%</Text>
-          <Text style={styles.separator}>|</Text>
-          <Text style={styles.valueItem}>{'\uD83C\uDF21\uFE0F'} {temperature ?? "--"}{'\u00B0'}</Text>
+          <Text style={[styles.valueItem, { color: colors.textSecondary }]}>{'\uD83D\uDCA7'} {moisture ?? "--"}%</Text>
+          <Text style={[styles.separator, { color: colors.border }]}>|</Text>
+          <Text style={[styles.valueItem, { color: colors.textSecondary }]}>{'\uD83D\uDCA8'} {humidity ?? "--"}%</Text>
+          <Text style={[styles.separator, { color: colors.border }]}>|</Text>
+          <Text style={[styles.valueItem, { color: colors.textSecondary }]}>{'\uD83C\uDF21\uFE0F'} {temperature ?? "--"}{'\u00B0'}</Text>
         </View>
       ) : (
-        <Text style={styles.offlineText}>Offline</Text>
+        <Text style={[styles.offlineText, { color: colors.textMuted }]}>Offline</Text>
       )}
       {relativeTime ? (
-        <Text style={styles.syncTime}>Last sync: {relativeTime}</Text>
+        <Text style={[styles.syncTime, { color: colors.textMuted }]}>Last sync: {relativeTime}</Text>
       ) : null}
     </Animated.View>
   );

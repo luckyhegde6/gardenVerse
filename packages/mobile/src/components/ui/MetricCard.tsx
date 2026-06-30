@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS } from "@/styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS, useThemeColors } from "@/styles/tokens";
 
 interface MetricCardProps {
   icon: string;
@@ -21,31 +21,32 @@ export function MetricCard({
   trend,
   color = COLORS.primary,
 }: MetricCardProps) {
+  const colors = useThemeColors();
   const trendColor =
     trend?.direction === "up"
-      ? COLORS.leafGreen
+      ? colors.leafGreen
       : trend?.direction === "down"
-        ? COLORS.dangerRed
-        : COLORS.textMuted;
+        ? colors.dangerRed
+        : colors.textMuted;
 
   const trendArrow = trend?.direction === "up" ? "↑" : trend?.direction === "down" ? "↓" : "→";
 
   return (
-    <Animated.View entering={FadeIn.duration(300)} style={styles.card}>
+    <Animated.View entering={FadeIn.duration(300)} style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.header}>
         <View style={[styles.iconDot, { backgroundColor: color }]}>
           <Text style={styles.icon}>{icon}</Text>
         </View>
       </View>
       <View style={styles.valueRow}>
-        <Text style={styles.value}>{value}</Text>
+        <Text style={[styles.value, { color: colors.text }]}>{value}</Text>
         {trend ? (
           <Text style={[styles.trend, { color: trendColor }]}>
             {trendArrow} {trend.value}
           </Text>
         ) : null}
       </View>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text>
     </Animated.View>
   );
 }
@@ -54,7 +55,6 @@ export default MetricCard;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.md,
     ...SHADOWS.sm as Record<string, unknown>,
@@ -81,7 +81,6 @@ const styles = StyleSheet.create({
   },
   value: {
     ...TYPOGRAPHY.headingXL,
-    color: COLORS.text,
   },
   trend: {
     ...TYPOGRAPHY.bodySmall,
@@ -89,7 +88,6 @@ const styles = StyleSheet.create({
   },
   label: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
     marginTop: SPACING.xs,
   },
 });

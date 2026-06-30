@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StatusBar, StyleSheet } from "react-native";
-import { COLORS, SPACING, TYPOGRAPHY } from "@/styles/tokens";
+import { COLORS, SPACING, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
 
 interface PageHeaderProps {
   title: string;
@@ -9,17 +9,18 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, onBack, rightActions }: PageHeaderProps) {
+  const colors = useThemeColors();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.darkForest }]}>
       <StatusBar barStyle="light-content" />
       <View style={styles.left}>
         {onBack ? (
           <TouchableOpacity onPress={onBack} style={styles.backButton} accessibilityLabel="Go back">
-            <Text style={styles.backArrow}>{'\u2190'}</Text>
+            <Text style={[styles.backArrow, { color: colors.white }]}>{'\u2190'}</Text>
           </TouchableOpacity>
         ) : null}
       </View>
-      <Text style={styles.title} numberOfLines={1}>
+      <Text style={[styles.title, { color: colors.white }]} numberOfLines={1}>
         {title}
       </Text>
       <View style={styles.right}>
@@ -36,7 +37,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: COLORS.darkForest,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
     paddingTop: SPACING.md,
@@ -50,11 +50,9 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: 22,
-    color: COLORS.white,
   },
   title: {
     ...TYPOGRAPHY.headingS,
-    color: COLORS.white,
     flex: 1,
     textAlign: "center",
   },

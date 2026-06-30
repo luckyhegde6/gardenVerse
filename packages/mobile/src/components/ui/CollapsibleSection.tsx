@@ -8,7 +8,7 @@ import Animated, {
   FadeIn,
   FadeOut,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@/styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -23,6 +23,7 @@ export function CollapsibleSection({
   children,
   badge,
 }: CollapsibleSectionProps) {
+  const colors = useThemeColors();
   const [expanded, setExpanded] = useState(defaultExpanded);
   const chevronRotation = useSharedValue(defaultExpanded ? 0 : -90);
   const contentHeight = useSharedValue(defaultExpanded ? 1 : 0);
@@ -48,11 +49,11 @@ export function CollapsibleSection({
     <View style={styles.container}>
       <TouchableOpacity onPress={toggle} style={styles.header} accessibilityState={{ expanded }} accessibilityLabel={title}>
         <View style={styles.headerLeft}>
-          <Animated.Text style={[styles.chevron, chevronStyle]}>{'\u25BC'}</Animated.Text>
-          <Text style={styles.title}>{title}</Text>
+          <Animated.Text style={[styles.chevron, chevronStyle, { color: colors.textSecondary }]}>{'\u25BC'}</Animated.Text>
+          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
           {badge ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{badge}</Text>
+            <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+              <Text style={[styles.badgeText, { color: colors.white }]}>{badge}</Text>
             </View>
           ) : null}
         </View>

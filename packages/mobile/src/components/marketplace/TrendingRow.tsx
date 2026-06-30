@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import {
-  COLORS,
+  useThemeColors,
   SPACING,
   TYPOGRAPHY,
 } from "@/styles/tokens";
@@ -19,6 +19,47 @@ function TrendingRowComponent({
   onListingPress,
   onBuy,
 }: TrendingRowProps) {
+  const colors = useThemeColors();
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          marginBottom: SPACING.lg,
+        },
+        header: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: SPACING.md,
+          marginBottom: SPACING.sm + 2,
+        },
+        headerLeft: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: SPACING.sm,
+        },
+        headerEmoji: {
+          fontSize: 20,
+        },
+        headerTitle: {
+          ...TYPOGRAPHY.headingS,
+          color: colors.text,
+        },
+        headerSubtitle: {
+          ...TYPOGRAPHY.caption,
+          color: colors.textMuted,
+        },
+        scrollContent: {
+          paddingHorizontal: SPACING.md,
+        },
+        cardWrapper: {
+          marginRight: SPACING.sm + 2,
+        },
+      }),
+    [colors],
+  );
+
   if (listings.length === 0) {
     return null;
   }
@@ -56,38 +97,3 @@ function TrendingRowComponent({
 
 export const TrendingRow = React.memo(TrendingRowComponent);
 export default TrendingRow;
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: SPACING.lg,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.sm + 2,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.sm,
-  },
-  headerEmoji: {
-    fontSize: 20,
-  },
-  headerTitle: {
-    ...TYPOGRAPHY.headingS,
-    color: COLORS.text,
-  },
-  headerSubtitle: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.textMuted,
-  },
-  scrollContent: {
-    paddingHorizontal: SPACING.md,
-  },
-  cardWrapper: {
-    marginRight: SPACING.sm + 2,
-  },
-});

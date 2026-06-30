@@ -12,7 +12,7 @@ import Animated, {
   withSpring,
   withDelay,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from "@/styles/tokens";
+import { useThemeColors, COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from "@/styles/tokens";
 import { LeaderboardEntry } from "@/types";
 
 interface LeaderboardCardProps {
@@ -29,11 +29,11 @@ function getRankBadge(rank: number): string {
   return `#${rank}`;
 }
 
-function getRankColor(rank: number): string {
+function getRankColor(rank: number, textSecondaryColor: string): string {
   if (rank === 1) return "#d4a017";
   if (rank === 2) return "#9ca3af";
   if (rank === 3) return "#cd7f32";
-  return COLORS.textSecondary;
+  return textSecondaryColor;
 }
 
 function formatScore(score: number): string {
@@ -49,18 +49,17 @@ function getInitials(name?: string): string {
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
-const avatarColors = [
-  COLORS.primary,
-  "#15803d",
-  "#166534",
-  COLORS.skyBlue,
-  "#14b8a6",
-  "#ca8a04",
-  "#a16207",
-];
-
-function getColorFromName(name?: string): string {
+function getColorFromName(name: string | undefined, colors: { primary: string; skyBlue: string }): string {
   if (!name) return "#9ca3af";
+  const avatarColors = [
+    colors.primary,
+    "#15803d",
+    "#166534",
+    colors.skyBlue,
+    "#14b8a6",
+    "#ca8a04",
+    "#a16207",
+  ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -69,6 +68,7 @@ function getColorFromName(name?: string): string {
 }
 
 function LeaderboardCardComponent({ entry, index }: LeaderboardCardProps) {
+  const colors = useThemeColors();
   const [imageError, setImageError] = React.useState(false);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
@@ -98,15 +98,15 @@ function LeaderboardCardComponent({ entry, index }: LeaderboardCardProps) {
 
   const displayName = entry.displayName || entry.username;
   const showImage = entry.avatarUrl && !imageError;
-  const bgColor = getColorFromName(displayName);
+  const bgColor = getColorFromName(displayName, colors);
   const isTopThree = entry.rank <= 3;
-  const rankColor = getRankColor(entry.rank);
+  const rankColor = getRankColor(entry.rank, colors.textSecondary);
   const rankBadge = getRankBadge(entry.rank);
   const formattedScore = formatScore(entry.score);
 
   return (
     <AnimatedPressable
-      style={[styles.card, animatedCardStyle]}
+      style={[styles.card, { backgroundColor: colors.surface }, animatedCardStyle]}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       accessibilityRole="button"
@@ -118,7 +118,7 @@ function LeaderboardCardComponent({ entry, index }: LeaderboardCardProps) {
             <Text style={styles.rankEmoji}>{rankBadge}</Text>
           ) : (
             <View style={[styles.rankNumberBadge, { backgroundColor: rankColor }]}>
-              <Text style={styles.rankNumberText}>{rankBadge}</Text>
+              <Text style={[styles.rankNumberText, { color: colors.white }]}>{rankBadge}</Text>
             </View>
           )}
         </View>
@@ -133,25 +133,25 @@ function LeaderboardCardComponent({ entry, index }: LeaderboardCardProps) {
             />
           ) : (
             <View style={[styles.avatarFallback, { backgroundColor: bgColor }]}>
-              <Text style={styles.avatarInitials}>{getInitials(displayName)}</Text>
+              <Text style={[styles.avatarInitials, { color: colors.white }]}>{getInitials(displayName)}</Text>
             </View>
           )}
         </View>
 
         {/* Info */}
         <View style={styles.infoContainer}>
-          <Text style={styles.username} numberOfLines={1}>
+          <Text style={[styles.username, { color: colors.text }]} numberOfLines={1}>
             {entry.username}
           </Text>
           {entry.displayName ? (
-            <Text style={styles.displayName} numberOfLines={1}>
+            <Text style={[styles.displayName, { color: colors.textSecondary }]} numberOfLines={1}>
               {entry.displayName}
             </Text>
           ) : null}
           {entry.level != null ? (
             <View style={styles.levelRow}>
               <Text style={styles.levelIcon}>⭐</Text>
-              <Text style={styles.levelText}>Level {entry.level}</Text>
+              <Text style={[styles.levelText, { color: colors.textSecondary }]}>Level {entry.level}</Text>
             </View>
           ) : null}
         </View>
@@ -161,7 +161,7 @@ function LeaderboardCardComponent({ entry, index }: LeaderboardCardProps) {
           <Text style={[styles.scoreValue, { color: rankColor }]}>
             {formattedScore}
           </Text>
-          <Text style={styles.scoreLabel}>pts</Text>
+          <Text style={[styles.scoreLabel, { color: colors.textSecondary }]}>pts</Text>
         </View>
       </View>
     </AnimatedPressable>

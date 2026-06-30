@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Dimensions, StyleSheet } from "react-native";
-import { COLORS } from "@/styles/tokens";
+import { useThemeColors, COLORS } from "@/styles/tokens";
 import { EnvironmentEffects } from "@components/garden/EnvironmentEffects";
 
 interface GardenViewportProps {
@@ -12,6 +12,7 @@ const SCREEN_HEIGHT = Dimensions.get("window").height;
 const VIEWPORT_HEIGHT = SCREEN_HEIGHT * 0.6;
 
 export function GardenViewport({ children, environmentCondition }: GardenViewportProps) {
+  const colors = useThemeColors();
   return (
     <View style={styles.container}>
       {environmentCondition ? (
@@ -22,7 +23,7 @@ export function GardenViewport({ children, environmentCondition }: GardenViewpor
       <View style={styles.content}>
         {children}
       </View>
-      <View style={styles.gradient} />
+      <View style={[styles.gradient, { backgroundColor: colors.background }]} />
     </View>
   );
 }

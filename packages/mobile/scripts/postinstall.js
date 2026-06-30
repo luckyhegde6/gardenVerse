@@ -6,6 +6,9 @@
  *    Prevents "Could not get unknown property 'release'" in AGP 8.x
  * 2. expo-updates (v0.25.28): getRNVersion() searches multiple paths for react-native/package.json
  *    Prevents "Process command 'node' finished with non-zero exit value 1" cascade failures
+ * 3. react-native-reanimated (v3.9.0): registers WorkletsModule in ReanimatedPackage.java
+ *    Prevents "Native part of Reanimated doesn't seem to be initialized (Worklets)"
+ *    caused by missing native module registration for the worklets TurboModule
  *
  * This runs automatically after `npm install` / `yarn` via the "postinstall" lifecycle hook.
  */
@@ -144,6 +147,114 @@ function patchExpoUpdatesBuildGradle() {
 }
 
 // ─────────────────────────────────────────────
+// Fix 3: react-native-reanimated — register WorkletsModule
+// ─────────────────────────────────────────────
+
+const REANIMATED_PACKAGE = path.join(
+  PROJECT_ROOT,
+  'node_modules',
+  'react-native-reanimated',
+  'android',
+  'src',
+  'main',
+  'java',
+  'com',
+  'swmansion',
+  'reanimated',
+  'ReanimatedPackage.java'
+);
+
+function patchReanimatedPackage() {
+  if (!fs.existsSync(REANIMATED_PACKAGE)) {
+    warn(`ReanimatedPackage.java not found at ${REANIMATED_PACKAGE}, skipping patch`);
+    return false;
+  }
+
+  let content = fs.readFileSync(REANIMATED_PACKAGE, 'utf8');
+
+  // Skip if already patched (check for singleton field, which is the latest fix)
+  if (content.includes('mReanimatedModule')) {
+    log('ReanimatedPackage.java: already patched (singleton), skipping');
+    return false;
+  }
+
+  const original = content;
+
+  // Patch 1: Add singleton ReanimatedModule field + shared getModule for both names
+  content = content.replace(
+    'public class ReanimatedPackage extends TurboReactPackage implements ReactPackage {\n\n  @Override\n  public NativeModule getModule(String name, ReactApplicationContext reactContext) {',
+    'public class ReanimatedPackage extends TurboReactPackage implements ReactPackage {\n\n  private ReanimatedModule mReanimatedModule;\n\n  @Override\n  public NativeModule getModule(String name, ReactApplicationContext reactContext) {\n    if (name.equals(ReanimatedModule.NAME) || name.equals("WorkletsModule")) {\n      if (mReanimatedModule == null) {\n        mReanimatedModule = new ReanimatedModule(reactContext);\n      }\n      return mReanimatedModule;\n    }'
+  );
+
+  // Patch 2: Remove old separate "WorkletsModule" branch (now handled in Patch 1)
+  content = content.replace(
+    '    if (name.equals("WorkletsModule")) {\n      return new ReanimatedModule(reactContext);\n    }\n    ',
+    ''
+  );
+
+  // Patch 3: Add WorkletsModule entry in getReactModuleInfoProvider() before return
+  content = content.replace(
+    '    return new ReactModuleInfoProvider() {',
+    '    ReactModule reanimatedAnnotation =\n        ReanimatedModule.class.getAnnotation(ReactModule.class);\n    reactModuleInfoMap.put(\n        "WorkletsModule",\n        new ReactModuleInfo(\n            "WorkletsModule",\n            ReanimatedModule.class.getName(),\n            true,\n            reanimatedAnnotation.needsEagerInit(),\n            reanimatedAnnotation.hasConstants(),\n            reanimatedAnnotation.isCxxModule(),\n            BuildConfig.IS_NEW_ARCHITECTURE_ENABLED));\n\n    return new ReactModuleInfoProvider() {'
+  );
+
+  if (content === original) {
+    warn('ReanimatedPackage.java: replacement patterns not found, skipping');
+    return false;
+  }
+
+  fs.writeFileSync(REANIMATED_PACKAGE, content, 'utf8');
+  log('✓ Patched ReanimatedPackage.java: WorkletsModule + ReanimatedModule share singleton ReanimatedModule instance');
+  return true;
+}
+
+// ─────────────────────────────────────────────
+// Fix 4: react-native-reanimated — set __workletsModuleProxy in C++ decorator
+// ─────────────────────────────────────────────
+
+const RNRUNTIME_DECORATOR = path.join(
+  PROJECT_ROOT,
+  'node_modules',
+  'react-native-reanimated',
+  'Common',
+  'cpp',
+  'ReanimatedRuntime',
+  'RNRuntimeDecorator.cpp'
+);
+
+function patchRNRuntimeDecorator() {
+  if (!fs.existsSync(RNRUNTIME_DECORATOR)) {
+    warn(`RNRuntimeDecorator.cpp not found at ${RNRUNTIME_DECORATOR}, skipping patch`);
+    return false;
+  }
+
+  let content = fs.readFileSync(RNRUNTIME_DECORATOR, 'utf8');
+
+  // Skip if already patched
+  if (content.includes('__workletsModuleProxy')) {
+    log('RNRuntimeDecorator.cpp: already patched, skipping');
+    return false;
+  }
+
+  const original = content;
+
+  // Add __workletsModuleProxy property after __reanimatedModuleProxy
+  content = content.replace(
+    '      jsi::PropNameID::forAscii(rnRuntime, "__reanimatedModuleProxy"),\n      jsi::Object::createFromHostObject(rnRuntime, nativeReanimatedModule));',
+    '      jsi::PropNameID::forAscii(rnRuntime, "__reanimatedModuleProxy"),\n      jsi::Object::createFromHostObject(rnRuntime, nativeReanimatedModule));\n  rnRuntime.global().setProperty(\n      rnRuntime,\n      jsi::PropNameID::forAscii(rnRuntime, "__workletsModuleProxy"),\n      jsi::Object::createFromHostObject(rnRuntime, nativeReanimatedModule));'
+  );
+
+  if (content === original) {
+    warn('RNRuntimeDecorator.cpp: replacement pattern not found, skipping');
+    return false;
+  }
+
+  fs.writeFileSync(RNRUNTIME_DECORATOR, content, 'utf8');
+  log('✓ Patched RNRuntimeDecorator.cpp: set __workletsModuleProxy alongside __reanimatedModuleProxy');
+  return true;
+}
+
+// ─────────────────────────────────────────────
 // Main
 // ─────────────────────────────────────────────
 
@@ -152,8 +263,10 @@ function main() {
 
   const p1 = patchExpoModulesCorePlugin();
   const p2 = patchExpoUpdatesBuildGradle();
+  const p3 = patchReanimatedPackage();
+  const p4 = patchRNRuntimeDecorator();
 
-  if (p1 || p2) {
+  if (p1 || p2 || p3 || p4) {
     log('\n✓ Patches applied successfully.');
   } else {
     log('\nNo patches needed (all already applied or packages not found).');

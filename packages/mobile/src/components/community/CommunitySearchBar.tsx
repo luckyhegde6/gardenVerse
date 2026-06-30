@@ -11,6 +11,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import {
+  useThemeColors,
   COLORS,
   SPACING,
   TYPOGRAPHY,
@@ -32,9 +33,15 @@ function CommunitySearchBarComponent({
 }: CommunitySearchBarProps) {
   const inputRef = useRef<TextInput>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const borderColor = useSharedValue<string>(COLORS.border);
+  const colors = useThemeColors();
+  const borderColor = useSharedValue<string>(colors.border);
   const scale = useSharedValue(1);
   const clearScale = useSharedValue(1);
+
+  // Sync borderColor when theme changes
+  useEffect(() => {
+    borderColor.value = colors.border;
+  }, [colors.border, borderColor]);
 
   const animatedBorderStyle = useAnimatedStyle(() => ({
     borderColor: borderColor.value,
@@ -49,20 +56,20 @@ function CommunitySearchBarComponent({
   }));
 
   const handleFocus = useCallback(() => {
-    borderColor.value = withSpring(COLORS.primary, {
+    borderColor.value = withSpring(colors.primary, {
       damping: 15,
       stiffness: 300,
     });
     scale.value = withSpring(1.02, { damping: 15, stiffness: 300 });
-  }, [borderColor, scale]);
+  }, [borderColor, scale, colors.primary]);
 
   const handleBlur = useCallback(() => {
-    borderColor.value = withSpring(COLORS.border, {
+    borderColor.value = withSpring(colors.border, {
       damping: 15,
       stiffness: 300,
     });
     scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-  }, [borderColor, scale]);
+  }, [borderColor, scale, colors.border]);
 
   const handleChange = useCallback(
     (text: string) => {
@@ -105,16 +112,17 @@ function CommunitySearchBarComponent({
         styles.container,
         animatedBorderStyle,
         animatedScaleStyle,
+        { backgroundColor: colors.surface },
       ]}
     >
       <Text style={styles.searchIcon}>🔍</Text>
       <TextInput
         ref={inputRef}
-        style={styles.input}
+        style={[styles.input, { color: colors.text }]}
         value={value}
         onChangeText={handleChange}
         placeholder={placeholder}
-        placeholderTextColor={COLORS.textMuted}
+        placeholderTextColor={colors.textMuted}
         onFocus={handleFocus}
         onBlur={handleBlur}
         returnKeyType="search"
@@ -130,7 +138,7 @@ function CommunitySearchBarComponent({
           accessibilityRole="button"
           accessibilityLabel="Clear search"
         >
-          <Text style={styles.clearIcon}>✕</Text>
+          <Text style={[styles.clearIcon, { color: colors.textMuted }]}>✕</Text>
         </AnimatedPressable>
       )}
     </Animated.View>

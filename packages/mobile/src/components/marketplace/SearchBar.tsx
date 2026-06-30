@@ -11,7 +11,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import {
-  COLORS,
+  useThemeColors,
   SPACING,
   TYPOGRAPHY,
   BORDER_RADIUS,
@@ -31,7 +31,8 @@ function SearchBarComponent({
   placeholder = "Search listings...",
 }: SearchBarProps) {
   const inputRef = useRef<TextInput>(null);
-  const borderColor = useSharedValue<string>(COLORS.border);
+  const colors = useThemeColors();
+  const borderColor = useSharedValue<string>(colors.border);
   const scale = useSharedValue(1);
 
   const animatedBorderStyle = useAnimatedStyle(() => ({
@@ -43,12 +44,12 @@ function SearchBarComponent({
   }));
 
   const handleFocus = useCallback(() => {
-    borderColor.value = withSpring(COLORS.primary, { damping: 15, stiffness: 300 });
+    borderColor.value = withSpring(colors.primary, { damping: 15, stiffness: 300 });
     scale.value = withSpring(1.02, { damping: 15, stiffness: 300 });
   }, [borderColor, scale]);
 
   const handleBlur = useCallback(() => {
-    borderColor.value = withSpring(COLORS.border, { damping: 15, stiffness: 300 });
+    borderColor.value = withSpring(colors.border, { damping: 15, stiffness: 300 });
     scale.value = withSpring(1, { damping: 15, stiffness: 300 });
   }, [borderColor, scale]);
 
@@ -72,6 +73,11 @@ function SearchBarComponent({
     };
   }, []);
 
+  // Sync border color when theme changes
+  useEffect(() => {
+    borderColor.value = colors.border;
+  }, [colors.border]);
+
   const handleClear = useCallback(() => {
     onChangeText("");
     inputRef.current?.focus();
@@ -80,15 +86,15 @@ function SearchBarComponent({
   const hasText = value.length > 0;
 
   return (
-    <Animated.View style={[styles.container, animatedBorderStyle, animatedScaleStyle]}>
+    <Animated.View style={[styles.container, animatedBorderStyle, animatedScaleStyle, { backgroundColor: colors.surface }]}>
       <Text style={styles.searchIcon}>🔍</Text>
       <TextInput
         ref={inputRef}
-        style={styles.input}
+        style={[styles.input, { color: colors.text }]}
         value={value}
         onChangeText={handleChange}
         placeholder={placeholder}
-        placeholderTextColor={COLORS.textMuted}
+        placeholderTextColor={colors.textMuted}
         onFocus={handleFocus}
         onBlur={handleBlur}
         returnKeyType="search"
@@ -102,7 +108,7 @@ function SearchBarComponent({
           accessibilityRole="button"
           accessibilityLabel="Clear search"
         >
-          <Text style={styles.clearIcon}>✕</Text>
+          <Text style={[styles.clearIcon, { color: colors.textMuted }]}>✕</Text>
         </Pressable>
       )}
     </Animated.View>
@@ -116,9 +122,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.surface,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING.md,
     height: 48,
@@ -130,7 +134,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     ...TYPOGRAPHY.body,
-    color: COLORS.text,
     paddingVertical: 0,
   },
   clearButton: {
@@ -140,6 +143,5 @@ const styles = StyleSheet.create({
   },
   clearIcon: {
     fontSize: 16,
-    color: COLORS.textMuted,
   },
 });

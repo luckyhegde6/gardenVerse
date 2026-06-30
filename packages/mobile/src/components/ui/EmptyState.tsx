@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { COLORS, SPACING, TYPOGRAPHY } from "@/styles/tokens";
+import { COLORS, SPACING, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
 import { Button } from "@components/ui/Button";
 
 interface EmptyStateProps {
@@ -19,12 +19,13 @@ export function EmptyState({
   actionLabel,
   onAction,
 }: EmptyStateProps) {
+  const colors = useThemeColors();
   return (
     <Animated.View
       entering={FadeIn.duration(400)}
       style={styles.container}
     >
-      <View style={styles.iconContainer}>
+      <View style={[styles.iconContainer, { backgroundColor: colors.surfaceSecondary }]}>
         <Text style={styles.icon}>{icon}</Text>
       </View>
       <Text style={styles.title}>{title}</Text>
@@ -54,7 +55,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: SPACING.md,

@@ -6,7 +6,7 @@ import Animated, {
   withTiming,
   interpolate,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@/styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
 
 interface ProgressBarProps {
   value: number;
@@ -29,6 +29,7 @@ export function ProgressBar({
   trackColor = COLORS.border,
   animated = true,
 }: ProgressBarProps) {
+  const colors = useThemeColors();
   const progress = useSharedValue(0);
   const percentage = Math.min((value / maxValue) * 100, 100);
 
@@ -47,7 +48,7 @@ export function ProgressBar({
   return (
     <View style={styles.container}>
       {showLabel && labelPosition === "top" && (
-        <Text style={styles.labelTop}>{Math.round(percentage)}%</Text>
+        <Text style={[styles.labelTop, { color: colors.textSecondary }]}>{Math.round(percentage)}%</Text>
       )}
       <View
         style={[
@@ -64,7 +65,7 @@ export function ProgressBar({
         />
       </View>
       {showLabel && labelPosition === "right" && (
-        <Text style={styles.labelRight}>{Math.round(percentage)}%</Text>
+        <Text style={[styles.labelRight, { color: colors.textSecondary }]}>{Math.round(percentage)}%</Text>
       )}
     </View>
   );
@@ -91,12 +92,10 @@ const styles = StyleSheet.create({
   },
   labelTop: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xs,
   },
   labelRight: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
     marginLeft: SPACING.sm,
     minWidth: 32,
   },

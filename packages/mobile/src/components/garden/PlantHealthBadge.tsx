@@ -6,7 +6,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { COLORS, SPACING, TYPOGRAPHY } from "@/styles/tokens";
+import { useThemeColors, COLORS, SPACING, TYPOGRAPHY } from "@/styles/tokens";
 
 type PlantStatus = "healthy" | "dry" | "sick" | "growing";
 
@@ -14,12 +14,14 @@ interface PlantHealthBadgeProps {
   status: PlantStatus;
 }
 
-const STATUS_COLORS: Record<PlantStatus, string> = {
-  healthy: COLORS.leafGreen,
-  dry: COLORS.sunYellow,
-  sick: COLORS.dangerRed,
-  growing: COLORS.skyBlue,
-};
+function getStatusColor(status: PlantStatus, colors: ReturnType<typeof useThemeColors>): string {
+  switch (status) {
+    case "healthy": return colors.leafGreen;
+    case "dry": return colors.sunYellow;
+    case "sick": return colors.dangerRed;
+    case "growing": return colors.skyBlue;
+  }
+}
 
 const STATUS_LABELS: Record<PlantStatus, string> = {
   healthy: "Healthy",
@@ -29,6 +31,7 @@ const STATUS_LABELS: Record<PlantStatus, string> = {
 };
 
 export function PlantHealthBadge({ status }: PlantHealthBadgeProps) {
+  const colors = useThemeColors();
   const dotScale = useSharedValue(1);
 
   React.useEffect(() => {
@@ -44,13 +47,13 @@ export function PlantHealthBadge({ status }: PlantHealthBadgeProps) {
     };
   });
 
-  const color = STATUS_COLORS[status];
+  const color = getStatusColor(status, colors);
   const label = STATUS_LABELS[status];
 
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.dot, { backgroundColor: color }, dotAnimatedStyle]} />
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text>
     </View>
   );
 }

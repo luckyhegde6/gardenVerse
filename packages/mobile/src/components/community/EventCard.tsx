@@ -6,6 +6,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import {
+  useThemeColors,
   COLORS,
   SPACING,
   TYPOGRAPHY,
@@ -43,6 +44,7 @@ function formatParticipantCount(count?: number): string {
 }
 
 function EventCardComponent({ event, onPress, onParticipate }: EventCardProps) {
+  const colors = useThemeColors();
   const scale = useSharedValue(1);
   const buttonScale = useSharedValue(1);
 
@@ -75,7 +77,7 @@ function EventCardComponent({ event, onPress, onParticipate }: EventCardProps) {
 
   return (
     <AnimatedPressable
-      style={[styles.container, animatedStyle]}
+      style={[styles.container, animatedStyle, { backgroundColor: colors.surface }]}
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -83,17 +85,17 @@ function EventCardComponent({ event, onPress, onParticipate }: EventCardProps) {
       accessibilityLabel={`${event.title}, ${month} ${day}`}
     >
       <View style={styles.header}>
-        <View style={styles.dateBadge}>
-          <Text style={styles.dateDay}>{day}</Text>
-          <Text style={styles.dateMonth}>{month}</Text>
+        <View style={[styles.dateBadge, { backgroundColor: colors.primary }]}>
+          <Text style={[styles.dateDay, { color: colors.white }]}>{day}</Text>
+          <Text style={[styles.dateMonth, { color: colors.white }]}>{month}</Text>
         </View>
 
         <View style={styles.headerText}>
-          <Text style={styles.title} numberOfLines={2}>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
             {event.title}
           </Text>
           {event.description ? (
-            <Text style={styles.description} numberOfLines={2}>
+            <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>
               {event.description}
             </Text>
           ) : null}
@@ -103,28 +105,28 @@ function EventCardComponent({ event, onPress, onParticipate }: EventCardProps) {
       {event.rewards && event.rewards.length > 0 ? (
         <View style={styles.rewardsRow}>
           {event.rewards.map((reward, index) => (
-            <View key={`${reward}-${index}`} style={styles.rewardChip}>
-              <Text style={styles.rewardChipText}>{reward}</Text>
+            <View key={`${reward}-${index}`} style={[styles.rewardChip, { backgroundColor: colors.surfaceVariant }]}>
+              <Text style={[styles.rewardChipText, { color: colors.primary }]}>{reward}</Text>
             </View>
           ))}
         </View>
       ) : null}
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: colors.border }]}>
         <View style={styles.participantsRow}>
           <Text style={styles.participantsIcon}>👥</Text>
           {participantText ? (
-            <Text style={styles.participantsText}>
+            <Text style={[styles.participantsText, { color: colors.textMuted }]}>
               {participantText} participant{event.participants !== 1 ? "s" : ""}
             </Text>
           ) : (
-            <Text style={styles.participantsText}>No participants yet</Text>
+            <Text style={[styles.participantsText, { color: colors.textMuted }]}>No participants yet</Text>
           )}
         </View>
 
         {onParticipate ? (
           <AnimatedPressable
-            style={[styles.participateButton, buttonAnimatedStyle]}
+            style={[styles.participateButton, buttonAnimatedStyle, { backgroundColor: colors.primary }]}
             onPress={(e: any) => {
               e.stopPropagation?.();
               onParticipate();
@@ -134,7 +136,7 @@ function EventCardComponent({ event, onPress, onParticipate }: EventCardProps) {
             accessibilityRole="button"
             accessibilityLabel="Participate in event"
           >
-            <Text style={styles.participateButtonText}>Participate</Text>
+            <Text style={[styles.participateButtonText, { color: colors.white }]}>Participate</Text>
           </AnimatedPressable>
         ) : null}
       </View>

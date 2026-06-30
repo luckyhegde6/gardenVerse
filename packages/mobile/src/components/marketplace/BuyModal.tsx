@@ -19,12 +19,13 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import {
-  COLORS,
   SPACING,
   TYPOGRAPHY,
   BORDER_RADIUS,
   SHADOWS,
+  useThemeColors,
 } from "@/styles/tokens";
+import type { ColorScheme } from "@/styles/tokens";
 import type { MarketplaceListing } from "@/types";
 
 interface BuyModalProps {
@@ -112,6 +113,7 @@ function QuantityButton({
   onPress: () => void;
   disabled: boolean;
 }) {
+  const colors = useThemeColors();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -130,6 +132,7 @@ function QuantityButton({
     <AnimatedPressable
       style={[
         styles.qtyButton,
+        { backgroundColor: colors.surfaceVariant, borderColor: colors.border },
         disabled && styles.qtyButtonDisabled,
         animatedStyle,
       ]}
@@ -143,7 +146,7 @@ function QuantityButton({
       <Text
         style={[
           styles.qtyButtonText,
-          disabled && styles.qtyButtonTextDisabled,
+          { color: disabled ? colors.textMuted : colors.text },
         ]}
       >
         {label}
@@ -196,6 +199,7 @@ function FloatingEmoji({ emoji, index }: { emoji: string; index: number }) {
 // ─── Celebration overlay ────────────────────────────────────────────────────
 
 function CelebrationOverlay({ onFinish }: { onFinish: () => void }) {
+  const colors = useThemeColors();
   const scale = useSharedValue(0);
 
   useEffect(() => {
@@ -207,19 +211,19 @@ function CelebrationOverlay({ onFinish }: { onFinish: () => void }) {
   }));
 
   return (
-    <View style={styles.celebrationContainer}>
-      <Animated.View style={[styles.celebrationContent, animatedStyle]}>
+    <View style={[styles.celebrationContainer, { backgroundColor: colors.overlay }]}>
+      <Animated.View style={[styles.celebrationContent, { backgroundColor: colors.surface }, animatedStyle]}>
         <Text style={styles.celebrationEmoji}>{CELEBRATION_EMOJIS[0]}</Text>
-        <Text style={styles.celebrationTitle}>Purchase Complete!</Text>
-        <Text style={styles.celebrationSubtitle}>
+        <Text style={[styles.celebrationTitle, { color: colors.primary }]}>Purchase Complete!</Text>
+        <Text style={[styles.celebrationSubtitle, { color: colors.textSecondary }]}>
           Thank you for your purchase
         </Text>
         <AnimatedButton
           onPress={onFinish}
-          style={styles.celebrationCloseBtn}
+          style={[styles.celebrationCloseBtn, { backgroundColor: colors.primary }]}
           accessibilityLabel="Done"
         >
-          <Text style={styles.celebrationCloseText}>Done</Text>
+          <Text style={[styles.celebrationCloseText, { color: colors.white }]}>Done</Text>
         </AnimatedButton>
       </Animated.View>
       {CELEBRATION_EMOJIS.slice(1).map((emoji, index) => (
@@ -238,6 +242,7 @@ export function BuyModal({
   onConfirm,
   isProcessing = false,
 }: BuyModalProps) {
+  const colors = useThemeColors();
   const [quantity, setQuantity] = useState(1);
   const [couponCode, setCouponCode] = useState("");
   const [showCelebration, setShowCelebration] = useState(false);
@@ -319,11 +324,11 @@ export function BuyModal({
       onRequestClose={handleClose}
     >
       <TouchableWithoutFeedback onPress={handleClose}>
-        <View style={styles.overlay}>
+        <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
           <TouchableWithoutFeedback>
-            <Animated.View style={[styles.sheet, animatedStyle]}>
+            <Animated.View style={[styles.sheet, { backgroundColor: colors.surface }, animatedStyle]}>
               {/* Handle bar */}
-              <View style={styles.handle} />
+              <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
               {showCelebration ? (
                 <CelebrationOverlay onFinish={handleClose} />
@@ -334,17 +339,17 @@ export function BuyModal({
                     <Text style={styles.headerTitle}>Confirm Purchase</Text>
                     <AnimatedButton
                       onPress={handleClose}
-                      style={styles.closeButton}
+                      style={[styles.closeButton, { backgroundColor: colors.surfaceSecondary }]}
                       disabled={isProcessing}
                       accessibilityLabel="Close"
                     >
-                      <Text style={styles.closeButtonText}>✕</Text>
+                      <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
                     </AnimatedButton>
                   </View>
 
                   {/* Product Info */}
-                  <View style={styles.productInfo}>
-                    <View style={styles.productEmojiContainer}>
+                  <View style={[styles.productInfo, { backgroundColor: colors.surfaceVariant }]}>
+                    <View style={[styles.productEmojiContainer, { backgroundColor: colors.surface }]}>
                       <Text style={styles.productEmoji}>
                         {getCategoryEmoji()}
                       </Text>
@@ -353,10 +358,10 @@ export function BuyModal({
                       <Text style={styles.productTitle} numberOfLines={2}>
                         {listing.title}
                       </Text>
-                      <Text style={styles.productPrice}>
+                      <Text style={[styles.productPrice, { color: colors.primary }]}>
                         {listing.price} {listing.currency} each
                       </Text>
-                      <Text style={styles.productSeller}>
+                      <Text style={[styles.productSeller, { color: colors.textSecondary }]}>
                         Seller: {listing.seller.username}
                       </Text>
                     </View>
@@ -364,7 +369,7 @@ export function BuyModal({
 
                   {/* Quantity Selector */}
                   <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Quantity</Text>
+                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Quantity</Text>
                     <View style={styles.quantityRow}>
                       <QuantityButton
                         label="−"
@@ -372,7 +377,7 @@ export function BuyModal({
                         disabled={quantity <= 1}
                       />
                       <TextInput
-                        style={styles.quantityInput}
+                        style={[styles.quantityInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
                         value={String(quantity)}
                         onChangeText={handleQtyTextChange}
                         keyboardType="number-pad"
@@ -385,7 +390,7 @@ export function BuyModal({
                         disabled={!!listing && quantity >= listing.quantity}
                       />
                       {listing && (
-                        <Text style={styles.maxQtyText}>
+                        <Text style={[styles.maxQtyText, { color: colors.textMuted }]}>
                           of {listing.quantity}
                         </Text>
                       )}
@@ -394,27 +399,27 @@ export function BuyModal({
 
                   {/* Coupon Code */}
                   <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>
+                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
                       Coupon Code (optional)
                     </Text>
                     <TextInput
-                      style={styles.couponInput}
+                      style={[styles.couponInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
                       value={couponCode}
                       onChangeText={setCouponCode}
                       placeholder="Enter coupon code"
-                      placeholderTextColor={COLORS.textMuted}
+                      placeholderTextColor={colors.textMuted}
                       autoCapitalize="characters"
                       accessibilityLabel="Coupon code input"
                     />
                   </View>
 
                   {/* Divider */}
-                  <View style={styles.divider} />
+                  <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
                   {/* Total */}
                   <View style={styles.totalRow}>
                     <Text style={styles.totalLabel}>Total</Text>
-                    <Text style={styles.totalPrice}>
+                    <Text style={[styles.totalPrice, { color: colors.primary }]}>
                       {totalPrice.toLocaleString()} {listing.currency}
                     </Text>
                   </View>
@@ -425,16 +430,17 @@ export function BuyModal({
                     disabled={isProcessing}
                     style={[
                       styles.confirmButton,
+                      { backgroundColor: colors.primary },
                       isProcessing && styles.confirmButtonDisabled,
                     ]}
                     accessibilityLabel="Confirm purchase"
                   >
                     {isProcessing ? (
-                      <Text style={styles.confirmButtonText}>
+                      <Text style={[styles.confirmButtonText, { color: colors.white }]}>
                         Processing...
                       </Text>
                     ) : (
-                      <Text style={styles.confirmButtonText}>
+                      <Text style={[styles.confirmButtonText, { color: colors.white }]}>
                         Confirm Purchase
                       </Text>
                     )}
@@ -456,11 +462,9 @@ export default BuyModal;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: COLORS.overlay,
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: COLORS.surface,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
@@ -469,7 +473,6 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: COLORS.border,
     borderRadius: BORDER_RADIUS.full,
     alignSelf: "center",
     marginBottom: SPACING.md,
@@ -487,13 +490,11 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
   closeButtonText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
     fontWeight: "600",
   },
 
@@ -503,14 +504,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: SPACING.lg,
     padding: SPACING.md,
-    backgroundColor: COLORS.surfaceVariant,
     borderRadius: BORDER_RADIUS.md,
   },
   productEmojiContainer: {
     width: 56,
     height: 56,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.surface,
     alignItems: "center",
     justifyContent: "center",
     marginRight: SPACING.md,
@@ -529,12 +528,10 @@ const styles = StyleSheet.create({
   },
   productPrice: {
     ...TYPOGRAPHY.bodySmall,
-    color: COLORS.primary,
     fontWeight: "600",
   },
   productSeller: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textMuted,
   },
 
   // Sections
@@ -543,7 +540,6 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     ...TYPOGRAPHY.label,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
   },
 
@@ -557,11 +553,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.surfaceVariant,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   qtyButtonDisabled: {
     opacity: 0.4,
@@ -569,28 +563,20 @@ const styles = StyleSheet.create({
   qtyButtonText: {
     fontSize: 22,
     fontWeight: "600",
-    color: COLORS.text,
     lineHeight: 24,
-  },
-  qtyButtonTextDisabled: {
-    color: COLORS.textMuted,
   },
   quantityInput: {
     width: 60,
     height: 44,
     borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.surface,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
     textAlign: "center",
     fontSize: 18,
     fontWeight: "600",
-    color: COLORS.text,
     paddingVertical: 0,
   },
   maxQtyText: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textMuted,
     marginLeft: SPACING.xs,
   },
 
@@ -598,18 +584,14 @@ const styles = StyleSheet.create({
   couponInput: {
     height: 44,
     borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.surface,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
     paddingHorizontal: SPACING.md,
     fontSize: 16,
-    color: COLORS.text,
   },
 
   // Divider
   divider: {
     height: 1,
-    backgroundColor: COLORS.border,
     marginVertical: SPACING.md,
   },
 
@@ -625,14 +607,12 @@ const styles = StyleSheet.create({
   },
   totalPrice: {
     ...TYPOGRAPHY.headingM,
-    color: COLORS.primary,
   },
 
   // Confirm Button
   confirmButton: {
     height: 52,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -641,7 +621,6 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     ...TYPOGRAPHY.button,
-    color: COLORS.white,
   },
 
   // Celebration
@@ -661,23 +640,19 @@ const styles = StyleSheet.create({
   },
   celebrationTitle: {
     ...TYPOGRAPHY.headingL,
-    color: COLORS.primary,
     marginBottom: SPACING.xs,
   },
   celebrationSubtitle: {
     ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.lg,
   },
   celebrationCloseBtn: {
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.sm + 4,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primary,
   },
   celebrationCloseText: {
     ...TYPOGRAPHY.button,
-    color: COLORS.white,
   },
   floatingEmoji: {
     position: "absolute",

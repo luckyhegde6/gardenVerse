@@ -11,8 +11,9 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from "@/styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
 import { Group } from "@/types";
+import type { ColorScheme } from "@/styles/tokens";
 
 interface CommunityGroupCardProps {
   group: Group;
@@ -35,20 +36,21 @@ function getCategoryEmoji(type: string): string {
   }
 }
 
-function getCategoryColor(type: string): string {
+function getCategoryColor(type: string, colors: ColorScheme): string {
   switch (type.toLowerCase()) {
     case "regional":
-      return COLORS.skyBlue;
+      return colors.skyBlue;
     case "topic":
-      return COLORS.skyBlue;
+      return colors.skyBlue;
     case "events":
-      return COLORS.sunYellow;
+      return colors.sunYellow;
     default:
-      return COLORS.primary;
+      return colors.primary;
   }
 }
 
 function CommunityGroupCardComponent({ group, onPress, onJoin }: CommunityGroupCardProps) {
+  const colors = useThemeColors();
   const [imageError, setImageError] = useState(false);
   const scale = useSharedValue(1);
   const joinScale = useSharedValue(1);
@@ -83,12 +85,12 @@ function CommunityGroupCardComponent({ group, onPress, onJoin }: CommunityGroupC
 
   const showImage = group.imageUrl && !imageError;
   const categoryEmoji = getCategoryEmoji(group.type);
-  const categoryColor = getCategoryColor(group.type);
+  const categoryColor = getCategoryColor(group.type, colors);
   const isJoined = group.isJoined ?? false;
 
   return (
     <AnimatedPressable
-      style={[styles.card, animatedCardStyle]}
+      style={[{ backgroundColor: colors.surface, borderRadius: BORDER_RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm }, SHADOWS.md, animatedCardStyle]}
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -117,23 +119,23 @@ function CommunityGroupCardComponent({ group, onPress, onJoin }: CommunityGroupC
 
         {/* Info */}
         <View style={styles.infoContainer}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
             {group.name}
           </Text>
           {group.description ? (
-            <Text style={styles.description} numberOfLines={2}>
+            <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>
               {group.description}
             </Text>
           ) : null}
           <View style={styles.metaRow}>
             <Text style={styles.metaIcon}>👥</Text>
-            <Text style={styles.metaText}>
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
               {group.memberCount} {group.memberCount === 1 ? "member" : "members"}
             </Text>
             {group.region ? (
               <>
                 <Text style={styles.metaIcon}>📍</Text>
-                <Text style={styles.metaText} numberOfLines={1}>
+                <Text style={[styles.metaText, { color: colors.textSecondary }]} numberOfLines={1}>
                   {group.region}
                 </Text>
               </>
@@ -146,7 +148,7 @@ function CommunityGroupCardComponent({ group, onPress, onJoin }: CommunityGroupC
           <AnimatedPressable
             style={[
               styles.joinButton,
-              isJoined ? styles.joinedButton : styles.notJoinedButton,
+              isJoined ? { backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border } : { backgroundColor: colors.primary },
               animatedJoinStyle,
             ]}
             onPress={handleJoinPress}
@@ -158,7 +160,7 @@ function CommunityGroupCardComponent({ group, onPress, onJoin }: CommunityGroupC
             <Text
               style={[
                 styles.joinButtonText,
-                isJoined ? styles.joinedText : styles.notJoinedText,
+                { color: isJoined ? colors.text : colors.white },
               ]}
             >
               {isJoined ? "Joined" : "Join"}

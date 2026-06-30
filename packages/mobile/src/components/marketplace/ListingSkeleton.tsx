@@ -9,9 +9,10 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import {
-  COLORS,
+  useThemeColors,
   SPACING,
   BORDER_RADIUS,
+  ColorScheme,
 } from "@/styles/tokens";
 
 interface ListingSkeletonProps {
@@ -21,16 +22,16 @@ interface ListingSkeletonProps {
   count?: number;
 }
 
-const SKELETON_COLOR = COLORS.surfaceSecondary;
-
 function SkeletonBlock({
   width,
   height,
   borderRadius = BORDER_RADIUS.sm,
+  color,
 }: {
   width?: number | string;
   height: number;
   borderRadius?: number;
+  color: string;
 }) {
   const pulse = useSharedValue(0);
 
@@ -54,7 +55,7 @@ function SkeletonBlock({
           width: width as number | undefined,
           height,
           borderRadius,
-          backgroundColor: SKELETON_COLOR,
+          backgroundColor: color,
         },
         animatedStyle,
       ]}
@@ -64,29 +65,30 @@ function SkeletonBlock({
 
 // ─── Card Variant (vertical, like ProductCard) ──────────────────────────────
 
-function CardSkeleton() {
+function CardSkeleton({ colors }: { colors: ColorScheme }) {
+  const skeletonColor = colors.surfaceSecondary;
   return (
-    <View style={styles.cardContainer}>
+    <View style={[styles.cardContainer, { backgroundColor: colors.surface }]}>
       {/* Image area */}
-      <SkeletonBlock height={130} borderRadius={BORDER_RADIUS.md} />
+      <SkeletonBlock height={130} borderRadius={BORDER_RADIUS.md} color={skeletonColor} />
       {/* Spacer */}
       <View style={styles.cardBody}>
         {/* Title line */}
-        <SkeletonBlock width="80%" height={16} />
+        <SkeletonBlock width="80%" height={16} color={skeletonColor} />
         <View style={styles.skeletonSpacer} />
         {/* Description line */}
-        <SkeletonBlock width="60%" height={12} />
+        <SkeletonBlock width="60%" height={12} color={skeletonColor} />
         <View style={styles.skeletonSpacer} />
         {/* Bottom row: seller + price */}
         <View style={styles.cardBottomRow}>
           {/* Seller avatar + name */}
           <View style={styles.cardSellerRow}>
-            <SkeletonBlock width={24} height={24} borderRadius={12} />
+            <SkeletonBlock width={24} height={24} borderRadius={12} color={skeletonColor} />
             <View style={{ width: SPACING.sm }} />
-            <SkeletonBlock width={60} height={12} />
+            <SkeletonBlock width={60} height={12} color={skeletonColor} />
           </View>
           {/* Price */}
-          <SkeletonBlock width={70} height={18} borderRadius={BORDER_RADIUS.sm} />
+          <SkeletonBlock width={70} height={18} borderRadius={BORDER_RADIUS.sm} color={skeletonColor} />
         </View>
       </View>
     </View>
@@ -95,23 +97,24 @@ function CardSkeleton() {
 
 // ─── Horizontal Variant (like ProductCardHorizontal) ────────────────────────
 
-function HorizontalSkeleton() {
+function HorizontalSkeleton({ colors }: { colors: ColorScheme }) {
+  const skeletonColor = colors.surfaceSecondary;
   return (
-    <View style={styles.horizontalContainer}>
+    <View style={[styles.horizontalContainer, { backgroundColor: colors.surface }]}>
       {/* Image area */}
-      <SkeletonBlock width={100} height={100} borderRadius={BORDER_RADIUS.md} />
+      <SkeletonBlock width={100} height={100} borderRadius={BORDER_RADIUS.md} color={skeletonColor} />
       {/* Content */}
       <View style={styles.horizontalBody}>
         {/* Title */}
-        <SkeletonBlock width="85%" height={16} />
+        <SkeletonBlock width="85%" height={16} color={skeletonColor} />
         <View style={styles.skeletonSpacer} />
         {/* Category badge */}
-        <SkeletonBlock width={60} height={20} borderRadius={BORDER_RADIUS.full} />
+        <SkeletonBlock width={60} height={20} borderRadius={BORDER_RADIUS.full} color={skeletonColor} />
         <View style={styles.skeletonSpacer} />
         {/* Bottom: price + seller */}
         <View style={styles.horizontalBottomRow}>
-          <SkeletonBlock width={70} height={16} />
-          <SkeletonBlock width={80} height={12} />
+          <SkeletonBlock width={70} height={16} color={skeletonColor} />
+          <SkeletonBlock width={80} height={12} color={skeletonColor} />
         </View>
       </View>
     </View>
@@ -124,11 +127,12 @@ export function ListingSkeleton({
   variant = "card",
   count = 3,
 }: ListingSkeletonProps) {
+  const colors = useThemeColors();
   return (
     <View style={styles.wrapper}>
       {Array.from({ length: count }, (_, i) => (
         <View key={i} style={variant === "card" ? styles.cardGap : styles.horizontalGap}>
-          {variant === "card" ? <CardSkeleton /> : <HorizontalSkeleton />}
+          {variant === "card" ? <CardSkeleton colors={colors} /> : <HorizontalSkeleton colors={colors} />}
         </View>
       ))}
     </View>
@@ -146,7 +150,6 @@ const styles = StyleSheet.create({
 
   // Card variant
   cardContainer: {
-    backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
     overflow: "hidden",
   },
@@ -170,7 +173,6 @@ const styles = StyleSheet.create({
   // Horizontal variant
   horizontalContainer: {
     flexDirection: "row",
-    backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm,
     alignItems: "center",

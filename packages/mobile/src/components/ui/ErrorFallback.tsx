@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { COLORS, SPACING, TYPOGRAPHY } from "@/styles/tokens";
+import { COLORS, SPACING, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
 import { Button } from "@components/ui/Button";
 
 interface ErrorFallbackProps {
@@ -15,10 +15,11 @@ export function ErrorFallback({
   onRetry,
   icon = "\u26A0\uFE0F",
 }: ErrorFallbackProps) {
+  const colors = useThemeColors();
   return (
-    <Animated.View entering={FadeIn.duration(400)} style={styles.container}>
+    <Animated.View entering={FadeIn.duration(400)} style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={styles.icon}>{icon}</Text>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
       {onRetry ? (
         <View style={styles.buttonContainer}>
           <Button title="Try Again" onPress={onRetry} variant="primary" />
@@ -35,7 +36,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.background,
     padding: SPACING.xl,
   },
   icon: {
@@ -44,7 +44,6 @@ const styles = StyleSheet.create({
   },
   message: {
     ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
     textAlign: "center",
     marginBottom: SPACING.lg,
   },

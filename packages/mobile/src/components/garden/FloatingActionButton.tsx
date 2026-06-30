@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { COLORS, BORDER_RADIUS, SHADOWS } from "@/styles/tokens";
+import { useThemeColors, COLORS, BORDER_RADIUS, SHADOWS } from "@/styles/tokens";
 
 interface FloatingActionButtonProps {
   icon: string;
@@ -22,9 +22,11 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export function FloatingActionButton({
   icon,
   onPress,
-  color = COLORS.primary,
+  color,
   position,
 }: FloatingActionButtonProps) {
+  const colors = useThemeColors();
+  const bgColor = color ?? colors.primary;
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -43,7 +45,7 @@ export function FloatingActionButton({
     <AnimatedPressable
       style={[
         styles.button,
-        { backgroundColor: color },
+        { backgroundColor: bgColor },
         position ? { bottom: position.bottom ?? 24, right: position.right ?? 24 } : styles.defaultPosition,
         animatedStyle,
       ]}
@@ -53,7 +55,7 @@ export function FloatingActionButton({
       accessibilityRole="button"
       accessibilityLabel={icon}
     >
-      <Text style={styles.icon}>{icon}</Text>
+      <Text style={[styles.icon, { color: colors.white }]}>{icon}</Text>
     </AnimatedPressable>
   );
 }
@@ -76,6 +78,5 @@ const styles = StyleSheet.create({
   },
   icon: {
     fontSize: 24,
-    color: COLORS.white,
   },
 });

@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { Platform } from "react-native";
+import { useTheme } from "./ThemeContext";
 
 export const COLORS = {
   primary: "#16a34a",
@@ -21,6 +23,54 @@ export const COLORS = {
   border: "#e2e8f0",
   overlay: "rgba(0,0,0,0.5)",
 } as const;
+
+export interface ColorScheme {
+  primary: string;
+  darkForest: string;
+  leafGreen: string;
+  soilBrown: string;
+  skyBlue: string;
+  sunYellow: string;
+  dangerRed: string;
+  white: string;
+  black: string;
+  background: string;
+  surface: string;
+  surfaceSecondary: string;
+  surfaceVariant: string;
+  text: string;
+  textSecondary: string;
+  textMuted: string;
+  border: string;
+  overlay: string;
+}
+
+export function useThemeColors(): ColorScheme {
+  const { theme, isDark } = useTheme();
+  return useMemo(
+    () => ({
+      primary: theme.primary,
+      darkForest: isDark ? "#0a1f12" : "#0d2818",
+      leafGreen: theme.success,
+      soilBrown: isDark ? "#6B3410" : "#8B4513",
+      skyBlue: isDark ? "#0c7bb5" : "#0ea5e9",
+      sunYellow: theme.warning,
+      dangerRed: theme.error,
+      white: theme.white,
+      black: theme.black,
+      background: theme.background,
+      surface: theme.surface,
+      surfaceSecondary: theme.surfaceSecondary,
+      surfaceVariant: theme.surfaceVariant,
+      text: theme.text,
+      textSecondary: theme.textSecondary,
+      textMuted: theme.textMuted,
+      border: theme.border,
+      overlay: theme.overlay,
+    }),
+    [theme, isDark],
+  );
+}
 
 export const SPACING = {
   xs: 4,
@@ -53,22 +103,22 @@ export const TYPOGRAPHY = {
 
 export const SHADOWS = {
   sm: Platform.select({
-    ios: { shadowColor: COLORS.black, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
+    ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
     android: { elevation: 1 },
     default: {},
   }) as Record<string, unknown>,
   md: Platform.select({
-    ios: { shadowColor: COLORS.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+    ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
     android: { elevation: 3 },
     default: {},
   }) as Record<string, unknown>,
   lg: Platform.select({
-    ios: { shadowColor: COLORS.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8 },
+    ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8 },
     android: { elevation: 6 },
     default: {},
   }) as Record<string, unknown>,
   xl: Platform.select({
-    ios: { shadowColor: COLORS.black, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16 },
+    ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16 },
     android: { elevation: 10 },
     default: {},
   }) as Record<string, unknown>,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useRef } from "react";
 import {
   Text,
   ActivityIndicator,
@@ -6,13 +6,9 @@ import {
   ViewStyle,
   TextStyle,
   StyleSheet,
+  Animated,
 } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@/styles/tokens";
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
@@ -32,8 +28,6 @@ interface ButtonProps {
   className?: string;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function Button({
   title,
   onPress,
@@ -47,39 +41,46 @@ export function Button({
   testID,
   className: _className,
 }: ButtonProps) {
+  const colors = useThemeColors();
   const isDisabled = disabled || isLoading;
-  const scale = useSharedValue(1);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const handlePressIn = useCallback(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.96,
+      damping: 15,
+      stiffness: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [scaleAnim]);
 
-  const handlePressIn = () => {
-    scale.value = withSpring(0.96, { damping: 15, stiffness: 300 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-  };
+  const handlePressOut = useCallback(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      damping: 15,
+      stiffness: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [scaleAnim]);
 
   const buttonStyles: ViewStyle[] = [
     styles.base,
     size === "sm" && styles.sm,
     size === "lg" && styles.lg,
-    variant === "primary" && styles.primary,
-    variant === "secondary" && styles.secondary,
-    variant === "outline" && styles.outline,
-    variant === "ghost" && styles.ghost,
-    variant === "danger" && styles.danger,
+    variant === "primary" && { backgroundColor: colors.primary },
+    variant === "secondary" && { backgroundColor: colors.surfaceSecondary },
+    variant === "outline" && { backgroundColor: "transparent", borderWidth: 2, borderColor: colors.primary },
+    variant === "ghost" && { backgroundColor: "transparent" },
+    variant === "danger" && { backgroundColor: colors.dangerRed },
     fullWidth && styles.fullWidth,
     isDisabled && styles.disabled,
   ].filter(Boolean) as ViewStyle[];
 
+  const textColor = variant === "secondary" ? colors.text : (variant === "outline" || variant === "ghost") ? colors.primary : colors.white;
+
   const textStyles: TextStyle[] = [
     styles.textBase,
-    variant === "secondary" && styles.textSecondary,
-    (variant === "outline" || variant === "ghost") && styles.textOutlineGhost,
-    variant === "danger" && styles.textDanger,
+    { color: textColor },
     size === "sm" && styles.textSm,
     size === "lg" && styles.textLg,
   ].filter(Boolean) as TextStyle[];
@@ -91,8 +92,8 @@ export function Button({
           size="small"
           color={
             variant === "outline" || variant === "ghost"
-              ? COLORS.primary
-              : COLORS.white
+              ? colors.primary
+              : colors.white
           }
         />
       );
@@ -119,8 +120,8 @@ export function Button({
   };
 
   return (
-    <AnimatedPressable
-      style={[buttonStyles, animatedStyle]}
+    <Pressable
+      style={buttonStyles}
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -130,8 +131,10 @@ export function Button({
       accessibilityState={{ disabled: isDisabled }}
       accessibilityLabel={title}
     >
-      {renderContent()}
-    </AnimatedPressable>
+      <Animated.View style={[{ transform: [{ scale: scaleAnim }] }]}>
+        {renderContent()}
+      </Animated.View>
+    </Pressable>
   );
 }
 

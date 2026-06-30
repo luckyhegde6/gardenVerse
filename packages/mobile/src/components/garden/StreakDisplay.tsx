@@ -6,7 +6,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@/styles/tokens";
+import { useThemeColors, COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@/styles/tokens";
 
 interface StreakDisplayProps {
   streak: number;
@@ -14,6 +14,7 @@ interface StreakDisplayProps {
 }
 
 export function StreakDisplay({ streak, label = "Day Streak" }: StreakDisplayProps) {
+  const colors = useThemeColors();
   const scale = useSharedValue(1);
 
   useEffect(() => {
@@ -27,10 +28,10 @@ export function StreakDisplay({ streak, label = "Day Streak" }: StreakDisplayPro
   }));
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <Animated.View style={[styles.container, { backgroundColor: colors.sunYellow + '26' }, animatedStyle]}>
       <Text style={styles.fire}>{'\uD83D\uDD25'}</Text>
-      <Text style={styles.count}>{streak}</Text>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.count, { color: colors.text }]}>{streak}</Text>
+      <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
     </Animated.View>
   );
 }

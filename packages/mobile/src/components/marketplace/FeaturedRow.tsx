@@ -4,6 +4,7 @@ import {
   COLORS,
   SPACING,
   TYPOGRAPHY,
+  useThemeColors,
 } from "@/styles/tokens";
 import { MarketplaceListing } from "@/types";
 import { ProductCardHorizontal } from "@components/marketplace/ProductCardHorizontal";
@@ -19,6 +20,7 @@ function FeaturedRowComponent({
   onListingPress,
   onBuy,
 }: FeaturedRowProps) {
+  const colors = useThemeColors();
   if (listings.length === 0) {
     return null;
   }
@@ -28,7 +30,7 @@ function FeaturedRowComponent({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerEmoji}>⭐</Text>
-          <Text style={styles.headerTitle}>Featured</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Featured</Text>
         </View>
         <Text style={styles.headerSubtitle}>
           {listings.length} listing{listings.length !== 1 ? "s" : ""}

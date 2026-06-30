@@ -10,6 +10,7 @@ import {
   SPACING,
   TYPOGRAPHY,
   BORDER_RADIUS,
+  useThemeColors,
 } from "@/styles/tokens";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -27,6 +28,7 @@ function CategoryChipComponent({
   selected,
   onPress,
 }: CategoryChipProps) {
+  const colors = useThemeColors();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -45,7 +47,9 @@ function CategoryChipComponent({
     <AnimatedPressable
       style={[
         styles.base,
-        selected ? styles.selected : styles.unselected,
+        selected
+          ? { backgroundColor: colors.primary, borderColor: colors.primary }
+          : { backgroundColor: "transparent", borderColor: colors.border },
         animatedStyle,
       ]}
       onPress={onPress}
@@ -56,7 +60,7 @@ function CategoryChipComponent({
       accessibilityLabel={`${label} filter`}
     >
       {emoji ? <Text style={styles.emoji}>{emoji}</Text> : null}
-      <Text style={[styles.label, selected && styles.labelSelected]}>
+      <Text style={[styles.label, selected && { color: colors.white }]}>
         {label}
       </Text>
     </AnimatedPressable>
