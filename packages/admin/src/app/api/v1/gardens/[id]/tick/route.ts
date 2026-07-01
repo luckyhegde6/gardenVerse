@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { CropStatus } from '@prisma/client'
+import { CropStatus } from '@/lib/prisma/generated/client'
 import { requireAuth } from '@/lib/middleware/auth'
 import { success, badRequest, notFound, serverError } from '@/lib/middleware/auth'
 

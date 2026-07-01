@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireRole, success, badRequest, notFound, serverError, paginated } from '@/lib/middleware/auth'
 import { sanitizeLike } from '@/lib/sanitize'
-import type { Prisma } from '@prisma/client'
+import type { Prisma } from '@/lib/prisma/generated/client'
 
 const VALID_TOKEN_TYPES = ['GREEN_CREDITS', 'ECO_POINTS', 'REPUTATION_TOKENS'] as const
 

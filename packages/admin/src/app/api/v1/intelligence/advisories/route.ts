@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import type { Prisma } from '@prisma/client'
+import type { Prisma } from '@/lib/prisma/generated/client'
 import { success, serverError, paginated } from '@/lib/middleware/auth'
 import { sanitizeLike } from '@/lib/sanitize'
 

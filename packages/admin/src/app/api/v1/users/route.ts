@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { UserRole, type Prisma } from '@prisma/client'
+import { UserRole, type Prisma } from '@/lib/prisma/generated/client'
 import { requireRole, paginated, serverError } from '@/lib/middleware/auth'
 import { sanitizeLike } from '@/lib/sanitize'
 

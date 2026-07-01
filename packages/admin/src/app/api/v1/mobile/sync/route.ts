@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { CropStatus } from '@prisma/client'
+import { CropStatus } from '@/lib/prisma/generated/client'
 import { requireAuth, success, badRequest, serverError } from '@/lib/middleware/auth'
 
 interface SyncPayload {
