@@ -5,8 +5,8 @@ import {
   notifyGrowthReady,
   notifyDailyReward,
   notifyStreakReminder,
-} from "../services/notifications";
-import { useAuthStore } from "../stores/authStore";
+} from "@services/notifications";
+import { useAuthStore } from "@stores/authStore";
 import { useRouter } from "expo-router";
 
 export function useNotifications() {

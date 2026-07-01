@@ -1,5 +1,5 @@
 import React from "react";
-import { CropDetailScreen } from "../../src/screens/garden/CropDetailScreen";
+import { CropDetailScreen } from "@screens/garden/CropDetailScreen";
 
 export default function CropDetailRoute() {
   return <CropDetailScreen />;

@@ -1,5 +1,5 @@
-import api from './api';
-import type { PlantCollectionData, CollectionStats, SpeciesMasteryData } from '../types';
+import api from '@services/api';
+import type { PlantCollectionData, CollectionStats, SpeciesMasteryData } from "@/types";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 

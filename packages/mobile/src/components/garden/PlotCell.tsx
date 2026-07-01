@@ -1,7 +1,7 @@
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
-import { Crop } from "../../types";
-import { CropSprite } from "./CropSprite";
+import { Crop } from "@/types";
+import { CropSprite } from "@components/garden/CropSprite";
 
 interface PlotCellProps {
   crop?: Crop | null;

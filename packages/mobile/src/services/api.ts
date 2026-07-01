@@ -4,15 +4,16 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { Platform } from "react-native";
-import { getItem, setItem, removeItem, StorageKeys } from "../services/storage";
-import { logger } from "./logger";
+import Constants from "expo-constants";
+import { getItem, setItem, removeItem, StorageKeys } from "@services/storage";
+import { logger } from "@services/logger";
 
-const LOCAL_API_URL =
-  Platform.OS === "android"
-    ? "http://localhost:3000/api/v1"
-    : "http://localhost:3000/api/v1";
+const LOCAL_API_URL = "http://localhost:3000/api/v1";
 
-const BASE_URL = process.env.API_URL || LOCAL_API_URL;
+const EXPO_API_URL = Constants.expoConfig?.extra?.apiUrl as string | undefined;
+const BASE_URL =
+  EXPO_API_URL ||
+  (Platform.OS === "android" ? "http://10.0.2.2:3000/api/v1" : LOCAL_API_URL);
 
 export const api = axios.create({
   baseURL: BASE_URL,

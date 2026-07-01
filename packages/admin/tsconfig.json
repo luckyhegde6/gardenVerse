@@ -16,7 +16,8 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"],
-      "@gardenverse/*": ["../../packages/*/src"]
+      "@gardenverse/*": ["../../packages/*/src"],
+      "@prisma/client": ["./src/lib/prisma/generated/client"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

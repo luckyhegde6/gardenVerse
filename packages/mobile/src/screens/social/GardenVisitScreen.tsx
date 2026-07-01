@@ -10,15 +10,15 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ScreenHeader } from "../../components/ui/ScreenHeader";
-import { Avatar } from "../../components/ui/Avatar";
-import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import api from "../../services/api";
-import { HapticFeedback } from "../../utils/haptics";
-import { colors, spacing, typography, borderRadius } from "../../styles/theme";
+import { ScreenHeader } from "@components/ui/ScreenHeader";
+import { Avatar } from "@components/ui/Avatar";
+import { Button } from "@components/ui/Button";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
+import api from "@services/api";
+import { HapticFeedback } from "@utils/haptics";
+import { colors, spacing, typography, borderRadius } from "@/styles/theme";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

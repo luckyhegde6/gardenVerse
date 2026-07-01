@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { WeatherData } from "../../types";
-import { Card } from "../ui/Card";
+import { WeatherData } from "@/types";
+import { Card } from "@components/ui/Card";
 
 interface WeatherCardProps {
   weather: WeatherData;

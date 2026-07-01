@@ -55,41 +55,66 @@
 - [x] Phase 4: Screens (Shop, Plots, PlotDetail, RealGardener, CouponRedeem, SoilCheck; updated GardenScreen, ProfileScreen)
 - [x] Emulator verification (Pixel_7_API_34): app launches, GardenScreen renders, Profile with new menu items confirmed
 
-### Mobile App — Garden Screen Enhancement (Phase 1.5)
-**Goal: Transform GardenScreen into a playable, juicy game loop**
+### Mobile App — UX Refactor & Design System (Session 19)
 
-- [x] **1.5.1** Guided first plant: pulse hint on empty plot + seed selection bottom sheet
-  - [x] PlantSelectionSheet with seed carousel
-  - [x] Pulsing hint on center empty plot (IsometricGrid)
-  - [x] Wire starter seed grant in GardenScreen mount effect
-- [x] **1.5.2** Action feedback: haptics + Skia particles + sound for water/fertilize/harvest
-  - [x] ParticlePresets, useParticles, ParticleSystem (Skia)
-  - [x] useGameFeedback hook (haptics + sound + particles)
-  - [x] Wire into AnimatedActionButton, WaterButton, FertilizeButton, HarvestButton
-  - [x] Add placeholder sound assets (assets/sounds/*.wav)
-- [x] **1.5.3** 3D view interaction parity: raycast plant selection in Garden3D
-- [x] **1.5.4** Empty state gamification: starter seeds + animated plot hints
-- [x] **1.5.5** Growth tick visual pulse: subtle animation on all growing crops
-- [x] **1.5.6** Daily quest tracker widget on garden header
-- [x] **1.5.7** E2E tests for plant→water→harvest loop, 2D/3D toggle, quest widget
-- [x] Build debug APK and test on emulator
-- [x] Document learnings in AGENTS.md
+### Phase 0: Design System Foundation [x] Complete
+- [x] Create `src/styles/tokens.ts` — color tokens, spacing scale, typography, shadows
+- [x] Upgrade Card — Reanimated press animation (scale 1→0.96), hero image slot
+- [x] Upgrade Button — Reanimated spring press, iconPosition prop
+- [x] Upgrade Avatar — broken image fallback (catch load error → initials). Never show raw URLs.
+- [x] Upgrade Modal — Replace RN Animated with Reanimated, backdrop blur
+- [x] Upgrade ProgressBar — Animated fill with `withTiming`
+- [x] Upgrade EmptyState — Fade-in animation
+- [x] Create MetricCard — Icon + value + label + trend arrow
+- [x] Create ErrorFallback — Per-screen "Something went wrong" + retry
+- [x] Create PageHeader — Back + title + actions
+- [x] Create SectionHeader — Title + optional "See All"
+- [x] Create CollapsibleSection — Expand/collapse with Reanimated
+- [x] Create LoadingCard — Skeleton card for lists
 
-## Phase 2: Progression & Retention (Week 2-3)
-- [ ] **2.1** XP floating numbers + level-up celebration modal
-- [ ] **2.2** Crop detail modal on long-press (growth timeline, care history, predicted harvest)
-- [ ] **2.3** Daily quest integration on garden header
-- [ ] **2.4** Sound asset creation (plant, water, fertilize, harvest, levelup)
-- [ ] **2.5** Starter seed grant API integration
+### Phase 1: Garden Immersive Overhaul [x] Complete
+- [x] Create GardenViewport — Full-width 60% viewport with layer system
+- [x] Create EnvironmentEffects — Skia weather (rain, sun, clouds, night, storm)
+- [x] Create FloatingActionButton — 3 FABs (Scan, Water, Soil) with spring animation
+- [x] Create PlantHealthBadge — Color-coded dot+label per crop (healthy/dry/sick/growing)
+- [x] Create SyncWidget — IoT sensor card (online/offline, moisture, humidity, temp, last sync)
+- [x] Create XpBar — Compact animated progress bar
+- [x] Create StreakDisplay — Fire pill animated badge
+- [x] Delete GrowthOverlay.tsx (774 lines) — replaced by compact HUD
+- [x] Rewrite GardenScreen (1317→~650 lines) — immersive layout, compact HUD, collapsible sections
 
-## Phase 3: Polish & Depth (Week 3-4)
-- [ ] **3.1** Seasonal garden themes (background, soil color, ambient particles)
-- [ ] **3.2** Weather particle effects (rain, snow, heat shimmer)
-- [ ] **3.3** Drag-to-water-multiple gesture
-- [ ] **3.4** Garden layout save/load templates
-- [ ] **3.5** Friend garden preview in plot selector
+### Phase 2: Marketplace Redesign [ ] Pending
+- [ ] Create ProductCard — Image (emoji fallback), title, price, seller, badge, Buy button
+- [ ] Create ProductCardHorizontal — Horizontal variant for featured/trending
+- [ ] Create FeaturedRow — Horizontal scroll section with header
+- [ ] Create TrendingRow — Same, "Trending 🔥" header
+- [ ] Create BuyModal — Confirmation + quantity + coupon + confetti
+- [ ] Create CategoryChip — Styled chip matching tokens
+- [ ] Create SearchBar — Debounced 300ms, clear button, focus animation
+- [ ] Create ListingSkeleton — Card skeleton for marketplace
+- [ ] Create EmptyMarketplace — Illustration + message + CTA
+- [ ] Rewrite MarketplaceScreen — SearchBar → CategoryChips → FeaturedRow → TrendingRow → ProductCard FlatList
 
-## Phase 4: Social & Competitive (Week 4-5)
-- [ ] **4.1** Garden visit + rating feature
-- [ ] **4.2** Weekly "Best Garden" contest banner
-- [ ] **4.3** Social sharing (auto-generated garden cards)
+### Phase 3: Community Redesign [ ] Pending
+- [ ] Create NearbyGardenerCard — Avatar, username, level, location, score, Follow
+- [ ] Create LeaderboardCard — Rank badges (#1 gold, #2 silver, #3 bronze), staggered entry
+- [ ] Create CommunityGroupCard — Image/fallback, name, member count, Join button
+- [ ] Create EventCard — Title, date, rewards, Participate button
+- [ ] Create ActivityFeed — Icon + text + timestamp list
+- [ ] Create CommunitySearchBar — Debounced search
+- [ ] Rewrite CommunityScreen — Segmented control + all new cards
+
+### Phase 4: State Management & Performance [ ] Pending
+- [ ] React Query migration for all API calls
+- [ ] Configure query staleTime/gcTime per domain
+- [ ] FlashList for marketplace and community lists
+- [ ] React.memo on card components
+- [ ] Lazy-load Garden3D (dynamic import for 3D mode)
+- [ ] expo-image with memory-disk caching
+
+### Phase 5: Polish [ ] Pending
+- [ ] Per-screen ErrorBoundary
+- [ ] Staggered card entrance animations
+- [ ] Offline banner + stale cache display
+- [ ] Verify Avatar never shows raw URLs
+- [ ] Path alias migration (@/ → src/)

@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { colors, spacing, typography } from "../../styles/theme";
-import { Button } from "./Button";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { SPACING, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
+import { Button } from "@components/ui/Button";
 
 interface EmptyStateProps {
   icon?: string;
@@ -9,21 +10,22 @@ interface EmptyStateProps {
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
-  /** @deprecated Use StyleSheet instead of className */
-  className?: string;
 }
 
 export function EmptyState({
-  icon = "🪴",
+  icon = "\u{1FAB4}",
   title,
   description,
   actionLabel,
   onAction,
-  className: _className,
 }: EmptyStateProps) {
+  const colors = useThemeColors();
   return (
-    <View style={styles.container}>
-      <View style={styles.iconContainer}>
+    <Animated.View
+      entering={FadeIn.duration(400)}
+      style={styles.container}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: colors.surfaceSecondary }]}>
         <Text style={styles.icon}>{icon}</Text>
       </View>
       <Text style={styles.title}>{title}</Text>
@@ -35,7 +37,7 @@ export function EmptyState({
           <Button title={actionLabel} onPress={onAction} variant="primary" />
         </View>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -46,31 +48,30 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxl,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xxl,
   },
   iconContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.md,
+    marginBottom: SPACING.md,
   },
   icon: {
     fontSize: 36,
   },
   title: {
-    ...typography.h3,
+    ...TYPOGRAPHY.headingM,
     textAlign: "center",
-    marginBottom: spacing.xs,
+    marginBottom: SPACING.xs,
   },
   description: {
-    ...typography.bodySmall,
+    ...TYPOGRAPHY.bodySmall,
     textAlign: "center",
     lineHeight: 20,
-    marginBottom: spacing.lg,
+    marginBottom: SPACING.lg,
   },
   actionContainer: {
     minWidth: 160,

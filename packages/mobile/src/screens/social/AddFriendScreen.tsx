@@ -8,15 +8,15 @@ import {
   Keyboard,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ScreenHeader } from "../../components/ui/ScreenHeader";
-import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
-import { Avatar } from "../../components/ui/Avatar";
-import { Badge } from "../../components/ui/Badge";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import api from "../../services/api";
-import { triggerHaptic } from "../../utils/haptics";
-import { colors, spacing, typography, borderRadius } from "../../styles/theme";
+import { ScreenHeader } from "@components/ui/ScreenHeader";
+import { Button } from "@components/ui/Button";
+import { Card } from "@components/ui/Card";
+import { Avatar } from "@components/ui/Avatar";
+import { Badge } from "@components/ui/Badge";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
+import api from "@services/api";
+import { triggerHaptic } from "@utils/haptics";
+import { colors, spacing, typography, borderRadius } from "@/styles/theme";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

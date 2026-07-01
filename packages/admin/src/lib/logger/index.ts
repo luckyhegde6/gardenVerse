@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import type { Prisma } from '@prisma/client'
+import type { Prisma } from '@/lib/prisma/generated/client'
 import { prisma } from '@/lib/prisma/client'
 
 export type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'

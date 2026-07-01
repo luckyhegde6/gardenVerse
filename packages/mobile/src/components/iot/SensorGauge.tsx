@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { ProgressBar } from "../ui/ProgressBar";
+import { ProgressBar } from "@components/ui/ProgressBar";
 
 interface SensorGaugeProps {
   label: string;

@@ -1,5 +1,5 @@
-import { Crop, CropStatus, GardenType } from "../types"
-// import api from "./api"
+import { Crop, CropStatus, GardenType } from "@/types"
+// import api from "@services/api"
 
 // A tick happens every TICK_INTERVAL_MS of real time.
 const TICK_INTERVAL_MS = 30_000

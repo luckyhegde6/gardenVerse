@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, ScrollView } from "react-native";
-import { AiScanResult } from "../../types";
-import { Card } from "../ui/Card";
-import { Badge } from "../ui/Badge";
-import { ProgressBar } from "../ui/ProgressBar";
+import { AiScanResult } from "@/types";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { ProgressBar } from "@components/ui/ProgressBar";
 
 interface ScanResultProps {
   result: AiScanResult;

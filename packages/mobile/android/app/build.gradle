@@ -156,12 +156,15 @@ android {
         }
     }
 
-    // Limit build to arm64-v8a only (emulator supports ARM binary translation)
+    // Build for x86_64 (emulator) + arm64-v8a
+    // arm64-v8a alone crashed with Hermes SIGSEGV under ARM binary translation on x86_64 emulator
+    // x86_64 alone had missing expo-av native libs (AAR resolution issue)
+    // Including both ensures Gradle resolves all AARs correctly
     splits {
         abi {
             enable true
             reset()
-            include 'arm64-v8a'
+            include 'x86_64', 'arm64-v8a'
             universalApk false
         }
     }

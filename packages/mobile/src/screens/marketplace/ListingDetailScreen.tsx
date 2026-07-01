@@ -8,13 +8,13 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-import { Avatar } from "../../components/ui/Avatar";
-import { useMarketplace } from "../../hooks/useMarketplace";
-import { formatRelativeTime } from "../../utils/formatting";
-import { MarketplaceListing } from "../../types";
+import { Button } from "@components/ui/Button";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { Avatar } from "@components/ui/Avatar";
+import { useMarketplace } from "@hooks/useMarketplace";
+import { formatRelativeTime } from "@utils/formatting";
+import { MarketplaceListing } from "@/types";
 
 export function ListingDetailScreen() {
   const router = useRouter();

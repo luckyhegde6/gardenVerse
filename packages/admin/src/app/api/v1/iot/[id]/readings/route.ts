@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import type { Prisma } from '@prisma/client'
-import { SensorType } from '@prisma/client'
+import { SensorType, type Prisma } from '@/lib/prisma/generated/client'
 import { requireAuth, success, badRequest, notFound, serverError, paginated } from '@/lib/middleware/auth'
 import { startRequestLog, finishRequestLog, logApiError } from '@/lib/middleware/logging'
 

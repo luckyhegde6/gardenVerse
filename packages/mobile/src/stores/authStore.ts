@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import { User } from "../types";
-import AuthService, { LoginRequest, RegisterRequest } from "../services/auth";
-import { getItem, setItem, removeItem, StorageKeys } from "../services/storage";
+import { User } from "@/types";
+import AuthService, { LoginRequest, RegisterRequest } from "@services/auth";
+import { getItem, setItem, removeItem, StorageKeys } from "@services/storage";
 
 interface AuthState {
   user: User | null;

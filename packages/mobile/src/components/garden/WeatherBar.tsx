@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { WeatherData } from "../../types";
-import { spacing, borderRadius } from "../../styles/theme";
+import { WeatherData } from "@/types";
+import { spacing, borderRadius } from "@/styles/theme";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

@@ -10,11 +10,11 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useRouter } from "expo-router";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { useAuthStore } from "../../stores/authStore";
-import { validateEmail, validatePassword } from "../../utils/validation";
-import { AuthStackParamList } from "../../types";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { useAuthStore } from "@stores/authStore";
+import { validateEmail, validatePassword } from "@utils/validation";
+import { AuthStackParamList } from "@/types";
 
 type LoginNavProp = NativeStackNavigationProp<AuthStackParamList, "Login">;
 

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { View, Text } from 'react-native'
-import { AnimatedActionButton } from './AnimatedActionButton'
-import { Crop, CropStatus } from '../../types'
+import { AnimatedActionButton } from '@components/garden/AnimatedActionButton'
+import { Crop, CropStatus } from "@/types"
 
 
 interface HarvestButtonProps {

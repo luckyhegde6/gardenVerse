@@ -1,4 +1,5 @@
 import { PrismaClient, GardenType, CropStatus } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcryptjs';
 import { extraPlants } from './extra-plants';
@@ -8,7 +9,10 @@ if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = 'postgresql://gardenverse:gardenverse123@localhost:5432/gardenverse?schema=public';
 }
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: (process.env.DATABASE_URL ?? '').trim(),
+});
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const tables = [

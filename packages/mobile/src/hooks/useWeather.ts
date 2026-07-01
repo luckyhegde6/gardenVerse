@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import api from "../services/api";
-import { WeatherData } from "../types";
-import { useLocation } from "./useLocation";
+import api from "@services/api";
+import { WeatherData } from "@/types";
+import { useLocation } from "@hooks/useLocation";
 
 interface UseWeatherReturn {
   weather: WeatherData | null;

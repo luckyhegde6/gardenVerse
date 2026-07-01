@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, FlatList } from "react-native";
-import { AiScanResult } from "../../types";
-import { Card } from "../ui/Card";
-import { Badge } from "../ui/Badge";
-import { formatRelativeTime } from "../../utils/formatting";
+import { AiScanResult } from "@/types";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { formatRelativeTime } from "@utils/formatting";
 
 interface ScanHistoryProps {
   scans: AiScanResult[];

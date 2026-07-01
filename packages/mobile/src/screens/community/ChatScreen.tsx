@@ -9,9 +9,9 @@ import {
   Platform,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { MessageBubble } from "../../components/community/MessageBubble";
-import { useAuthStore } from "../../stores/authStore";
-import { Message } from "../../types";
+import { MessageBubble } from "@components/community/MessageBubble";
+import { useAuthStore } from "@stores/authStore";
+import { Message } from "@/types";
 
 export function ChatScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();

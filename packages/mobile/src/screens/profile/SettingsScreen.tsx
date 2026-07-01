@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useRouter } from "expo-router";
-// import { ScreenHeader } from "../../components/ui/ScreenHeader";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { Card } from "../../components/ui/Card";
-import { useAuthStore } from "../../stores/authStore";
-import { useTheme } from "../../styles/ThemeContext";
-import { lightTheme } from "../../styles/theme";
-import { gameSaveSync } from "../../services/gameSaveSync";
-import { useGardenStore } from "../../stores/gardenStore";
-import { useNetworkStatus } from "../../hooks/useNetworkStatus";
-import { useToast } from "../../components/ui/Toast";
-import { getItem, removeItem } from "../../utils/storage";
+// import { ScreenHeader } from "@components/ui/ScreenHeader";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { Card } from "@components/ui/Card";
+import { useAuthStore } from "@stores/authStore";
+import { useTheme } from "@/styles/ThemeContext";
+import { lightTheme } from "@/styles/theme";
+import { gameSaveSync } from "@services/gameSaveSync";
+import { useGardenStore } from "@stores/gardenStore";
+import { useNetworkStatus } from "@hooks/useNetworkStatus";
+import { useToast } from "@components/ui/Toast";
+import { getItem, removeItem } from "@utils/storage";
 
 export function SettingsScreen() {
   const _router = useRouter();

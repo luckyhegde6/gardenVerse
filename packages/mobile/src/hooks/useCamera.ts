@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { ensurePermission } from "../utils/permissions";
+import { ensurePermission } from "@utils/permissions";
 
 interface UseCameraReturn {
   hasPermission: boolean | null;

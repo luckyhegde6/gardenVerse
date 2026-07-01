@@ -8,11 +8,11 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { usePlotsStore } from "../../stores/plotsStore";
-import { useGardenStore } from "../../stores/gardenStore";
-import { SoilCheckResult } from "../../types";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import { Divider } from "../../components/ui/Divider";
+import { usePlotsStore } from "@stores/plotsStore";
+import { useGardenStore } from "@stores/gardenStore";
+import { SoilCheckResult } from "@/types";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
+import { Divider } from "@components/ui/Divider";
 
 function getQualityColor(quality: number): string {
   if (quality >= 70) return "#22c55e";

@@ -9,12 +9,12 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { usePlotsStore } from "../../stores/plotsStore";
-import { useGardenStore } from "../../stores/gardenStore";
-import { useAuthStore } from "../../stores/authStore";
-import { GardenType, Crop, SoilCheckResult } from "../../types";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import { Badge } from "../../components/ui/Badge";
+import { usePlotsStore } from "@stores/plotsStore";
+import { useGardenStore } from "@stores/gardenStore";
+import { useAuthStore } from "@stores/authStore";
+import { GardenType, Crop, SoilCheckResult } from "@/types";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
+import { Badge } from "@components/ui/Badge";
 
 function getSoilColor(quality: number): string {
   if (quality >= 70) return "#22c55e";

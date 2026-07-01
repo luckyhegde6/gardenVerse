@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Dimensions } from "react-native";
 import axios from "axios";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import HapticFeedback from "../../utils/haptics";
-import { NearbyGardener } from "../../types";
+import { LoadingSpinner } from "@components/ui/LoadingSpinner";
+import HapticFeedback from "@utils/haptics";
+import { NearbyGardener } from "@/types";
 
 const { width: _width } = Dimensions.get("window");
 

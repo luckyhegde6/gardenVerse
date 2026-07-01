@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import api from "../services/api";
-import PlotsService from "../services/plots";
-import { Garden, Crop, CropStatus } from "../types";
-import { HapticFeedback } from "../utils/haptics";
+import api from "@services/api";
+import PlotsService from "@services/plots";
+import { Garden, Crop, CropStatus } from "@/types";
+import { HapticFeedback } from "@utils/haptics";
 
 interface GardenState {
   gardens: Garden[];

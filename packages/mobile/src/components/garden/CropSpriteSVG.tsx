@@ -1,6 +1,6 @@
 import React from "react";
 import { G, Circle, Path, Ellipse, Rect } from "react-native-svg";
-import { Crop, CropStatus } from "../../types";
+import { Crop, CropStatus } from "@/types";
 
 interface CropSpriteSVGProps {
   crop: Crop;

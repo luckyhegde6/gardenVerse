@@ -6,13 +6,13 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from "react-native";
-import { useIot } from "../../hooks/useIot";
-import { DeviceCard } from "../../components/iot/DeviceCard";
-import { SensorGauge } from "../../components/iot/SensorGauge";
-import { SensorChart } from "../../components/iot/SensorChart";
-import { Card } from "../../components/ui/Card";
-import { EmptyState } from "../../components/ui/EmptyState";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
+import { useIot } from "@hooks/useIot";
+import { DeviceCard } from "@components/iot/DeviceCard";
+import { SensorGauge } from "@components/iot/SensorGauge";
+import { SensorChart } from "@components/iot/SensorChart";
+import { Card } from "@components/ui/Card";
+import { EmptyState } from "@components/ui/EmptyState";
+import { SkeletonLoader } from "@components/ui/SkeletonLoader";
 
 export function IotDashboardScreen() {
   const { devices, readings, isLoading, error, refresh } = useIot();

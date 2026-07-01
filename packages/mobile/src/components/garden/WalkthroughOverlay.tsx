@@ -7,9 +7,9 @@ import {
   StyleSheet,
   Platform,
 } from "react-native";
-import { getItem, setItem, StorageKeys } from "../../utils/storage";
-import { colors, spacing, borderRadius, typography } from "../../styles/theme";
-import HapticFeedback from "../../utils/haptics";
+import { getItem, setItem, StorageKeys } from "@utils/storage";
+import { colors, spacing, borderRadius, typography } from "@/styles/theme";
+import HapticFeedback from "@utils/haptics";
 
 interface WalkthroughStep {
   title: string;

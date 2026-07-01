@@ -1,5 +1,12 @@
-import React, { useEffect, useRef } from "react";
-import { View, Animated, Text } from "react-native";
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolate,
+} from "react-native-reanimated";
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
 
 interface ProgressBarProps {
   value: number;
@@ -10,7 +17,6 @@ interface ProgressBarProps {
   color?: string;
   trackColor?: string;
   animated?: boolean;
-  className?: string;
 }
 
 export function ProgressBar({
@@ -19,54 +25,78 @@ export function ProgressBar({
   showLabel = false,
   labelPosition = "right",
   height = 8,
-  color = "#22c55e",
-  trackColor = "#e5e7eb",
+  color = COLORS.leafGreen,
+  trackColor = COLORS.border,
   animated = true,
-  className = "",
 }: ProgressBarProps) {
-  const animatedValue = useRef(new Animated.Value(0)).current;
+  const colors = useThemeColors();
+  const progress = useSharedValue(0);
   const percentage = Math.min((value / maxValue) * 100, 100);
 
   useEffect(() => {
     if (animated) {
-      Animated.timing(animatedValue, {
-        toValue: percentage,
-        duration: 800,
-        useNativeDriver: true,
-      }).start();
+      progress.value = withTiming(percentage, { duration: 800 });
     } else {
-      animatedValue.setValue(percentage);
+      progress.value = percentage;
     }
-  }, [percentage, animated, animatedValue]);
+  }, [percentage, animated, progress]);
 
-  const width = animated
-    ? animatedValue.interpolate({
-        inputRange: [0, 100],
-        outputRange: ["0%", "100%"],
-      })
-    : `${percentage}%`;
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${interpolate(progress.value, [0, 100], [0, 100])}%`,
+  }));
 
   return (
-    <View className={`flex-row items-center ${className}`}>
+    <View style={styles.container}>
       {showLabel && labelPosition === "top" && (
-        <Text className="text-xs text-gray-500 mb-1">
-          {Math.round(percentage)}%
-        </Text>
+        <Text style={[styles.labelTop, { color: colors.textSecondary }]}>{Math.round(percentage)}%</Text>
       )}
       <View
-        className="flex-1 rounded-full overflow-hidden"
-        style={{ backgroundColor: trackColor, height }}
+        style={[
+          styles.track,
+          { backgroundColor: trackColor, height },
+        ]}
       >
         <Animated.View
-          className="rounded-full absolute left-0 top-0 bottom-0"
-          style={{ backgroundColor: color, width: width as any }}
+          style={[
+            styles.fill,
+            { backgroundColor: color, height },
+            animatedStyle,
+          ]}
         />
       </View>
       {showLabel && labelPosition === "right" && (
-        <Text className="text-xs text-gray-500 ml-2 min-w-[32px]">
-          {Math.round(percentage)}%
-        </Text>
+        <Text style={[styles.labelRight, { color: colors.textSecondary }]}>{Math.round(percentage)}%</Text>
       )}
     </View>
   );
 }
+
+export default ProgressBar;
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  track: {
+    flex: 1,
+    borderRadius: BORDER_RADIUS.full,
+    overflow: "hidden",
+  },
+  fill: {
+    borderRadius: BORDER_RADIUS.full,
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+  },
+  labelTop: {
+    ...TYPOGRAPHY.caption,
+    marginBottom: SPACING.xs,
+  },
+  labelRight: {
+    ...TYPOGRAPHY.caption,
+    marginLeft: SPACING.sm,
+    minWidth: 32,
+  },
+});

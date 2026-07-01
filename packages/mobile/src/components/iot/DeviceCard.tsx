@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { IotDevice } from "../../types";
-import { formatRelativeTime } from "../../utils/formatting";
+import { IotDevice } from "@/types";
+import { formatRelativeTime } from "@utils/formatting";
 
 interface DeviceCardProps {
   device: IotDevice;

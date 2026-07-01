@@ -1,5 +1,6 @@
-import React from "react";
-import { View, Image, Text } from "react-native";
+import React, { useState } from "react";
+import { View, Image, Text, StyleSheet } from "react-native";
+import { COLORS, BORDER_RADIUS, useThemeColors } from "@/styles/tokens";
 
 interface AvatarProps {
   uri?: string;
@@ -7,22 +8,33 @@ interface AvatarProps {
   size?: "sm" | "md" | "lg" | "xl";
   showOnline?: boolean;
   isOnline?: boolean;
-  className?: string;
 }
 
-const sizeMap = {
-  sm: { container: 32, font: "text-xs" },
-  md: { container: 40, font: "text-sm" },
-  lg: { container: 56, font: "text-lg" },
-  xl: { container: 80, font: "text-2xl" },
+const sizeMap: Record<string, { container: number; font: number }> = {
+  sm: { container: 32, font: 12 },
+  md: { container: 40, font: 16 },
+  lg: { container: 56, font: 24 },
+  xl: { container: 80, font: 32 },
 };
 
-const onlineDotSize = {
+const onlineDotSize: Record<string, number> = {
   sm: 8,
   md: 10,
   lg: 12,
   xl: 14,
 };
+
+const avatarColors = [
+  COLORS.primary,
+  "#15803d",
+  "#166534",
+  "#14532d",
+  "#ca8a04",
+  "#a16207",
+  "#854d0e",
+  COLORS.skyBlue,
+  "#14b8a6",
+];
 
 function getInitials(name?: string): string {
   if (!name) return "?";
@@ -33,22 +45,11 @@ function getInitials(name?: string): string {
 
 function getColorFromName(name?: string): string {
   if (!name) return "#9ca3af";
-  const colors = [
-    "#16a34a",
-    "#15803d",
-    "#166534",
-    "#14532d",
-    "#ca8a04",
-    "#a16207",
-    "#854d0e",
-    "#06b6d4",
-    "#14b8a6",
-  ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return colors[Math.abs(hash) % colors.length];
+  return avatarColors[Math.abs(hash) % avatarColors.length];
 }
 
 export function Avatar({
@@ -57,43 +58,85 @@ export function Avatar({
   size = "md",
   showOnline = false,
   isOnline = false,
-  className = "",
 }: AvatarProps) {
+  const colors = useThemeColors();
+  const [imageError, setImageError] = useState(false);
   const dim = sizeMap[size];
   const dotSize = onlineDotSize[size];
+  const showImage = uri && !imageError;
 
   return (
-    <View className={`relative ${className}`}>
-      {uri ? (
+    <View style={styles.container}>
+      {showImage ? (
         <Image
           source={{ uri }}
-          className="rounded-full"
-          style={{ width: dim.container, height: dim.container }}
+          style={[
+            styles.image,
+            { width: dim.container, height: dim.container },
+          ]}
+          onError={() => setImageError(true)}
         />
       ) : (
         <View
-          className="rounded-full items-center justify-center"
-          style={{
-            width: dim.container,
-            height: dim.container,
-            backgroundColor: getColorFromName(name),
-          }}
+          style={[
+            styles.fallback,
+            {
+              width: dim.container,
+              height: dim.container,
+              backgroundColor: getColorFromName(name),
+            },
+          ]}
         >
-          <Text className={`text-white font-bold ${dim.font}`}>
+          <Text
+            style={[
+              styles.initials,
+              { fontSize: dim.font * 0.6, lineHeight: dim.font * 0.8 },
+            ]}
+          >
             {getInitials(name)}
           </Text>
         </View>
       )}
       {showOnline && (
         <View
-          className="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-white"
-          style={{
-            width: dotSize,
-            height: dotSize,
-            backgroundColor: isOnline ? "#22c55e" : "#9ca3af",
-          }}
+          style={[
+            styles.onlineDot,
+            {
+              width: dotSize,
+              height: dotSize,
+              borderRadius: dotSize / 2,
+              backgroundColor: isOnline ? colors.leafGreen : "#9ca3af",
+              borderColor: colors.white,
+            },
+          ]}
         />
       )}
     </View>
   );
 }
+
+export default Avatar;
+
+const styles = StyleSheet.create({
+  container: {
+    position: "relative",
+  },
+  image: {
+    borderRadius: BORDER_RADIUS.full,
+  },
+  fallback: {
+    borderRadius: BORDER_RADIUS.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  initials: {
+    color: COLORS.white,
+    fontWeight: "700",
+  },
+  onlineDot: {
+    position: "absolute",
+    bottom: -1,
+    right: -1,
+    borderWidth: 2,
+  },
+});

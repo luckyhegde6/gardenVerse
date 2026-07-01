@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import { Particle, ParticleType, createParticles, PARTICLE_CONFIG } from './ParticlePresets';
+import { Particle, ParticleType, createParticles, PARTICLE_CONFIG } from '@components/garden/ParticlePresets';
 
 interface ParticleState {
   particles: Particle[];

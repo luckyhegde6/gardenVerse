@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, ScrollView } from "react-native";
-import { WeatherForecast } from "../../types";
+import { WeatherForecast } from "@/types";
 import dayjs from "dayjs";
 
 interface ForecastCardProps {

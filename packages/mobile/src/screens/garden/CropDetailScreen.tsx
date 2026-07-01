@@ -1,23 +1,23 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useGarden } from "../../hooks/useGarden";
-import { ProgressBar } from "../../components/ui/ProgressBar";
-import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-import { WaterButton } from "../../components/garden/WaterButton";
-import { FertilizeButton } from "../../components/garden/FertilizeButton";
-import { HarvestButton } from "../../components/garden/HarvestButton";
-import { CropSprite } from "../../components/garden/CropSprite";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { EmptyState } from "../../components/ui/EmptyState";
+import { useGarden } from "@hooks/useGarden";
+import { ProgressBar } from "@components/ui/ProgressBar";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { WaterButton } from "@components/garden/WaterButton";
+import { FertilizeButton } from "@components/garden/FertilizeButton";
+import { HarvestButton } from "@components/garden/HarvestButton";
+import { CropSprite } from "@components/garden/CropSprite";
+import { LoadingSpinner } from "@components/ui/LoadingSpinner";
+import { EmptyState } from "@components/ui/EmptyState";
 import {
   formatDate,
   formatRelativeTime,
   formatGrowthStage,
-} from "../../utils/formatting";
-import { CropStatus } from "../../types";
-import HapticFeedback from "../../utils/haptics";
+} from "@utils/formatting";
+import { CropStatus } from "@/types";
+import HapticFeedback from "@utils/haptics";
 
 function getHealthTip(health: number): string {
   if (health >= 80) return "⭐ Excellent condition! Keep up the good work.";

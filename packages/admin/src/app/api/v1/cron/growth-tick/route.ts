@@ -12,7 +12,7 @@
 
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { CropStatus } from '@prisma/client'
+import { CropStatus } from '@/lib/prisma/generated/client'
 import { success, unauthorized, serverError } from '@/lib/middleware/auth'
 import { getTask, registerTask, recordTaskRun } from '@/lib/cron'
 import logFn from '@/lib/logger'

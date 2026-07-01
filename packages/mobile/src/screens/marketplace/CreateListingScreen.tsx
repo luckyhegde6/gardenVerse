@@ -10,11 +10,11 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { Chip } from "../../components/ui/Chip";
-import { useMarketplace } from "../../hooks/useMarketplace";
-import { validatePrice } from "../../utils/validation";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { Chip } from "@components/ui/Chip";
+import { useMarketplace } from "@hooks/useMarketplace";
+import { validatePrice } from "@utils/validation";
 
 const CATEGORIES = ["seeds", "fertilizers", "tools", "services", "harvest"];
 

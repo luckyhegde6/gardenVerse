@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { requireAuth, success, badRequest, serverError, paginated } from '@/lib/middleware/auth'
-import type { Prisma, ListingStatus } from '@prisma/client'
+import type { Prisma, ListingStatus } from '@/lib/prisma/generated/client'
 import { sanitizeLike } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest) {

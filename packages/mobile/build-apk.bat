@@ -55,7 +55,7 @@ if /I "%SKIP_BUNDLE%"=="skipbundle" (
     call npx.cmd @react-native-community/cli bundle ^
         --platform android ^
         --dev false ^
-        --entry-file app/index.ts ^
+        --entry-file index.js ^
         --bundle-output "%BUNDLE_FILE%" ^
         --assets-dest android\app\src\main\res ^
         --reset-cache ^
@@ -79,7 +79,7 @@ echo.
 
 cd android
 
-set GRADLE_ARGS=assembleDebug -PreactNativeArchitectures=arm64-v8a -x lint -x test --no-daemon --max-workers 2
+set GRADLE_ARGS=assembleDebug -x lint -x test --no-daemon --max-workers 2
 
 rem Skip expo-updates kapt task (Room DBVerifier crashes on Windows)
 if /I "%SKIP_KAPT%"=="skipkapt" (

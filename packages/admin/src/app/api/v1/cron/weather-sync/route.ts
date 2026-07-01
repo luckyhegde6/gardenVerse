@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import type { Prisma } from '@prisma/client'
+import type { Prisma } from '@/lib/prisma/generated/client'
 import { success, serverError } from '@/lib/middleware/auth'
 import { listTasks, recordTaskRun } from '@/lib/cron'
 

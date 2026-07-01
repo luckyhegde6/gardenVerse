@@ -9,9 +9,9 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { Button } from "../../components/ui/Button";
-import { AuthStackParamList } from "../../types";
-import AuthService from "../../services/auth";
+import { Button } from "@components/ui/Button";
+import { AuthStackParamList } from "@/types";
+import AuthService from "@services/auth";
 type OTPVerifyRouteProp = RouteProp<AuthStackParamList, "OTPVerify">;
 
 export function OTPVerifyScreen() {

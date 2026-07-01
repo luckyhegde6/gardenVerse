@@ -9,17 +9,17 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { useAuthStore } from "../../stores/authStore";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { useAuthStore } from "@stores/authStore";
 import {
   validateEmail,
   validatePassword,
   validateUsername,
   validateConfirmPassword,
   validateInviteCode,
-} from "../../utils/validation";
-import { AuthStackParamList } from "../../types";
+} from "@utils/validation";
+import { AuthStackParamList } from "@/types";
 
 type RegisterNavProp = NativeStackNavigationProp<AuthStackParamList, "Register">;
 

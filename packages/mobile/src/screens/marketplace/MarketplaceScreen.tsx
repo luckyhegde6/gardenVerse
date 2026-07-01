@@ -2,224 +2,377 @@ import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  RefreshControl,
-  Dimensions,
+  ScrollView,
+  Pressable,
+  StyleSheet,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
-import { useMarketplace } from "../../hooks/useMarketplace";
-import { ListingCard } from "../../components/marketplace/ListingCard";
-import { CategoryFilter } from "../../components/marketplace/CategoryFilter";
-// import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { EmptyState } from "../../components/ui/EmptyState";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import { MarketplaceListing } from "../../types";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  FadeInDown,
+} from "react-native-reanimated";
+import { SearchBar } from "@components/marketplace/SearchBar";
+import { CategoryChip } from "@components/marketplace/CategoryChip";
+import { ProductCard } from "@components/marketplace/ProductCard";
+import { FeaturedRow } from "@components/marketplace/FeaturedRow";
+import { TrendingRow } from "@components/marketplace/TrendingRow";
+import { BuyModal } from "@components/marketplace/BuyModal";
+import { ListingSkeleton } from "@components/marketplace/ListingSkeleton";
+import { EmptyMarketplace } from "@components/marketplace/EmptyMarketplace";
+import { useMarketplace } from "@hooks/useMarketplace";
+import { MarketplaceListing } from "@/types";
+import { useThemeColors, SPACING, TYPOGRAPHY } from "@/styles/tokens";
 
-const { width } = Dimensions.get("window");
+// ─── Constants ───────────────────────────────────────────────────────────────
 
-const FEATURED_EMOJIS: Record<string, string> = {
-  seeds: "🌱",
-  fertilizers: "🧪",
-  tools: "🔧",
-  services: "🛠️",
-  harvest: "🌾",
-};
+const CATEGORIES = [
+  { label: "All", emoji: "\uD83D\uDD00" },
+  { label: "Seeds", emoji: "\uD83C\uDF31" },
+  { label: "Fertilizers", emoji: "\uD83E\uDDEA" },
+  { label: "Tools", emoji: "\uD83D\uDD27" },
+  { label: "Services", emoji: "\uD83D\uDEE0\uFE0F" },
+  { label: "Harvest", emoji: "\uD83C\uDF3E" },
+] as const;
+
+// ─── Animated FAB ────────────────────────────────────────────────────────────
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function FAB({ onPress }: { onPress: () => void }) {
+  const colors = useThemeColors();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = useCallback(() => {
+    scale.value = withSpring(0.92, { damping: 15, stiffness: 300 });
+  }, [scale]);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  }, [scale]);
+
+  return (
+    <AnimatedPressable
+      style={[
+        styles.fab,
+        {
+          backgroundColor: colors.primary,
+          shadowColor: colors.black,
+        },
+        animatedStyle,
+      ]}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      accessibilityRole="button"
+      accessibilityLabel="Create listing"
+    >
+      <Text style={[styles.fabText, { color: colors.white }]}>+</Text>
+    </AnimatedPressable>
+  );
+}
+
+// ─── Screen ──────────────────────────────────────────────────────────────────
 
 export function MarketplaceScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [buyModalVisible, setBuyModalVisible] = useState(false);
+  const [selectedListing, setSelectedListing] =
+    useState<MarketplaceListing | null>(null);
 
-  const { listings, isLoading, isRefreshing, error: _error, refresh, loadMore } =
-    useMarketplace({
-      category: selectedCategory === "all" ? undefined : selectedCategory,
-      search: searchQuery || undefined,
-    });
+  const {
+    listings,
+    isLoading,
+    isRefreshing,
+    error,
+    refresh,
+    loadMore,
+  } = useMarketplace({
+    category:
+      selectedCategory === "all" ? undefined : selectedCategory.toLowerCase(),
+    search: searchQuery || undefined,
+  });
+
+  const isFiltered =
+    selectedCategory !== "all" || searchQuery.length > 0;
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleListingPress = useCallback(
     (listing: MarketplaceListing) => {
-      router.push({ pathname: "/listing-detail/[listingId]", params: { listingId: listing.id } });
+      router.push({
+        pathname: "/listing-detail/[listingId]",
+        params: { listingId: listing.id },
+      });
     },
     [router],
   );
 
-  const filteredListings = searchQuery
-    ? listings.filter(
-        (l) =>
-          l.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          l.description?.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : listings;
+  const handleBuy = useCallback((listing: MarketplaceListing) => {
+    setSelectedListing(listing);
+    setBuyModalVisible(true);
+  }, []);
 
-  const featured = filteredListings.slice(0, 3);
+  const handleBuyClose = useCallback(() => {
+    setBuyModalVisible(false);
+    setSelectedListing(null);
+  }, []);
+
+  const handleBuyConfirm = useCallback(
+    (_quantity: number, _couponCode?: string) => {
+      handleBuyClose();
+    },
+    [handleBuyClose],
+  );
+
+  const handleCreateListing = useCallback(() => {
+    router.push("/create-listing");
+  }, [router]);
+
+  const handleResetFilters = useCallback(() => {
+    setSelectedCategory("all");
+    setSearchQuery("");
+  }, []);
+
+  // ── Render helpers ────────────────────────────────────────────────────────
+
+  const renderHeader = useCallback(() => {
+    if (listings.length === 0) return null;
+
+    const featured = listings.slice(0, 3);
+    const trending = listings.slice(3, 6);
+
+    return (
+      <View style={styles.headerSection}>
+        {!isFiltered && featured.length > 0 && (
+          <FeaturedRow
+            listings={featured}
+            onListingPress={handleListingPress}
+            onBuy={handleBuy}
+          />
+        )}
+        {!isFiltered && trending.length > 0 && (
+          <TrendingRow
+            listings={trending}
+            onListingPress={handleListingPress}
+            onBuy={handleBuy}
+          />
+        )}
+      </View>
+    );
+  }, [listings, isFiltered, handleListingPress, handleBuy]);
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: MarketplaceListing; index: number }) => (
+      <Animated.View
+        entering={FadeInDown.delay(index * 80).springify()}
+        style={styles.listItem}
+      >
+        <ProductCard
+          listing={item}
+          onPress={() => handleListingPress(item)}
+          onBuy={() => handleBuy(item)}
+        />
+      </Animated.View>
+    ),
+    [handleListingPress, handleBuy],
+  );
+
+  const keyExtractor = useCallback(
+    (item: MarketplaceListing) => item.id,
+    [],
+  );
+
+  // ── Content state ─────────────────────────────────────────────────────────
+
+  const renderContent = () => {
+    // Error state (no cached data)
+    if (error && listings.length === 0) {
+      return (
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={[styles.errorText, { color: colors.dangerRed }]}>{error}</Text>
+          <Pressable style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={refresh}>
+            <Text style={[styles.retryText, { color: colors.white }]}>Retry</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+    // Loading state (first load)
+    if (isLoading && listings.length === 0) {
+      return (
+        <View style={styles.skeletonContainer}>
+          <ListingSkeleton variant="card" count={4} />
+        </View>
+      );
+    }
+
+    // Empty state
+    if (listings.length === 0) {
+      return (
+        <EmptyMarketplace
+          isSearch={isFiltered}
+          searchQuery={searchQuery}
+          onCreateListing={handleCreateListing}
+          onResetFilters={isFiltered ? handleResetFilters : undefined}
+        />
+      );
+    }
+
+    // Data state
+    return (
+      <FlashList<MarketplaceListing>
+        data={listings}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        estimatedItemSize={280}
+        ListHeaderComponent={renderHeader()}
+        refreshing={isRefreshing}
+        onRefresh={refresh}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        contentContainerStyle={styles.listContent as any}
+      />
+    );
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* Search Bar */}
-      <View className="px-4 pt-3 pb-1">
-        <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 py-2.5">
-          <Text className="text-gray-400 mr-2">🔍</Text>
-          <TextInput
-            className="flex-1 text-base text-gray-900"
-            placeholder="Search listings..."
-            placeholderTextColor="#9ca3af"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <Text className="text-gray-400">✕</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Sticky header: SearchBar + CategoryChips */}
+      <View style={[styles.stickyHeader, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search listings..."
+        />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryRow}
+        >
+          {CATEGORIES.map((cat) => (
+            <CategoryChip
+              key={cat.label}
+              label={cat.label}
+              emoji={cat.emoji}
+              selected={selectedCategory === cat.label.toLowerCase()}
+              onPress={() => setSelectedCategory(cat.label.toLowerCase())}
+            />
+          ))}
+        </ScrollView>
       </View>
 
-      {/* Category Filter */}
-      <CategoryFilter
-        selected={selectedCategory}
-        onSelect={setSelectedCategory}
+      {/* Main content area */}
+      <View style={styles.content}>{renderContent()}</View>
+
+      {/* Buy confirmation modal */}
+      <BuyModal
+        visible={buyModalVisible}
+        listing={selectedListing}
+        onClose={handleBuyClose}
+        onConfirm={handleBuyConfirm}
       />
 
-      {/* Main Content */}
-      {isLoading && listings.length === 0 ? (
-        <View className="flex-1 px-4 pt-4">
-          {/* Featured skeleton */}
-          <View className="mb-4">
-            <SkeletonLoader width="45%" height={20} borderRadius={6} style={{ marginBottom: 12 }} />
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              {[0, 1].map((i) => (
-                <View
-                  key={i}
-                  className="bg-white rounded-2xl overflow-hidden border border-gray-100"
-                  style={{ width: width * 0.7 }}
-                >
-                  <SkeletonLoader width="100%" height={112} borderRadius={0} />
-                  <View className="p-3">
-                    <SkeletonLoader width="80%" height={14} borderRadius={4} style={{ marginBottom: 8 }} />
-                    <View className="flex-row items-center justify-between">
-                      <SkeletonLoader width="40%" height={12} borderRadius={4} />
-                      <SkeletonLoader width={50} height={14} borderRadius={4} />
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-          {/* Section header skeleton */}
-          <SkeletonLoader width="35%" height={18} borderRadius={6} style={{ marginBottom: 4 }} />
-          <SkeletonLoader width="50%" height={12} borderRadius={4} style={{ marginBottom: 16 }} />
-          {/* Listing card skeletons */}
-          {[0, 1, 2, 3].map((i) => (
-            <View key={i} className="bg-white rounded-2xl p-4 mb-3 border border-gray-100 flex-row">
-              <SkeletonLoader width={80} height={80} borderRadius={12} />
-              <View className="flex-1 ml-3 justify-center">
-                <SkeletonLoader width="90%" height={16} borderRadius={4} style={{ marginBottom: 8 }} />
-                <SkeletonLoader width="60%" height={12} borderRadius={4} style={{ marginBottom: 8 }} />
-                <View className="flex-row items-center justify-between">
-                  <SkeletonLoader width="30%" height={12} borderRadius={4} />
-                  <SkeletonLoader width={60} height={16} borderRadius={4} />
-                </View>
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : filteredListings.length === 0 ? (
-        <EmptyState
-          title="No listings found"
-          description={
-            searchQuery
-              ? `No results for "${searchQuery}"`
-              : "No items available in this category"
-          }
-          icon="🏪"
-        />
-      ) : (
-        <FlatList
-          data={filteredListings}
-          keyExtractor={(item: MarketplaceListing) => item.id}
-          ListHeaderComponent={() => (
-            <>
-              {/* Featured Section */}
-              {featured.length > 0 && selectedCategory === "all" && !searchQuery && (
-                <View className="px-4 mb-4">
-                  <Text className="text-lg font-bold text-gray-900 mb-3">
-                    ⭐ Featured Listings
-                  </Text>
-                  <FlatList
-                    horizontal
-                    data={featured}
-                    keyExtractor={(item: MarketplaceListing) => `featured-${item.id}`}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ gap: 12 }}
-                    renderItem={({ item }: { item: MarketplaceListing }) => (
-                      <TouchableOpacity
-                        onPress={() => handleListingPress(item)}
-                        activeOpacity={0.8}
-                        className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-                        style={{ width: width * 0.7 }}
-                      >
-                        <View className="h-28 bg-gradient-to-br from-primary-50 to-green-50 items-center justify-center">
-                          <Text className="text-4xl">
-                            {FEATURED_EMOJIS[item.category] || "🌿"}
-                          </Text>
-                        </View>
-                        <View className="p-3">
-                          <Text className="font-semibold text-gray-900 text-sm" numberOfLines={1}>
-                            {item.title}
-                          </Text>
-                          <View className="flex-row items-center justify-between mt-1">
-                            <Text className="text-xs text-gray-400">
-                              {item.seller?.username || "Unknown"}
-                            </Text>
-                            <Text className="text-sm font-bold text-primary-600">
-                              {item.price} {item.currency}
-                            </Text>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    )}
-                  />
-                </View>
-              )}
-
-              {/* Section Header */}
-              <View className="px-4 mb-2">
-                <Text className="text-base font-bold text-gray-900">
-                  {searchQuery ? `Results for "${searchQuery}"` : "All Listings"}
-                </Text>
-                <Text className="text-xs text-gray-400 mt-0.5">
-                  {filteredListings.length} item{filteredListings.length !== 1 ? "s" : ""} available
-                </Text>
-              </View>
-            </>
-          )}
-          renderItem={({ item }: { item: MarketplaceListing }) => (
-            <View className="px-4">
-              <ListingCard
-                listing={item}
-                onPress={() => handleListingPress(item)}
-              />
-            </View>
-          )}
-          refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={refresh} />
-          }
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
-        />
-      )}
-
-      {/* Create Listing FAB */}
-      <TouchableOpacity
-        onPress={() => router.push("/create-listing")}
-        className="absolute bottom-6 right-6 w-14 h-14 bg-primary-600 rounded-full items-center justify-center shadow-lg"
-      >
-        <Text className="text-white text-2xl font-bold">+</Text>
-      </TouchableOpacity>
+      {/* Create listing FAB */}
+      <FAB onPress={handleCreateListing} />
     </View>
   );
 }
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  stickyHeader: {
+    paddingTop: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 1,
+    gap: SPACING.sm,
+  },
+  categoryRow: {
+    gap: SPACING.sm,
+  },
+  content: {
+    flex: 1,
+  },
+
+  // Skeleton
+  skeletonContainer: {
+    padding: SPACING.md,
+  },
+
+  // Header section (FeaturedRow + TrendingRow)
+  headerSection: {
+    paddingTop: SPACING.md,
+  },
+
+  // FlashList
+  listContent: {
+    paddingHorizontal: SPACING.md,
+    paddingBottom: 100,
+  },
+  listItem: {
+    marginBottom: SPACING.md,
+  },
+
+  // FAB
+  fab: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  fabText: {
+    fontSize: 28,
+    fontWeight: "600",
+    lineHeight: 30,
+  },
+
+  // Error state
+  centerContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: SPACING.xl,
+  },
+  errorIcon: {
+    fontSize: 48,
+    marginBottom: SPACING.md,
+  },
+  errorText: {
+    ...TYPOGRAPHY.body,
+    textAlign: "center",
+    marginBottom: SPACING.lg,
+  },
+  retryButton: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: 8,
+  },
+  retryText: {
+    ...TYPOGRAPHY.button,
+  },
+});

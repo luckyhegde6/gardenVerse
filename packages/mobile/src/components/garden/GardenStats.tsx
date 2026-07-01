@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { Card } from "../ui/Card";
-import { ProgressBar } from "../ui/ProgressBar";
-import { User } from "../../types";
+import { Card } from "@components/ui/Card";
+import { ProgressBar } from "@components/ui/ProgressBar";
+import { User } from "@/types";
 
 interface GardenStatsProps {
   user: User;

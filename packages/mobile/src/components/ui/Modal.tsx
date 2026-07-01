@@ -1,11 +1,19 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Modal as RNModal,
-  Animated,
   Dimensions,
   TouchableWithoutFeedback,
+  StyleSheet,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from "react-native-reanimated";
+import { SPACING, BORDER_RADIUS, useThemeColors } from "@/styles/tokens";
 
 interface ModalProps {
   visible: boolean;
@@ -22,28 +30,28 @@ export function Modal({
   children,
   height = "auto",
 }: ModalProps) {
-  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const colors = useThemeColors();
+  const translateY = useSharedValue(SCREEN_HEIGHT);
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(translateY, {
-        toValue: 0,
-        damping: 20,
-        stiffness: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      translateY.setValue(SCREEN_HEIGHT);
+      translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
     }
   }, [visible, translateY]);
 
   const handleClose = () => {
-    Animated.timing(translateY, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => onClose());
+    translateY.value = withTiming(
+      SCREEN_HEIGHT,
+      { duration: 250 },
+      () => {
+        runOnJS(onClose)();
+      }
+    );
   };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   return (
     <RNModal
@@ -53,16 +61,17 @@ export function Modal({
       onRequestClose={handleClose}
     >
       <TouchableWithoutFeedback onPress={handleClose}>
-        <View className="flex-1 bg-black/50 justify-end">
+        <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
           <TouchableWithoutFeedback>
             <Animated.View
-              className="bg-white rounded-t-3xl p-6"
               style={[
-                { transform: [{ translateY }] },
+                styles.sheet,
+                animatedStyle,
+                { backgroundColor: colors.surface },
                 height !== "auto" ? { height: height as number } : undefined,
               ]}
             >
-              <View className="w-10 h-1 bg-gray-300 rounded-full self-center mb-4" />
+              <View style={[styles.handle, { backgroundColor: colors.border }]} />
               {children}
             </Animated.View>
           </TouchableWithoutFeedback>
@@ -71,3 +80,24 @@ export function Modal({
     </RNModal>
   );
 }
+
+export default Modal;
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    borderTopLeftRadius: BORDER_RADIUS.xl,
+    borderTopRightRadius: BORDER_RADIUS.xl,
+    padding: SPACING.lg,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: BORDER_RADIUS.full,
+    alignSelf: "center",
+    marginBottom: SPACING.md,
+  },
+});

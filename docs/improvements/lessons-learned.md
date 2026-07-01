@@ -1201,3 +1201,49 @@ adb shell input keyevent 23  # DPAD_CENTER
 - For tab navigation in Expo dev builds, use DPAD keys instead of coordinate taps
 - The debug overlay button intercepts taps in the bottom-right quadrant of the screen
 - In production builds (no debug overlay), coordinate taps will work normally
+
+## 2026-06-28: Prisma v7 Migration — npm Workspace Scripts on Windows
+**Session**: ses-019
+**Category**: Workflow
+**Impact**: High
+
+### Situation
+Migrating Prisma ORM from v6 to v7 in an npm workspaces monorepo on Windows required updating `schema.prisma`, creating `prisma.config.ts`, and installing `@prisma/adapter-pg`. Multiple issues arose with npm resolution, script pathing, and agent blocking.
+
+### Root Cause
+1. **Stale lock file entries**: `package-lock.json` had `packages/admin/node_modules/prisma` pinned to v6.19.3. Even after changing `package.json` to `^7.8.0`, npm resolved to v6 because the lock file took precedence.
+2. **npm workspace binary shims**: `prisma` CLI binary exists only in root `node_modules/.bin/`. Admin scripts running via `npm run -w packages/admin` inherit root PATH, but `cmd /c "prisma generate"` fails because admin's `node_modules/.bin/` has no shim.
+3. **Agent blocking**: `npm install` on 2200 packages takes 25+ seconds. When a dev server holds node_modules locks, the install times out and blocks the agent.
+4. **`npx --no-install` fails cross-workspace**: On Windows, npx looks for packages in the workspace's own node_modules tree, not the root's. Since prisma wasn't in admin's devDependencies, `npx --no-install prisma generate` failed with MODULE_NOT_FOUND.
+
+### Fix
+1. Keep `"prisma": "^7.8.0"` in admin's devDependencies for workspace binary shim.
+2. Delete stale lock entries from `package-lock.json` using `node -e "..."` before reinstalling.
+3. Kill any dev server holding node_modules locks before `npm install`.
+4. Use `prisma generate` directly in scripts (not npx) — npm workspace PATH resolution handles it.
+
+### Prevention
+- After any package.json version change, check if a stale lock entry exists in `package-lock.json` under `packages/<workspace>/node_modules/<pkg>`. Delete it if the version doesn't match.
+- Before `npm install`, kill dev servers holding node_modules (`netstat -ano | findstr :3000` → `taskkill /PID <id> /F`)
+- For workspaces needing CLI tools from root, keep them in devDependencies (even if root already has them) to ensure binary shims are created in the workspace's `.bin/`.
+- Never remove CLI tools from a workspace's devDependencies unless the scripts use explicit path references.
+
+## 2026-06-28: AGENTS.md Split — Separating Behavioral Rules from Project Reference
+**Session**: ses-019
+**Category**: Workflow
+**Impact**: Medium
+
+### Situation
+AGENTS.md grew to 1321 lines as a monolithic project encyclopedia. The first 61 lines contained behavioral guidelines (CLAUDE.md), but the remaining 1260 lines were project topology, engineering standards, session history, and decision records. This made AGENTS.md too large for LLM context and mixed concerns.
+
+### Fix
+Split into two files:
+- `AGENTS.md` (65 lines) — only the 4 behavioral guidelines (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution). Pure agent behavior rules, no project-specific content.
+- `PROJECT_REFERENCE.md` (~1260 lines) — all project topology, engineering standards, git/commit conventions, session feedback history, design decisions, API integration details.
+
+Also updated MEMORY.md to reference PROJECT_REFERENCE.md instead of AGENTS.md for project info.
+
+### Prevention
+- AGENTS.md is for agent behavior rules only. If it's more than 100 lines, project-specific content should live elsewhere.
+- PROJECT_REFERENCE.md is the canonical project reference. Session feedback goes here.
+- MEMORY.md tracks session-to-session context and active state.

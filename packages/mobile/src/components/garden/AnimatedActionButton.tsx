@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
   withSequence,
 } from 'react-native-reanimated'
-import { useParticleSystem } from './ParticleSystem'
+import { useParticleSystem } from '@components/garden/ParticleSystem'
 
 interface AnimatedActionButtonProps {
   onPress: () => void

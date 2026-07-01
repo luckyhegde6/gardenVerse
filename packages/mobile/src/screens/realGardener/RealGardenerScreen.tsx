@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useRealGardenerStore } from "../../stores/realGardenerStore";
+import { useRealGardenerStore } from "@stores/realGardenerStore";
 
 function formatDate(iso?: string): string {
   if (!iso) return "—";

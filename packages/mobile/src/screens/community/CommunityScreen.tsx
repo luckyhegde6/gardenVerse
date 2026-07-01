@@ -1,225 +1,712 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from "react-native";
-import { useRouter } from "expo-router";
-import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-import { GroupCard } from "../../components/community/GroupCard";
-import { SkeletonLoader } from "../../components/ui/SkeletonLoader";
-import { Group } from "../../types";
-import api from "../../services/api";
+import { View, Text, ScrollView, RefreshControl, Pressable, StyleSheet, Alert } from "react-native";
+import { useCallback, useState, useEffect } from "react";
+import Animated, {
+  withSpring,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { CommunitySearchBar } from "@components/community/CommunitySearchBar";
+import { NearbyGardenerCard } from "@components/community/NearbyGardenerCard";
+import { LeaderboardCard } from "@components/community/LeaderboardCard";
+import { CommunityGroupCard } from "@components/community/CommunityGroupCard";
+import { EventCard } from "@components/community/EventCard";
+import { ActivityFeed } from "@components/community/ActivityFeed";
+
+import { COLORS, SPACING, TYPOGRAPHY, SHADOWS, BORDER_RADIUS, useThemeColors } from "@/styles/tokens";
+
+import type {
+  Group,
+  NearbyGardener,
+  LeaderboardEntry,
+  ActivityEntry,
+  CommunityEvent,
+} from "@/types";
+
+// ─── Sample Data ────────────────────────────────────────────────────────────
+
+const SAMPLE_GROUPS: Group[] = [
+  {
+    id: "g1",
+    name: "Bengaluru Organic Farmers",
+    description:
+      "A community of organic farmers in and around Bengaluru sharing tips, seeds, and fresh produce.",
+    type: "regional",
+    region: "Bengaluru",
+    memberCount: 234,
+    isJoined: true,
+  },
+  {
+    id: "g2",
+    name: "Herb Garden Enthusiasts",
+    description:
+      "Everything about growing culinary herbs — basil, mint, coriander, rosemary and more!",
+    type: "topic",
+    memberCount: 89,
+    isJoined: false,
+  },
+  {
+    id: "g3",
+    name: "Mumbai Terrace Gardeners",
+    description:
+      "Terrace gardening in the city that never sleeps. Share space-saving tips and urban hacks.",
+    type: "regional",
+    region: "Mumbai",
+    memberCount: 156,
+    isJoined: false,
+  },
+  {
+    id: "g4",
+    name: "Composting Champions",
+    description:
+      "Master the art of composting — from kitchen scrap bins to large-scale pit composting.",
+    type: "topic",
+    memberCount: 312,
+    isJoined: true,
+  },
+  {
+    id: "g5",
+    name: "Monsoon Gardeners Club",
+    description:
+      "Planning and caring for gardens during the monsoon season. Rain-ready techniques.",
+    type: "events",
+    region: "Kerala",
+    memberCount: 78,
+    isJoined: false,
+  },
+];
+
+const SAMPLE_GARDENERS: NearbyGardener[] = [
+  {
+    id: "ng1",
+    username: "green_thumb",
+    displayName: "Priya Sharma",
+    bio: "Organic gardening since 2019",
+    latitude: 12.9716,
+    longitude: 77.5946,
+    sustainabilityScore: 92,
+  },
+  {
+    id: "ng2",
+    username: "urban_farmer",
+    displayName: "Rahul Patel",
+    bio: "Grows vegetables on my balcony",
+    latitude: 12.9352,
+    longitude: 77.6105,
+    sustainabilityScore: 78,
+  },
+];
+
+const SAMPLE_LEADERBOARD: LeaderboardEntry[] = [
+  { id: "l1", username: "garden_guru", displayName: "Ananya Reddy", score: 15420, rank: 1, level: 42 },
+  { id: "l2", username: "eco_warrior", displayName: "Vikram Singh", score: 13280, rank: 2, level: 38 },
+  { id: "l3", username: "seed_saver", displayName: "Lakshmi Iyer", score: 11950, rank: 3, level: 35 },
+  { id: "l4", username: "terrace_queen", displayName: "Meera Nair", score: 9870, rank: 4, level: 31 },
+  { id: "l5", username: "compost_king", displayName: "Arun Kumar", score: 8520, rank: 5, level: 28 },
+  { id: "l6", username: "herb_hacker", displayName: "Divya Joseph", score: 7410, rank: 6, level: 25 },
+  { id: "l7", username: "water_wise", displayName: "Ravi Deshmukh", score: 6350, rank: 7, level: 22 },
+  { id: "l8", username: "pollinator_pal", displayName: "Sunita Verma", score: 5240, rank: 8, level: 19 },
+  { id: "l9", username: "soil_sage", displayName: "Karthik Rao", score: 4180, rank: 9, level: 17 },
+  { id: "l10", username: "green_bean", displayName: "Neha Gupta", score: 3120, rank: 10, level: 14 },
+];
+
+const SAMPLE_EVENTS: CommunityEvent[] = [
+  {
+    id: "e1",
+    title: "Community Seed Swap",
+    description: "Bring your extra seeds and trade with fellow gardeners! All organic seeds welcome.",
+    date: "2026-07-15T09:00:00Z",
+    rewards: ["🌱 Rare Seeds", "🏅 Event Badge"],
+    participants: 47,
+  },
+  {
+    id: "e2",
+    title: "Permaculture Workshop",
+    description: "Learn the principles of permaculture design for urban spaces.",
+    date: "2026-07-22T10:30:00Z",
+    rewards: ["📜 Certificate", "🎍 Bamboo Planter"],
+    participants: 28,
+  },
+  {
+    id: "e3",
+    title: "Garden Photography Contest",
+    description: "Show off your most beautiful garden photos. Winners featured in our newsletter!",
+    date: "2026-08-01T00:00:00Z",
+    rewards: ["🏆 Featured Spot", "🎁 Surprise Seed Pack"],
+    participants: 112,
+  },
+  {
+    id: "e4",
+    title: "Composting Masterclass",
+    description: "From kitchen scraps to black gold — a hands-on composting demonstration.",
+    date: "2026-08-12T08:00:00Z",
+    rewards: ["🪴 Compost Starter Kit", "📖 Guide Book"],
+    participants: 15,
+  },
+];
+
+function makeTimestamps(): ActivityEntry[] {
+  const now = Date.now();
+  const min = (m: number) => new Date(now - m * 60 * 1000).toISOString();
+  const hours = (h: number) => new Date(now - h * 60 * 60 * 1000).toISOString();
+  const days = (d: number) => new Date(now - d * 24 * 60 * 60 * 1000).toISOString();
+
+  return [
+    { id: "a1", type: "plant", text: "planted Tomato in their garden", timestamp: min(5), userId: "u1", username: "green_thumb" },
+    { id: "a2", type: "harvest", text: "harvested 2 kg of Spinach", timestamp: min(18), userId: "u2", username: "urban_farmer" },
+    { id: "a3", type: "water", text: "watered their raised beds", timestamp: hours(1), userId: "u3", username: "seed_saver" },
+    { id: "a4", type: "badge", text: "earned the 'Compost Master' badge", timestamp: hours(3), userId: "u4", username: "compost_king" },
+    { id: "a5", type: "levelup", text: "reached Level 42!", timestamp: hours(5), userId: "u1", username: "garden_guru" },
+    { id: "a6", type: "trade", text: "traded Coriander seeds with terrace_queen", timestamp: hours(8), userId: "u5", username: "herb_hacker" },
+    { id: "a7", type: "join", text: "joined Bengaluru Organic Farmers", timestamp: days(1), userId: "u6", username: "water_wise" },
+    { id: "a8", type: "fertilize", text: "applied vermicompost to their Tulsi plants", timestamp: days(2), userId: "u7", username: "soil_sage" },
+  ];
+}
+
+// ─── Segments ───────────────────────────────────────────────────────────────
+
+const SEGMENTS = ["Groups", "Leaderboard", "Events", "Activity"] as const;
+type Segment = (typeof SEGMENTS)[number];
+
+// ─── Sub-components ─────────────────────────────────────────────────────────
+
+function SectionHeader({
+  title,
+  showSeeAll,
+  onSeeAll,
+}: {
+  title: string;
+  showSeeAll?: boolean;
+  onSeeAll?: () => void;
+}) {
+  const colors = useThemeColors();
+  return (
+    <View style={styles.sectionHeader}>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
+      {showSeeAll && (
+        <Pressable
+          onPress={onSeeAll}
+          accessibilityRole="button"
+          accessibilityLabel="See all"
+        >
+          <Text style={[styles.seeAllText, { color: colors.primary }]}>See All</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+function SegmentButton({
+  label,
+  isActive,
+  onPress,
+}: {
+  label: Segment;
+  isActive: boolean;
+  onPress: () => void;
+}) {
+  const colors = useThemeColors();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = useCallback(() => {
+    scale.value = withSpring(0.94, { damping: 15, stiffness: 300 });
+  }, [scale]);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  }, [scale]);
+
+  return (
+    <AnimatedPressable
+      style={[
+        styles.segment,
+        isActive ? styles.segmentActive : styles.segmentInactive,
+        animatedStyle,
+        isActive ? { backgroundColor: colors.primary } : undefined,
+      ]}
+      onPress={() => {
+        onPress();
+      }}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isActive }}
+      accessibilityLabel={`${label} tab`}
+    >
+      <Text
+        style={[
+          styles.segmentText,
+          isActive ? styles.segmentTextActive : styles.segmentTextInactive,
+          isActive ? { color: colors.white } : { color: colors.textSecondary },
+        ]}
+      >
+        {label}
+      </Text>
+    </AnimatedPressable>
+  );
+}
+
+function LeaderboardSkeleton() {
+  const colors = useThemeColors();
+  return (
+    <View style={styles.skeletonContainer}>
+      {[1, 2, 3].map((key) => (
+        <View key={key} style={[styles.skeletonRow, { backgroundColor: colors.surface }]}>
+          <View style={[styles.skeletonRank, { backgroundColor: colors.surfaceSecondary }]} />
+          <View style={[styles.skeletonAvatar, { backgroundColor: colors.surfaceSecondary }]} />
+          <View style={styles.skeletonTextBlock}>
+            <View style={[styles.skeletonLine, { backgroundColor: colors.surfaceSecondary }]} />
+            <View style={[styles.skeletonLine, styles.skeletonLineShort, { backgroundColor: colors.surfaceSecondary }]} />
+          </View>
+          <View style={[styles.skeletonScore, { backgroundColor: colors.surfaceSecondary }]} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// ─── Screen ─────────────────────────────────────────────────────────────────
 
 export function CommunityScreen() {
-  const router = useRouter();
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [leaderboard, setLeaderboard] = useState<{rank: number; name: string; score: number; avatar: string}[]>([]);
-  const [challenges, setChallenges] = useState<{id: string; title: string; description: string; progress: number; target: number; active: boolean}[]>([]);
+  const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeSegment, setActiveSegment] = useState<Segment>("Groups");
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchGroups = useCallback(async () => {
-    try {
-      const resp = await api.get("/community/groups");
-      const data = resp.data?.data || resp.data || [];
-      setGroups(Array.isArray(data) ? data : []);
-    } catch {
-      setGroups([]);
-    }
-  }, []);
+  const [nearbyGardeners] = useState<NearbyGardener[]>(SAMPLE_GARDENERS);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [events, setEvents] = useState<CommunityEvent[]>([]);
+  const [activities, setActivities] = useState<ActivityEntry[]>([]);
 
-  const fetchLeaderboard = useCallback(async () => {
-    try {
-      const resp = await api.get("/gamification/leaderboard?limit=3");
-      const data = resp.data?.data || resp.data || [];
-      setLeaderboard(Array.isArray(data) ? data : []);
-    } catch {
-      setLeaderboard([]);
-    }
-  }, []);
-
-  const fetchChallenges = useCallback(async () => {
-    try {
-      const resp = await api.get("/gamification/quests?active=true&limit=2");
-      const data = resp.data?.data || resp.data || [];
-      setChallenges(Array.isArray(data) ? data : []);
-    } catch {
-      setChallenges([]);
-    }
-  }, []);
-
+  // Simulate async data loading
   useEffect(() => {
-    Promise.all([fetchGroups(), fetchLeaderboard(), fetchChallenges()]).finally(() =>
-      setLoading(false)
-    );
-  }, [fetchGroups, fetchLeaderboard, fetchChallenges]);
+    const timer = setTimeout(() => {
+      setGroups(SAMPLE_GROUPS);
+      setLeaderboard(SAMPLE_LEADERBOARD);
+      setEvents(SAMPLE_EVENTS);
+      setActivities(makeTimestamps());
+      setLoading(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    Promise.all([fetchGroups(), fetchLeaderboard(), fetchChallenges()]).finally(() =>
-      setRefreshing(false)
+    setLoading(true);
+    // Simulate reload
+    setTimeout(() => {
+      setGroups(SAMPLE_GROUPS);
+      setLeaderboard(SAMPLE_LEADERBOARD);
+      setEvents(SAMPLE_EVENTS);
+      setActivities(makeTimestamps());
+      setLoading(false);
+      setRefreshing(false);
+    }, 600);
+  }, []);
+
+  // ── Handlers ──────────────────────────────────────────────────────────
+
+  const handleGroupPress = useCallback((group: Group) => {
+    Alert.alert(group.name, group.description ?? "No description");
+  }, []);
+
+  const handleGroupJoin = useCallback((group: Group) => {
+    Alert.alert(
+      group.isJoined ? "Leave Group" : "Join Group",
+      group.isJoined
+        ? `You have left "${group.name}"`
+        : `You joined "${group.name}"!`,
     );
-  }, [fetchGroups, fetchLeaderboard, fetchChallenges]);
+  }, []);
 
-  const topChallenges = challenges.filter((c) => c.active).slice(0, 2);
+  const handleGardenerPress = useCallback((gardener: NearbyGardener) => {
+    Alert.alert(gardener.displayName ?? gardener.username, gardener.bio ?? "Bio not available");
+  }, []);
 
-  return (
-    <ScrollView
-      className="flex-1 bg-gray-50"
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      {/* Find Nearby Gardeners */}
-      <Card className="mx-4 mt-4 bg-primary-800 mb-4">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-1">
-            <Text className="text-white text-lg font-bold">
-              Find Nearby Gardeners
-            </Text>
-            <Text className="text-primary-200 text-sm mt-1">
-              Connect with gardeners in your area
-            </Text>
-          </View>
-          <TouchableOpacity
-            className="bg-white/20 rounded-xl px-4 py-2"
-            onPress={() => router.push("/(tabs)/garden")}
-          >
-            <Text className="text-white font-semibold">Explore</Text>
-          </TouchableOpacity>
-        </View>
-      </Card>
+  const handleGardenerFollow = useCallback((gardener: NearbyGardener) => {
+    Alert.alert("Follow", `You followed ${gardener.displayName ?? gardener.username}`);
+  }, []);
 
-      {/* Leaderboard Preview */}
-      <View className="px-4 mb-4">
-        <View className="flex-row justify-between items-center mb-3">
-          <Text className="text-lg font-bold text-gray-900">🏆 Leaderboard</Text>
-          <TouchableOpacity onPress={() => {}}>
-            <Text className="text-primary-600 text-sm font-medium">
-              See All
-            </Text>
-          </TouchableOpacity>
-        </View>
-        {loading ? (
-          <>
-            <SkeletonLoader height={52} style={{ marginBottom: 8, borderRadius: 12 }} />
-            <SkeletonLoader height={52} style={{ marginBottom: 8, borderRadius: 12 }} />
-            <SkeletonLoader height={52} style={{ borderRadius: 12 }} />
-          </>
-        ) : leaderboard.length === 0 ? (
-          <Card className="p-4 items-center">
-            <Text className="text-gray-400 text-sm">No leaderboard data yet</Text>
-          </Card>
-        ) : (
-          leaderboard.map((entry: { rank: number; name: string; score: number; avatar: string }) => (
-            <View
-              key={entry.rank}
-              className="flex-row items-center bg-white rounded-xl px-4 py-3 mb-2 border border-gray-100"
-            >
-              <Text
-                className={`text-lg font-bold w-8 ${
-                  entry.rank === 1
-                    ? "text-amber-500"
-                    : entry.rank === 2
-                      ? "text-gray-400"
-                      : entry.rank === 3
-                        ? "text-amber-700"
-                        : "text-gray-400"
-                }`}
-              >
-                #{entry.rank}
-              </Text>
-              <Text className="text-2xl mr-3">{entry.avatar}</Text>
-              <View className="flex-1">
-                <Text className="text-sm font-semibold text-gray-900">
-                  {entry.name}
-                </Text>
+  const handleEventPress = useCallback((event: CommunityEvent) => {
+    Alert.alert(event.title, event.description ?? "No description");
+  }, []);
+
+  const handleEventParticipate = useCallback((event: CommunityEvent) => {
+    Alert.alert("Participate", `You signed up for "${event.title}"`);
+  }, []);
+
+  // ── Render helpers ───────────────────────────────────────────────────
+
+  const renderGroupsContent = () => (
+    <View>
+      {/* Nearby Gardeners */}
+      <SectionHeader title="🌍 Nearby Gardeners" />
+      {nearbyGardeners.map((gardener) => (
+        <NearbyGardenerCard
+          key={gardener.id}
+          gardener={gardener}
+          isFollowing={false}
+          onFollow={() => handleGardenerFollow(gardener)}
+          onPress={() => handleGardenerPress(gardener)}
+        />
+      ))}
+
+      {/* All Groups */}
+      <SectionHeader title="👥 All Groups" showSeeAll onSeeAll={() => Alert.alert("Groups", "See all groups")} />
+      {loading ? (
+        <View style={styles.skeletonContainer}>
+          {[1, 2, 3].map((key) => (
+            <View key={key} style={[styles.groupSkeleton, { backgroundColor: colors.surface }]}>
+              <View style={[styles.groupSkeletonImage, { backgroundColor: colors.surfaceSecondary }]} />
+              <View style={styles.groupSkeletonText}>
+                <View style={[styles.skeletonLine, { backgroundColor: colors.surfaceSecondary }]} />
+                <View style={[styles.skeletonLine, styles.skeletonLineShort, { backgroundColor: colors.surfaceSecondary }]} />
               </View>
-              <Text className="text-sm font-bold text-primary-700">
-                {entry.score.toLocaleString()}
-              </Text>
             </View>
-          ))
-        )}
-      </View>
-
-      {/* Active Challenges */}
-      {!loading && topChallenges.length > 0 && (
-        <View className="px-4 mb-4">
-          <Text className="text-lg font-bold text-gray-900 mb-3">
-            🎯 Active Challenges
-          </Text>
-          {topChallenges.map((challenge) => (
-            <Card key={challenge.id} className="mb-2">
-              <View className="flex-row justify-between items-center mb-1">
-                <Text className="text-sm font-semibold text-gray-900">
-                  {challenge.title}
-                </Text>
-                <Badge label="Active" variant="success" size="sm" />
-              </View>
-              <Text className="text-xs text-gray-500 mb-2">
-                {challenge.description}
-              </Text>
-              <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <View
-                  className="h-full bg-primary-500 rounded-full"
-                  style={{ width: `${(challenge.progress / challenge.target) * 100}%` }}
-                />
-              </View>
-              <Text className="text-xs text-gray-400 mt-1">
-                {challenge.progress}/{challenge.target}
-              </Text>
-            </Card>
           ))}
         </View>
-      )}
-
-      {/* Groups */}
-      <View className="px-4 mb-4">
-        <View className="flex-row justify-between items-center mb-3">
-          <Text className="text-lg font-bold text-gray-900">👥 Groups</Text>
-          <TouchableOpacity onPress={() => {}}>
-            <Text className="text-primary-600 text-sm font-medium">
-              + Create Group
-            </Text>
-          </TouchableOpacity>
+      ) : groups.length === 0 ? (
+        <View style={[styles.emptyContainer, { backgroundColor: colors.surface }]}>
+          <Text style={styles.emptyEmoji}>🌐</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No groups yet. Create the first one!</Text>
         </View>
-        {loading ? (
-          <>
-            <SkeletonLoader height={100} style={{ marginBottom: 8, borderRadius: 12 }} />
-            <SkeletonLoader height={100} style={{ borderRadius: 12 }} />
-          </>
-        ) : groups.length === 0 ? (
-          <Card className="p-6 items-center">
-            <Text className="text-3xl mb-2">🌐</Text>
-            <Text className="text-gray-500 text-sm text-center">
-              No groups yet. Create the first one!
-            </Text>
-          </Card>
-        ) : (
-          groups.map((group) => (
-            <GroupCard
-              key={group.id}
-              group={group}
-              onPress={() =>
-                router.push({ pathname: "/group-detail/[groupId]", params: { groupId: group.id } })
-              }
-            />
-          ))
-        )}
-      </View>
+      ) : (
+        groups.map((group) => (
+          <CommunityGroupCard
+            key={group.id}
+            group={group}
+            onPress={() => handleGroupPress(group)}
+            onJoin={() => handleGroupJoin(group)}
+          />
+        ))
+      )}
+    </View>
+  );
 
-      {/* Events / Meetups Placeholder */}
-      <View className="px-4 mb-8">
-        <Text className="text-lg font-bold text-gray-900 mb-3">
-          📅 Upcoming Events
-        </Text>
-        <Card className="p-6 items-center border-dashed border-2 border-gray-200">
-          <Text className="text-3xl mb-2">🎉</Text>
-          <Text className="text-gray-500 text-sm text-center">
-            No upcoming events. Check back later!
-          </Text>
-        </Card>
-      </View>
-    </ScrollView>
+  const renderLeaderboardContent = () => (
+    <View>
+      <SectionHeader title="🏆 Leaderboard" showSeeAll onSeeAll={() => Alert.alert("Leaderboard", "Full leaderboard")} />
+      {loading ? (
+        <LeaderboardSkeleton />
+      ) : leaderboard.length === 0 ? (
+        <View style={[styles.emptyContainer, { backgroundColor: colors.surface }]}>
+          <Text style={styles.emptyEmoji}>🏅</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No leaderboard data yet</Text>
+        </View>
+      ) : (
+        leaderboard.map((entry, index) => (
+          <LeaderboardCard key={entry.id} entry={entry} index={index} />
+        ))
+      )}
+    </View>
+  );
+
+  const renderEventsContent = () => (
+    <View>
+      <SectionHeader title="🎉 Upcoming Events" showSeeAll onSeeAll={() => Alert.alert("Events", "All events")} />
+      {loading ? (
+        <LeaderboardSkeleton />
+      ) : events.length === 0 ? (
+        <View style={[styles.emptyContainer, { backgroundColor: colors.surface }]}>
+          <Text style={styles.emptyEmoji}>📅</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No upcoming events</Text>
+          <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>Check back later for new events!</Text>
+        </View>
+      ) : (
+        events.map((event) => (
+          <EventCard
+            key={event.id}
+            event={event}
+            onPress={() => handleEventPress(event)}
+            onParticipate={() => handleEventParticipate(event)}
+          />
+        ))
+      )}
+    </View>
+  );
+
+  const renderActivityContent = () => (
+    <ActivityFeed activities={activities} isLoading={loading} />
+  );
+
+  const renderContent = () => {
+    switch (activeSegment) {
+      case "Groups":
+        return renderGroupsContent();
+      case "Leaderboard":
+        return renderLeaderboardContent();
+      case "Events":
+        return renderEventsContent();
+      case "Activity":
+        return renderActivityContent();
+    }
+  };
+
+  return (
+    <View style={[styles.screen, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Community</Text>
+          <AnimatedPressable
+            style={[styles.bellButton, { backgroundColor: colors.surface }]}
+            onPress={() => Alert.alert("Notifications", "No new notifications")}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+          >
+            <Text style={styles.bellIcon}>🔔</Text>
+          </AnimatedPressable>
+        </View>
+
+        {/* Search Bar */}
+        <View style={styles.searchWrapper}>
+          <CommunitySearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search gardeners, groups, events..."
+          />
+        </View>
+
+        {/* Segmented Control */}
+        <View style={[styles.segmentedControl, { backgroundColor: colors.surfaceSecondary }]}>
+          {SEGMENTS.map((segment) => (
+            <SegmentButton
+              key={segment}
+              label={segment}
+              isActive={activeSegment === segment}
+              onPress={() => setActiveSegment(segment)}
+            />
+          ))}
+        </View>
+
+        {/* Content Area */}
+        <View style={styles.contentArea}>{renderContent()}</View>
+      </ScrollView>
+    </View>
   );
 }
+
+export default CommunityScreen;
+
+// ─── Styles ─────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: SPACING.xxl,
+  },
+
+  // Header
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
+  },
+  headerTitle: {
+    ...TYPOGRAPHY.headingXL,
+    color: COLORS.text,
+  },
+  bellButton: {
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    ...SHADOWS.sm,
+  },
+  bellIcon: {
+    fontSize: 20,
+  },
+
+  // Search
+  searchWrapper: {
+    paddingHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+
+  // Segmented Control
+  segmentedControl: {
+    flexDirection: "row",
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.lg,
+    backgroundColor: COLORS.surfaceSecondary,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.xs,
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: SPACING.sm + 2,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: BORDER_RADIUS.sm,
+  },
+  segmentActive: {
+    backgroundColor: COLORS.primary,
+    ...SHADOWS.sm,
+  },
+  segmentInactive: {
+    backgroundColor: "transparent",
+  },
+  segmentText: {
+    ...TYPOGRAPHY.label,
+    fontWeight: "600",
+  },
+  segmentTextActive: {
+    color: COLORS.white,
+  },
+  segmentTextInactive: {
+    color: COLORS.textSecondary,
+  },
+
+  // Section Header
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
+  },
+  sectionTitle: {
+    ...TYPOGRAPHY.headingS,
+    color: COLORS.text,
+  },
+  seeAllText: {
+    ...TYPOGRAPHY.label,
+    color: COLORS.primary,
+    fontWeight: "600",
+  },
+
+  // Content Area
+  contentArea: {
+    paddingBottom: SPACING.lg,
+  },
+
+  // Empty State
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: SPACING.xl,
+    marginHorizontal: SPACING.md,
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.md,
+    ...SHADOWS.sm,
+  },
+  emptyEmoji: {
+    fontSize: 40,
+    marginBottom: SPACING.sm,
+  },
+  emptyText: {
+    ...TYPOGRAPHY.body,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+    textAlign: "center",
+  },
+  emptySubtext: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textMuted,
+    textAlign: "center",
+    marginTop: SPACING.xs,
+  },
+
+  // Skeleton (shared)
+  skeletonContainer: {
+    paddingHorizontal: SPACING.md,
+    gap: SPACING.sm,
+  },
+  skeletonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.md,
+    gap: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  skeletonRank: {
+    width: 32,
+    height: 24,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.surfaceSecondary,
+  },
+  skeletonAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.surfaceSecondary,
+  },
+  skeletonTextBlock: {
+    flex: 1,
+    gap: SPACING.xs,
+  },
+  skeletonLine: {
+    height: 12,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.surfaceSecondary,
+    width: "70%",
+  },
+  skeletonLineShort: {
+    width: "40%",
+  },
+  skeletonScore: {
+    width: 60,
+    height: 20,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.surfaceSecondary,
+  },
+
+  // Group skeleton
+  groupSkeleton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    gap: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  groupSkeletonImage: {
+    width: 56,
+    height: 56,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.surfaceSecondary,
+  },
+  groupSkeletonText: {
+    flex: 1,
+    gap: SPACING.xs,
+  },
+});

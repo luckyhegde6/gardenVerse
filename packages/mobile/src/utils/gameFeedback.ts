@@ -1,6 +1,6 @@
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
-import { useParticleSystem } from '../components/garden/ParticleSystem';
+import { useParticleSystem } from '@components/garden/ParticleSystem';
 
 export type FeedbackType = 'plant' | 'water' | 'fertilize' | 'harvest' | 'levelUp' | 'growthTick';
 

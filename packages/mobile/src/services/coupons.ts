@@ -1,5 +1,5 @@
-import api from './api';
-import type { CouponRedemption } from '../types';
+import api from '@services/api';
+import type { CouponRedemption } from "@/types";
 
 const CouponService = {
   /**

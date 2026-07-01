@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import api from "../services/api";
-import { IotDevice, SensorReading } from "../types";
+import api from "@services/api";
+import { IotDevice, SensorReading } from "@/types";
 
 interface UseIotReturn {
   devices: IotDevice[];

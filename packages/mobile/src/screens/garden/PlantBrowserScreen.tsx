@@ -8,13 +8,13 @@ import {
   Image,
   Dimensions,
 } from "react-native";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-import { PlantSpecies } from "../../types";
-import debounce from "../../utils/debounce";
-import HapticFeedback from "../../utils/haptics";
-import api from "../../services/api";
+import { LoadingSpinner } from "@components/ui/LoadingSpinner";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { PlantSpecies } from "@/types";
+import debounce from "@utils/debounce";
+import HapticFeedback from "@utils/haptics";
+import api from "@services/api";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_GAP = 12;

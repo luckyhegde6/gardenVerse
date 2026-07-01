@@ -2,9 +2,9 @@ import React, { useEffect } from "react";
 import { AppState, AppStateStatus, View } from "react-native";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../src/styles/ThemeContext";
-import { gameSaveSync } from "../../src/services/gameSaveSync";
-import { useGardenStore } from "../../src/stores/gardenStore";
+import { useTheme } from "@/styles/ThemeContext";
+import { gameSaveSync } from "@services/gameSaveSync";
+import { useGardenStore } from "@stores/gardenStore";
 
 function TabIcon({
   icon,

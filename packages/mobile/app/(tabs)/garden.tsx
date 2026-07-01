@@ -1,5 +1,5 @@
 import React from "react";
-import { GardenScreen } from "../../src/screens/garden/GardenScreen";
+import { GardenScreen } from "@screens/garden/GardenScreen";
 
 export default function GardenTab() {
   return <GardenScreen />;

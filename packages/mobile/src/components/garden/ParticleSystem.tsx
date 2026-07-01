@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { Canvas, Circle, Rect, Group, Skia } from '@shopify/react-native-skia';
 import { StyleSheet } from 'react-native';
-import { Particle, ParticleType, createWaterParticle, createFertilizeParticle, createHarvestParticle, createPlantParticle, createConfettiParticle, createGrowthTickParticle } from './ParticlePresets';
+import { Particle, ParticleType, createWaterParticle, createFertilizeParticle, createHarvestParticle, createPlantParticle, createConfettiParticle, createGrowthTickParticle } from '@components/garden/ParticlePresets';
 
 const styles = StyleSheet.create({
   absolute: {

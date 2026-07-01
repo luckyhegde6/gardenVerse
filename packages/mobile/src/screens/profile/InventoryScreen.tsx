@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
-// import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-// import { Chip } from "../../components/ui/Chip";
+// import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+// import { Chip } from "@components/ui/Chip";
 
 const TABS = ["Seeds", "Fertilizers", "Tools", "Cosmetics"] as const;
 type TabType = (typeof TABS)[number];
