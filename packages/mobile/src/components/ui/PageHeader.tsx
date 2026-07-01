@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StatusBar, StyleSheet } from "react-native";
-import { COLORS, SPACING, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
+import { SPACING, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
 
 interface PageHeaderProps {
   title: string;

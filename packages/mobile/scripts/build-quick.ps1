@@ -66,7 +66,7 @@ if (-not $SkipBundle) {
         "@react-native-community/cli", "bundle",
         "--platform", "android",
         "--dev", "false",
-        "--entry-file", "app/index.ts",
+        "--entry-file", "index.js",
         "--bundle-output", $BundleOut,
         "--assets-dest", $BundleAssets,
         "--reset-cache",

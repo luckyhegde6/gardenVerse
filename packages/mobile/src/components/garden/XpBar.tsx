@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from "react-native-reanimated";
-import { useThemeColors, COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@/styles/tokens";
+import { useThemeColors, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@/styles/tokens";
 
 interface XpBarProps {
   currentXP: number;

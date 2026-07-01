@@ -25,7 +25,6 @@ import {
   SHADOWS,
   useThemeColors,
 } from "@/styles/tokens";
-import type { ColorScheme } from "@/styles/tokens";
 import type { MarketplaceListing } from "@/types";
 
 interface BuyModalProps {

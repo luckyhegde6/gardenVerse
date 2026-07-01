@@ -24,7 +24,7 @@ import { ListingSkeleton } from "@components/marketplace/ListingSkeleton";
 import { EmptyMarketplace } from "@components/marketplace/EmptyMarketplace";
 import { useMarketplace } from "@hooks/useMarketplace";
 import { MarketplaceListing } from "@/types";
-import { useThemeColors, SPACING, TYPOGRAPHY, ColorScheme } from "@/styles/tokens";
+import { useThemeColors, SPACING, TYPOGRAPHY } from "@/styles/tokens";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { COLORS, SPACING, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
+import { SPACING, TYPOGRAPHY, useThemeColors } from "@/styles/tokens";
 import { Button } from "@components/ui/Button";
 
 interface EmptyStateProps {

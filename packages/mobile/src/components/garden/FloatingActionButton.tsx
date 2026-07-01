@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { useThemeColors, COLORS, BORDER_RADIUS, SHADOWS } from "@/styles/tokens";
+import { useThemeColors, BORDER_RADIUS, SHADOWS } from "@/styles/tokens";
 
 interface FloatingActionButtonProps {
   icon: string;

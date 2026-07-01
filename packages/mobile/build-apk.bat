@@ -55,7 +55,7 @@ if /I "%SKIP_BUNDLE%"=="skipbundle" (
     call npx.cmd @react-native-community/cli bundle ^
         --platform android ^
         --dev false ^
-        --entry-file app/index.ts ^
+        --entry-file index.js ^
         --bundle-output "%BUNDLE_FILE%" ^
         --assets-dest android\app\src\main\res ^
         --reset-cache ^

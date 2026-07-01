@@ -61,7 +61,7 @@ import { SyncStatusIndicator } from '@components/SyncStatusIndicator';
 import { SaveGameButton } from '@components/SaveGameButton';
 import { gameSaveSync } from '@services/gameSaveSync';
 import { useToast } from '@components/ui/Toast';
-import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS, useThemeColors } from '@/styles/tokens';
+import { SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS, useThemeColors } from '@/styles/tokens';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const GARDEN_VIEWPORT_HEIGHT = SCREEN_HEIGHT * 0.6;
